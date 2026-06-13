@@ -1,0 +1,99 @@
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+
+{% block style %}
+    
+{% endblock style%}
+{% block content %}
+
+     <section class="section single-wrapper">
+        <div class="container" id="my-workplans-table-container" style="width: 70rem;">
+		    <div class="row">
+			    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">                 
+                    <div class="page-wrapper">
+                        {% if user.is_authenticated %}  
+                                <section class="content-header">
+                                        <div class="col-xs-12 col-sm-12">
+                                            {% comment %}
+                                            <h4 class="text-left caption">
+                                                {% for message in messages %}
+                                                <small><code>{{ message }}</code></small>
+                                                {% endfor %}
+                                            </h4>
+                                            {% endcomment %}
+                                            <h3>
+                                                Add, view and edit <b>Component</b>
+                                                <small>Dataset</small>                  
+                                            </h3>        
+                                            <ol class="breadcrumb">
+                                                <li class="breadcrumb-item"><a href="/"><i class="fa fa-reply"></i> Back</a></li>
+                                                <li class="breadcrumb-item"><a href="{% url 'export_component' %}"><i class="fa fa-external-link"></i> Export to Excel</a></li>
+                                                <li class="breadcrumb-item"><a href="{% url 'json_component' %}"><i class="fa fa-cog"></i> API component</a></li>
+                                            </ol>
+                                            <form method="GET">
+                                                {% csrf_token %}
+                                                <div class="row">
+                                                    <div><input class="form-control" name="component_name" type="text" placeholder="Search here title"></div>
+                                                    <div><button type="submit" class="btn btn-success">
+                                                        <i class="fa fa-search fa-fw"></i>
+                                                    </button></div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                </section>
+
+                                 <div class="row tbl-fixed">
+                                    <table class="table responsive" id="myWorkplansTable1" style="width:100%"  data-toggle="table" data-pagination="true" data-search="true">
+                                        <form method="POST" action="{% url 'component_add' %}">
+                                            {% csrf_token %}
+                                                <tr>
+                                                    <th>Component</th>
+                                                </tr>
+                                                {% if not form.instance.id %}
+                                                <tr> 
+                                                    {% include 'mytvddata/pages/component/component_save.html' %}
+                                                </tr>
+                                                {% endif %}
+                                            {% for component in components %}
+                                                <tr>
+                                                    {% if form.instance.id == component.id %}
+                                                    {% include 'mytvddata/pages/component/component_save.html' %}
+                                                    {% else %} 
+                                                    <td>{{component.component_name}}</td>
+                                                    <td><button formnovalidate name="edit" value="{{component.id}}" class="btn btn-primary btn-sm">Edit</button></td>
+                                                    <td><button formnovalidate name="delete" value="{{component.id}}" class="btn btn-warning btn-sm">delete</button></td>
+                                                    {% endif %}
+                                                </tr>
+                                            {% endfor %} 
+                                        </form>
+                                    </table>
+                                </div>
+
+                                {% comment %}
+
+                                {{form.component.label_tag}}
+                                {% render_field form.component class="custom-select mb-4" autocomplete="off" hx-get='subcomponents' hx-target="#id_subcomponents"%}
+
+                                {{form.subcomponents.label_tag}}
+                                {% render_field form.subcomponents class="custom-select mb-4" autocomplete="off" %}
+                                {% endcomment %}
+                        {% else %}
+                                <section>
+                                    <p style="position: center;">
+                                        We could not find the page you were looking for. 
+                                        Meanwhile, you may <a href='/signin'>login with your account</a> or <a href='/'>return to home page</a>.
+                                    </p>
+                                </section>   
+                        {% endif %}
+                    </div><!-- end page-wrapper -->
+                </div><!-- end col -->
+            </div><!-- end row -->
+	   </div><!-- end container -->
+    </section>
+<!-- end wrapper -->
+{% endblock %}
+
+

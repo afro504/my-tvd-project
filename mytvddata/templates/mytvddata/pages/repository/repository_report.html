@@ -1,0 +1,176 @@
+
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+
+{% block content %}
+
+
+    <div class="wrapper row-offcanvas row-offcanvas-left">
+    <!-- Left side column. contains the logo and sidebar -->    
+    <!-- Right side column. Contains the navbar and content of the page -->
+        <aside class="right-side">                
+        <!-- Content Header (Page header) -->
+            <section class="contact-us section">
+                <div class="container">
+
+                    <div class="row">
+                        <div class="col-lg-8 col-md-8 col-8">
+                            <h3 class="news-title">
+                                <b> List of <code>indicators</code>   <b>from</b> saved repository</b> 
+                                <small>Pillar 3</small>
+                            </h3>
+                        </div>
+                        <div class="col-lg-4 col-md-4 col-4">
+                            {% if user.is_authenticated %}
+                            <ul class="bread-list">
+                                <li><a href="/"><i class="fa fa-reply" aria-hidden="true"></i> Back</a></li>
+                                <li><a href="/index_survey"><i class="fa fa-edit" aria-hidden="true"></i> Edited data</a></li>
+                                <li class="active"><i class="fa fa-table" aria-hidden="true"></i> Survey list</li>
+                            </ul>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="container">
+                        <div class="row">
+                            <!-- blog-contents -->
+                            <section class="col-md-8">
+                                {% for  subComponent in subComponents  %}                            
+                                <article class="blog-item box box-solid box-success">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <h5> 
+                                                <a href="single_repository_page/{{subComponent.pk}}">
+                                                <b>{{ subComponent.subcomponent_name }}</b>  
+                                                </a>
+                                            </h5>
+                                        </div>
+                                        <div class="col-md-8">
+                                            {% comment %}
+                                            <p>
+                                                from 
+                                            <code>{{ surveyProject.start_date }}</code> 
+                                                to
+                                            <code><time>{{ surveyProject.end_date }}<time></code> 
+                                                <a href="export_survey_page/{{subComponent.pk}}">Export to Excel</a>
+                                            </p>
+                                            {% endcomment %}
+                                            <h4>
+                                                <b><a href="single_repository_page/{{subComponent.pk}}">{{ subComponent.component.component_name }}</a></b>
+                                            </h4>
+                                        </div>
+                                    </div>
+                                </article> <!-- /.blog-item -->
+                                {% endfor %}
+
+                                <ul class="pagination justify-content-center my-5">
+                                    {% if subComponents.has_previous %}
+                                    <!-- 'First' and 'Previous' Buttons -->
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1">|&lt; First</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ subComponents.previous_page_number }}">&lt; Previous</a>
+                                    </li>
+                                    {% endif %}
+                                
+                                    <!-- Numbered Buttons -->
+                                    {% for page in paginator.page_range %}
+                                    {% if subComponents.number == page %}
+                                        <li class="page-item">
+                                        <a class="page-link" href="?page={{ page }}"><strong><u>{{ page }}</u></strong></a>
+                                        </li>
+                                    {% elif page > subComponents.number|add:'-3' and page < subComponents.number|add:'3' %}
+                                        <li class="page-item">
+                                        <a class="page-link" href="?page={{ page }}">{{ page }}</a>
+                                        </li>
+                                    {% endif %}
+                                    {% endfor %}
+                                
+                                    <!-- 'Next' and 'Last' Buttons -->
+                                    {% if subComponents.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" 
+                                        href="?page={{ subComponents.next_page_number }}">Next &gt;</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ subComponents.paginator.num_pages }}">Last &gt;|</a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+
+
+                                {% comment "" %}
+
+                                
+
+                                <div class="page-turn">
+                                    <div class="row">
+                                        <div class="col-md-6 col-md-offset-3 text-center">
+                                            <nav>
+                                                <ul class="pagination pagination-sm">
+                                                    <li class="disabled">
+                                                        <a href="#" aria-label="Previous">
+                                                            <span aria-hidden="true">Prev</span>
+                                                        </a>
+                                                    </li>
+                                                    {% for page in paginator.page_range %}
+                                                    {% if page == surveyProjects.number %}
+                                                    <li class="page-item active" aria-current="page">
+                                                        <span class="page-link">{{page}}</span>
+                                                    </li>                                 
+                                                    {% else %}
+                                                    <li><a href="?page={{page}}">{{page}}</a></li>
+                                                    {% endif %}
+                                                    {% endfor %}
+                                                </ul> <!-- /.pagination -->
+                                            </nav>
+                                        </div>
+                                    </div>
+                                </div> <!-- /.page-turn -->
+                                {% endcomment %}
+                            </section>
+                            <!-- end of blog-contents -->
+                            <!-- sidebar -->
+                            <aside class="col-md-4 col-sm-8 col-xs-8">
+                                <div class="sidebar">
+                                    <!-- search option -->
+                                    <div class="search-widget">
+                                        <form method="GET">
+                                            {% csrf_token %}
+                                            <div class="input-group margin-bottom-sm">
+                                                <div class="row">
+                                                    <input class="common-input" name="subcomponent_name" type="text" placeholder="Filter by component">
+                                                    <button type="submit" class="btn btn-primary"><i class="fa fa-search fa-fw"></i></button>
+                                                </div>
+                                            </div>
+
+                                            {% comment "" %}
+
+                                            <div class="input-group margin-bottom-sm">
+                                                <div class="row">
+                                                    <div class="col-md-10"><input class="form-control" name="responsible" type="text" placeholder="Filter by survey author "></div>
+                                                    <div class="col-md-2"><button type="submit" class="btn btn-primary">
+                                                        <i class="fa fa-search fa-fw"></i>
+                                                    </button></div>
+                                                </div>
+                                            </div>
+                                            {% endcomment %}
+
+                                        </form>
+                                    </div>
+                                </div>
+                            </aside> 
+                            <!-- end of sidebar -->
+                        </div>
+                    </div> <!-- end of /.container -->
+                </div>
+            
+            </section><!-- /.content -->
+   
+        </aside><!-- /.right-side -->
+    </div>
+ 
+{% endblock %}

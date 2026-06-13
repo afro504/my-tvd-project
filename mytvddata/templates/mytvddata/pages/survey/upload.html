@@ -1,0 +1,73 @@
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+{% block style %}
+    
+{% endblock style%}
+
+{% block content %}
+
+
+ <section class="section single-wrapper">
+        <div class="container" style="width: 65rem;">
+		    <div class="row">
+			    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">                 
+                    <div class="page-wrapper">
+                        {% if user.is_authenticated %}  
+
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <div class="alert alert-{{message.tags}}" role="alert">
+                                        <p{% if message.tags %} class=""{% endif%}{{message}}></p>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                                <section class="content-header">
+                                        <h3>
+                                            Upload the dataset from survey
+                                            <small>Preview</small>
+                                        </h3>
+                                        <ol class="breadcrumb">
+                                            <li class="breadcrumb-item"><a href="/"><i class="fa fa-reply"></i> Back</a></li>
+                                            <li class="breadcrumb-item"><a href="/survey_report"><i class="fa fa-bars"></i> List of Survey</a></li>
+                                            <li class="breadcrumb-active"><i class="fa fa-upload"></i> Import dataset</li>
+                                        </ol>
+                                </section>
+                                    <div class="box box-primary">
+                                        <div class="box-header">
+                                            <h3 class="box-title"></h3>
+                                        </div><!-- /.box-header -->
+                                        <!-- form start -->
+                                        <form role="form"  action="/upload_survey" method="POST" enctype="multipart/form-data">
+                                            {% csrf_token %}
+                                            <div class="box-body">
+                                               <div class="form-group">
+                                                    <label>File in Excel format(xlsx) </label>
+                                                    <input type="file"  name="myfile" class="form-control">
+                                                    <p class="help-block">Please use these column: 0-id, 1-project survey,  2-quest_code, 3-question, 4-response_text, 5-response_num, 6-level_1, 5-level_2</p>
+                                                </div>
+                                            </div><!-- /.box-body -->
+                                            <div class="box-footer">
+                                                <button type="submit" class="btn btn-primary">Upload</button>
+                                            </div>
+                                        </form>
+                                        <hr>
+                                        <br>
+                                        <p><a href="{% url 'index_survey' %}">View all datasets</a></p>
+                                    </div><!-- /.box -->
+                                   
+                        {% else %}
+                            <section>
+                                <p style="position: center;">
+                                    We could not find the page you were looking for. 
+                                    Meanwhile, you may <a href='/signin'>login with your account</a> or <a href='/'>return to home page</a>.
+                                </p>
+                            </section>   
+                        {% endif %}
+                    </div><!-- end page-wrapper -->
+                </div><!-- end col -->
+            </div><!-- end row -->
+	   </div><!-- end container -->
+    </section>
+<!-- end wrapper -->
+
+{% endblock %}

@@ -1,0 +1,24 @@
+database:
+  dev:
+    ENGINE: mssql
+    NAME: tvd_db
+    HOST: DESKTOP-QVJV7NQ
+    PORT: ""
+    USER: ""
+    PASSWORD: ""
+    OPTIONS:
+      driver: "ODBC Driver 17 for SQL Server"
+      trusted_connection: "yes"
+      TrustServerCertificate: "yes"
+
+  prod:
+    ENGINE: mssql
+    NAME: tvd_db_prod
+    HOST: SQLSERVER-PROD
+    PORT: "1433"
+    USER: admin_user
+    PASSWORD: strong_password_here
+    OPTIONS:
+      driver: "ODBC Driver 17 for SQL Server"
+      trusted_connection: "no"
+      TrustServerCertificate: "yes"

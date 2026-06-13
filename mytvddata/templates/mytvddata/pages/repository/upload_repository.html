@@ -1,0 +1,110 @@
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+
+{% block style %}
+<style>
+    body {
+        background: linear-gradient(135deg, #f5f7fa, #e9f2fb);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 2.5rem;
+        box-shadow: 0 6px 25px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    h2, h3 {
+        font-weight: 700;
+        color: #005eb8; /* WHO blue */
+    }
+    .breadcrumb {
+        background: transparent;
+        margin-bottom: 1rem;
+    }
+    .breadcrumb-item a {
+        color: #005eb8;
+        font-weight: 500;
+    }
+    .btn {
+        border-radius: 6px;
+    }
+    .help-block {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    .hero-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .hero-header img {
+        height: 60px;
+    }
+    .hero-header h2 {
+        margin-top: 1rem;
+    }
+</style>
+{% endblock style %}
+
+{% block content %}
+<section class="container-fluid my-5" style="max-width:90%;">
+
+  
+    {% if user.is_authenticated %}
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{message.tags}} text-center" role="alert">
+                {{message}}
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- UPLOAD FORM CARD -->
+        <div class="page-card">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb justify-content-center">
+                    <li class="breadcrumb-item"><a href="/"><i class="fa fa-reply"></i> Back</a></li>
+                    <li class="breadcrumb-item"><a href="/survey_report"><i class="fa fa-bars"></i> Survey List</a></li>
+                    <li class="breadcrumb-item active"><i class="fa fa-upload"></i> Import Dataset</li>
+                </ol>
+            </nav>
+
+            <h3 class="mb-4">Upload Repository Dataset</h3>
+            <form role="form" action="/upload_repository" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Excel File (.xlsx)</label>
+                    <input type="file" name="myfile" class="form-control">
+                    <p class="help-block mt-2">
+                        Required columns:<br>
+                        <code>
+                            0-id, 1-indicator_id, 2-country_id, 3-indicator_code, 4-spatial_dim, 
+                            5-dim1_type, 6-dim1, 7-dim2_type, 8-dim2, 9-dim3_type, 10-dim3, 
+                            11-time_dim, 12-alpha_value, 13-numeric_value, 14-publish_date (yyyy/mm/dd)
+                        </code>
+                    </p>
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary fw-bold">
+                        <i class="fa fa-upload"></i> Upload
+                    </button>
+                </div>
+            </form>
+            <hr class="my-4">
+            <p class="text-center">
+                <a href="{% url 'datasets_repository' %}" class="btn btn-outline-secondary">
+                    <i class="fa fa-database"></i> View All Datasets
+                </a>
+            </p>
+        </div>
+    {% else %}
+        <section class="text-center py-5">
+            <p>
+                We could not find the page you were looking for.  
+                Meanwhile, you may <a href='/signin'>login with your account</a> or <a href='/'>return to home page</a>.
+            </p>
+        </section>
+    {% endif %}
+</section>
+{% endblock %}

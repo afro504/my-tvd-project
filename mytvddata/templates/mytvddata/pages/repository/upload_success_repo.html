@@ -1,0 +1,17 @@
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+<!-- vdapp/pages/repository/upload_success_repo.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Success</title>
+</head>
+<body>
+    <h1>File Uploaded Successfully!</h1>
+    <p>Your Excel file has been processed.</p>
+    <p><a href="{% url 'upload_repository' %}">Upload another file</a></p>
+    <p><a href="{% url 'dataset_list_reposi' %}">View all datasets</a></p>
+</body>
+</html>

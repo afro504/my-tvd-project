@@ -1,0 +1,170 @@
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+
+{% block style %}
+<style>
+    .page-wrapper {
+        background: #fff;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    h2.caption {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    h3 {
+        margin-top: 1rem;
+        color: #34495e;
+    }
+    .breadcrumb {
+        background: transparent;
+        padding: 0;
+        margin-bottom: 1rem;
+    }
+    .tbl-container {
+        max-width: 100%;
+    }
+    table {
+        background: #fafafa;
+    }
+    th {
+        background: #2c3e50;
+        color: #fff;
+        text-align: center;
+    }
+    td {
+        vertical-align: middle;
+    }
+</style>
+{% endblock style %}
+
+{% block content %}
+<section class="section single-wrapper">
+    <div class="container tbl-container" style="max-width: 95%;">
+        <div class="row">
+            <div class="col-12">
+                <div class="page-wrapper">
+                    {% if user.is_authenticated %}
+                    <section class="content-header mb-4">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <h2 class="caption">
+                                    {% for message in messages %}
+                                    <small><code>{{ message }}</code></small>
+                                    {% endfor %}
+                                </h2>
+                                <h3>
+                                    Add, view and edit <b>Data from survey</b>
+                                    <small class="text-muted">Display</small>
+                                </h3>
+                            </div>
+                        </div>
+
+                        <!-- Breadcrumb -->
+                        <div class="row mb-3">
+                            <div class="col-lg-8">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item"><a href="/"><i class="fa fa-reply"></i> Back</a></li>
+                                    <li class="breadcrumb-item"><a href="/project_survey"><i class="fa fa-bars"></i> Survey project</a></li>
+                                    <li class="breadcrumb-item"><a href="export_to_excel_survey_dataset/{{by_survey}}/{{end_day}}"><i class="fa fa-download"></i> Export survey dataset</a></li>
+                                    <li class="breadcrumb-item"><a href="{% url 'export_to_excel' %}"><i class="fa fa-external-link"></i> Export to Excel</a></li>
+                                    <li class="breadcrumb-item"><a href="{% url 'json_surveydataset' %}"><i class="fa fa-cog"></i> API dataset</a></li>
+                                    <li class="breadcrumb-item active"><i class="fa fa-tasks"></i> Enter Data</li>
+                                </ol>
+                            </div>
+                            <div class="col-lg-4">
+                                <form method="GET" class="d-flex">
+                                    {% csrf_token %}
+                                    <input class="form-control me-2" name="quest_code" type="text" placeholder="Filter by question code">
+                                    <button type="submit" class="btn btn-success"><i class="fa fa-search"></i></button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Filter Form -->
+                         <form method="GET" action="{% url 'index_survey' %}" class="mb-4">
+                            {% csrf_token %}
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-6">
+                                    <label class="form-label">Survey Title</label>
+                                    {% render_field form_survey_title.by_survey class+="form-control" placeholder=form_survey_title.by_survey.label %}
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Survey End Date (mm/dd/yyyy)</label>
+                                    <input type="date" name="end" id="end" class="form-control" required>
+                                </div>
+                                <div class="col-md-2 d-grid">
+                                    <button class="btn btn-success fw-bold">
+                                        <i class="fa fa-filter"></i> Filter
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                      
+                    </section>
+
+                    <!-- Data Table -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Question Code</th>
+                                    <th>Question</th>
+                                    <th>Response (Text)</th>
+                                    <th>Response (Number)</th>
+                                    <th>First Area</th>
+                                    <th>Second Area</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if not form.instance.id %}
+                                <tr>{% include 'mytvddata/pages/survey/survey_dataset_save.html' %}</tr>
+                                {% endif %}
+                                {% for surveyDataset in surveyDatasets %}
+                                <tr>
+                                    {% if form.instance.id == surveyDataset.id %}
+                                        {% include 'tvdapp/pages/survey/survey_dataset_save.html' %}
+                                    {% else %}
+                                       <td class="text-center">
+                                            <button type="submit" class="btn btn-primary fw-bold">
+                                                <i class="fa fa-save"></i> Save
+                                            </button>
+                                        </td>
+                                        <td>{{surveyDataset.surveyProject.title_surv}}</td>
+                                        <td>{{surveyDataset.quest_code}}</td>
+                                        <td>{{surveyDataset.question}}</td>
+                                        <td>{{surveyDataset.response_text}}</td>
+                                        <td>{{surveyDataset.response_num}}</td>
+                                        <td>{{surveyDataset.level_1}}</td>
+                                        <td>{{surveyDataset.level_2}}</td>
+                                        <td>
+                                            <button formnovalidate name="edit" value="{{surveyDataset.id}}" class="btn btn-primary btn-sm">Edit</button>
+                                            <button formnovalidate name="delete" value="{{surveyDataset.id}}" class="btn btn-danger btn-sm">Delete</button>
+                                        </td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <section class="text-center">
+                        <p>
+                            We could not find the page you were looking for.  
+                            Meanwhile, you may <a href='/signin'>login</a> or <a href='/'>return home</a>.
+                        </p>
+                    </section>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

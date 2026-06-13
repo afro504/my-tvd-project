@@ -1,0 +1,56 @@
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+<!-- Modal input formular of scripts to use in add or edit-->
+    <div class="form-group col-md-12 mb-0">
+        <label>Name of survey</label>
+        {% render_field form.ws_title placeholder=form.ws_title.label class+="form-control" %}
+    </div>
+    <div class="form-row">
+        <div class="form-group col-md-6 mb-0">
+            <label>Type of collect (please selected from this dropdown)</label>
+            {% render_field form.ws_type placeholder=form.ws_type.label class+="form-control" %}
+        </div>
+        <div class="form-group col-md-6 mb-0">
+            <label>Name of table</label>
+            {% render_field form.ws_table placeholder=form.ws_table.label class+="form-control" %}
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group col-md-6 mb-0">
+            <label>Script of create table</label>
+            {% render_field form.ws_create placeholder=form.ws_create.label class+="form-control" %}
+        </div>
+        <div class="form-group col-md-6 mb-0">
+            <label>Script of insert table</label>
+            {% render_field form.ws_insert placeholder=form.ws_insert.label class+="form-control" %}
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col-md-6 mb-0">
+            <label>Script of select table</label>
+            {% render_field form.ws_select placeholder=form.ws_select.label class+="form-control" %}
+        </div>
+        <div class="form-group col-md-6 mb-0">
+            <label>Script of join table</label>
+            {% render_field form.ws_join placeholder=form.ws_join.label class+="form-control" %}
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col-md-12 mb-0">
+            <label>Script of pivot table</label>
+            {% render_field form.ws_pivot placeholder=form.ws_pivot.label class+="form-control" %}
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col-md-12 mb-0">
+            <label>Path of file</label>
+            {% render_field form.ws_pathfile placeholder=form.ws_pathfile.label class+="form-control" %} 
+        </div>    
+    </div>
+    <div class="form-group col-md-12 mb-0">
+        <label>Name of focal point</label>
+        {% render_field form.ws_focalpoint placeholder=form.ws_focalpoint.label class+="form-control" %}  
+    </div>
+                    

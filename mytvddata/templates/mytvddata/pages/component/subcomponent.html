@@ -1,0 +1,140 @@
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+
+{% block style %}
+    
+{% endblock style%}
+{% block content %}
+
+     <section class="section single-wrapper">
+        <div class="container" id="my-workplans-table-container" style="width: 70rem;">
+		    <div class="row">
+			    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">                 
+                    <div class="page-wrapper">
+                       {% comment %} {% if user.is_authenticated %} {% endcomment %} 
+                                <section class="content-header">
+                                        <div class="col-xs-12 col-sm-12">
+                                            {% comment %}
+                                            <h4 class="text-left caption">
+                                                {% for message in messages %}
+                                                <small><code>{{ message }}</code></small>
+                                                {% endfor %}
+                                            </h4>
+                                            {% endcomment %}
+                                            <h3>
+                                                Add, view and edit <b>Sub Component</b>
+                                                <small>Dataset</small>                  
+                                            </h3>        
+                                            <ol class="breadcrumb">
+                                                <li class="breadcrumb-item"><a href="/"><i class="fa fa-reply"></i> Back</a></li>
+                                                <li class="breadcrumb-item"><a href="{% url 'export_subcomponent' %}"><i class="fa fa-external-link"></i> Export to Excel</a></li>
+                                                <li class="breadcrumb-item"><a href="{% url 'json_subcomponent' %}"><i class="fa fa-cog"></i> API sub component</a></li>
+                                            </ol>
+                                            <form method="GET">
+                                                {% csrf_token %}
+                                                <div class="row">
+                                                    <div><input class="form-control" name="subcomponent_name" type="text" placeholder="Search here title"></div>
+                                                    <div><button type="submit" class="btn btn-success">
+                                                        <i class="fa fa-search fa-fw"></i>
+                                                    </button></div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                </section>
+
+                                 <div class="row tbl-fixed">
+                                    <table class="table responsive" id="myWorkplansTable1" style="width:100%"  data-toggle="table" data-pagination="true" data-search="true">
+                                        <form method="POST" action="{% url 'subcomponent_add' %}">
+                                            {% csrf_token %}
+                                                <tr>
+                                                    <th>Component</th>
+                                                    <th>Sub Component</th>
+                                                </tr>
+                                                {% if not form.instance.id %}
+                                                <tr> 
+                                                    {% include 'mytvddata/pages/component/subcomponent_save.html' %}
+                                                </tr>
+                                                {% endif %}
+                                            {% for subcomponent in subcomponents %}
+                                                <tr>
+                                                    {% if form.instance.id == subcomponent.id %}
+                                                    {% include 'mytvddata/pages/component/subcomponent_save.html' %}
+                                                    {% else %} 
+                                                    <td>{{subcomponent.component.component_name}}</td>
+                                                    <td>{{subcomponent.subcomponent_name}}</td>
+                                                    <td><button formnovalidate name="edit" value="{{subcomponent.id}}" class="btn btn-primary btn-sm">Edit</button></td>
+                                                    <td><button formnovalidate name="delete" value="{{subcomponent.id}}" class="btn btn-warning btn-sm">delete</button></td>
+                                                    {% endif %}
+                                                </tr>
+                                            {% endfor %} 
+                                        </form>
+                                    </table>
+                                </div>
+   
+
+                                {% comment %}
+
+                                {{form.component.label_tag}}
+                                {% render_field form.component class="custom-select mb-4" autocomplete="off" hx-get='subcomponents' hx-target="#id_subcomponents"%}
+
+                                {{form.subcomponents.label_tag}}
+                                {% render_field form.subcomponents class="custom-select mb-4" autocomplete="off" %}
+                                {% endcomment %}
+            <ul class="pagination justify-content-center my-5">
+                {% if subcomponents.has_previous %}
+                <!-- 'First' and 'Previous' Buttons -->
+                <li class="page-item">
+                    <a class="page-link" href="?page=1">|&lt; First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ subcomponents.previous_page_number }}">&lt; Previous</a>
+                </li>
+                {% endif %}
+            
+                <!-- Numbered Buttons -->
+                {% for page in paginator.page_range %}
+                {% if subcomponents.number == page %}
+                    <li class="page-item">
+                    <a class="page-link" href="?page={{ page }}"><strong><u>{{ page }}</u></strong></a>
+                    </li>
+                {% elif page > subcomponents.number|add:'-3' and page < subcomponents.number|add:'3' %}
+                    <li class="page-item">
+                    <a class="page-link" href="?page={{ page }}">{{ page }}</a>
+                    </li>
+                {% endif %}
+                {% endfor %}
+            
+                <!-- 'Next' and 'Last' Buttons -->
+                {% if subcomponents.has_next %}
+                <li class="page-item">
+                    <a class="page-link" 
+                    href="?page={{ subcomponents.next_page_number }}">Next &gt;</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ subcomponents.paginator.num_pages }}">Last &gt;|</a>
+                </li>
+                {% endif %}
+            </ul>
+                   {% comment %}
+                        {% else %}
+                                <section>
+                                    <p style="position: center;">
+                                        We could not find the page you were looking for. 
+                                        Meanwhile, you may <a href='/signin'>login with your account</a> or <a href='/'>return to home page</a>.
+                                    </p>
+                                </section>  
+                  
+                        {% endif %}
+                          {% endcomment %} 
+                    </div><!-- end page-wrapper -->
+                </div><!-- end col -->
+            </div><!-- end row -->
+	   </div><!-- end container -->
+    </section>
+<!-- end wrapper -->
+{% endblock %}
+
+

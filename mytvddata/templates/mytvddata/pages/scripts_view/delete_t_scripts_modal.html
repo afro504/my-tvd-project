@@ -1,0 +1,25 @@
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+
+    <!-- Modal Dialog delete-->   
+    <div class="modal fade" id="delett_scriptsForm{{t_scripts_view.pk}}" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <form action="">
+                    <div class="modal-header">                
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <h4>Are you sure you wante to delete this <code>SCRIPTS</code><br/><br/>From the table <b>{{t_scripts_view.ws_table }}</b><br/><br/>Edit by the Focal Point name :<b>{{t_scripts_view.ws_focalpoint}}</b><br/><br/> created<code>{{t_scripts_view.ws_date}}</code> </h4>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="{% url 'delete_t_scripts' pk=t_scripts_view.pk %}" class="btn btn-danger btn-sm">Delete</a>
+                        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>

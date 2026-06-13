@@ -1,0 +1,65 @@
+{% extends "mytvddata/cover/base.html" %}
+
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+{% block style %}
+   
+{% endblock style%}
+
+{% block content %}
+    <div class="container tbl-container" style="width: 80rem;">
+        {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{message.tags}}" role="alert">
+                <p{% if message.tags %} class=""{% endif%}{{message}}></p>
+            </div>
+
+        {% endfor %}
+        {% endif %}
+        <div class="page-wrapper">
+            <div class="page-title lb single-wrapper">
+                <h3 class="news-title">Upload the Report in pdf format</h3>
+                <ol class="breadcrumb">
+                <li><a href="/"><i class="fa fa-reply"></i> Back</a></li>
+                </ol>
+            </div><!-- /.box-header -->
+    <!-- form start -->
+            <form role="form"  action="/report_upload" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{form.as_p}}
+                <div class="box-footer">
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </form>
+            <hr>
+            <!-- display image curretly saved-->
+            {% if img_report_obj %}
+            <h3>Succesfully uploaded : {{img_report_obj.title_rep}}</h3>
+            <img src="{{ img_report_obj.img_cp_rep.url}}" alt="connect" style="max-height:300px">
+            {% endif %}
+
+            <!-- display all image saved-->
+            {% for i in img_report_obj_all %}
+            {% if forloop.first %} <div class="row">{% endif %}
+                <div class="col-lg-4 col-md-4 col-12">
+                    <div class="text-center mt-2">
+                        {% if i.img_cp_rep %}
+                        <img src="{{ i.img_cp_rep.url}}" height="60%" width="60%" class="img-thumbnail" alt="...">
+                        
+                        {% endif %}
+                        
+                        <h5 class="text-center">{{i.title_rep}}</h5>
+                        <h5 class="text-center">{{i.author_rep}}</h5>
+                        <h6 class="text-center">{{i.date_rep}}</h6></div>
+                    </div>
+                    {% if forloop.counter|divisibleby:3 %}
+                </div>
+                <div class="row">{% endif %}
+                    {% if forloop.last %}</div>{% endif %}
+            {% endfor %}
+
+        </div><!-- /.box -->
+    </div>
+{% endblock %}

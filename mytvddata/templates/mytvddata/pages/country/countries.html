@@ -1,0 +1,108 @@
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+{% block content %}
+
+<div id="wrapper">
+
+    <!-- Page Title -->
+    <div class="page-title lb single-wrapper">
+        <div class="container-fluid" style="max-width:95%;">
+            <div class="row align-items-center">
+                <div class="col-lg-8 col-md-8 col-sm-12">
+                    <h2 class="fw-bold text-primary">
+                        <i class="fa fa-star bg-orange"></i> 
+                        List of Countries <span class="text-muted">({{total_country}})</span>
+                    </h2>
+                </div>
+                <div class="col-lg-4 col-md-4 d-none d-md-block">
+                    <ol class="breadcrumb justify-content-end mb-0">
+                        <li class="breadcrumb-item"><a href="/"><i class="fa fa-reply"></i> Back</a></li> 
+                        <li class="breadcrumb-item"><a href="{% url 'export_country' %}"><i class="fa fa-external-link"></i> Export to Excel</a></li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Section -->
+    <section class="section">
+        <div class="container-fluid" style="max-width:95%;">
+            <div class="row">
+                <div class="col-12">
+                    <div class="page-wrapper shadow-lg p-4 bg-white rounded">
+
+                        <!-- Table -->
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover align-middle">
+                                <thead class="table-primary text-center">
+                                    <tr>
+                                        <th>Flag</th>
+                                        <th>Name</th>
+                                        <th>ISO</th>
+                                        <th>Official</th>
+                                        <th>Capital</th>
+                                        <th>Subregion</th>
+                                        <th>Area</th>
+                                        <th>Population</th>
+                                        <th>Languages</th>
+                                        <th>Maps</th>
+                                        <th>Ref data</th>
+                                        <th>Data link</th>
+                                        <th>Classification</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for i in country_list %}
+                                    <tr>
+                                        <td>{{i.flag|safe}}</td>
+                                        <td>{{i.name}}</td>
+                                        <td>{{i.cca3}}</td>
+                                        <td>{{i.official}}</td>
+                                        <td>{{i.capital}}</td>
+                                        <td>{{i.subregion}}</td>
+                                        <td>{{i.area}}</td>
+                                        <td>{{i.population}}</td>
+                                        <td>{{i.languages}}</td>
+                                        <td><a href="{{i.maps}}" target="_blank" class="text-primary">View</a></td>
+                                        <td>{{i.ref_data}}</td>
+                                        <td>{{i.data_source}}</td>
+                                        <td>{{i.country_class}}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <nav aria-label="Country pagination">
+                            <ul class="pagination justify-content-center my-4">
+                                {% if country_list.has_previous %}
+                                <li class="page-item"><a class="page-link" href="?page=1">|&lt; First</a></li>
+                                <li class="page-item"><a class="page-link" href="?page={{ country_list.previous_page_number }}">&lt; Previous</a></li>
+                                {% endif %}
+
+                                {% for page in paginator.page_range %}
+                                    {% if country_list.number == page %}
+                                        <li class="page-item active"><a class="page-link" href="?page={{ page }}">{{ page }}</a></li>
+                                    {% elif page > country_list.number|add:'-3' and page < country_list.number|add:'3' %}
+                                        <li class="page-item"><a class="page-link" href="?page={{ page }}">{{ page }}</a></li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if country_list.has_next %}
+                                <li class="page-item"><a class="page-link" href="?page={{ country_list.next_page_number }}">Next &gt;</a></li>
+                                <li class="page-item"><a class="page-link" href="?page={{ country_list.paginator.num_pages }}">Last &gt;|</a></li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+
+                    </div><!-- end page-wrapper -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="dmtop">Scroll to Top</div>
+</div>
+
+{% endblock %}

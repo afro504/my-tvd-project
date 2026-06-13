@@ -1,0 +1,157 @@
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+
+{% block style %}
+    
+{% endblock style%}
+
+{% block content %}
+        <div class="container" id="my-workplans-table-container" style="width: 100rem;">
+		    <div class="row">
+			    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">                 
+                    <div class="page-wrapper">
+                        {% if user.is_authenticated %}  
+                             <div class="page-title lb single-wrapper">
+                                <div class="row">
+                                    <div class="col-lg-6 col-md-6 col-6">
+                                        <h3 class="news-title">
+                                            Add, view and edit <code><b>document</b></code> in <b>uploaded in the system</b>
+                                            {% for message in messages %}
+                                            <small><code>{{ message }}</code></small>
+                                            {% endfor %}
+                                         </h3>
+                                   </div>
+                                   <div class="col-lg-3 col-md-3 col-3">
+                                       <a href="/"><i class="fa fa-reply"></i> Back</a>
+                                   </div>
+                                <!-- search option -->
+                                    <div class="col-lg-3 col-md-3 col-3">
+                                        <form method="GET">
+                                            {% csrf_token %}
+                                            <div class="input-group margin-bottom-sm">
+                                                <div class="row">
+                                                    <input class="common-input" name="title_rep" type="text" placeholder="Search by document title">
+                                                    <button type="submit" class="btn btn-success"><i class="fa fa-search fa-fw"></i></button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                              <div class="row tbl-fixed">
+                                    <table class="table responsive" id="myWorkplansTable1" style="width:100%"  data-toggle="table" data-pagination="true" data-search="true">
+                                        <thead class="table-title">
+                                            <tr class="head-row">
+                                                <th scope="col">#</th>
+                                                <th></th>
+                                                <th>Title</th>
+                                                <th>Author</th>
+                                                <th>Date</th>
+                                                <th>Summary</th>
+                                                <th>Cover page</th>
+                                                <th>Edit</th>
+                                                <th>Delete</th>
+                                                <!-- <th colspan ="2" id="mid">Action</th>-->
+                                        </thead>
+                                        <tbody>
+                                                {% for  reportSave in reportSaves  %}   
+                                                    <tr class="table-row">
+                                                    <th scope="row">{{forloop.counter}}</th>
+                                                    <td>
+                                                        <span class="custom-checkbox">
+                                                            <input type="checkbox" name="option[]" value="1">
+                                                        </span>
+                                                    </td>
+                                                    <td>{{ reportSave.title_rep }}</td>
+                                                    <td>{{ reportSave.author_rep}}</td>
+                                                    <td>{{ reportSave.date_rep }}</td>
+                                                    <td>{{ reportSave.summary_rep }}</td>
+                                                    {% if reportSave.img_cp_rep  %}
+                                                    <td>
+                                                        <img src="{{ reportSave.img_cp_rep.url}}" height="10%" width="10%" class="img-thumbnail" alt="...">
+                                                    </td>
+                                                    {% else %}
+                                                    <td>
+                                                        <img src="{% static 'images/demo/afro.png' %}" height="10%" width="10%" class="img-thumbnail" alt="...">
+                                                    </td>
+
+                                                    {% endif %}
+                                                    <td> 
+                                                        <a href="{% url 'edit_report' reportSave.pk %}"><i class="fa fa-edit"></i></a>
+                                                    </td>
+                                                    <td>
+                                                        <a href=""><i class="fa fa-trash-o"></i></a>
+                                                    </td>
+                                                    
+                                            
+                                
+                                                {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="page-turn">
+                                    <div class="row">
+                                        <div class="col-md-6 col-md-offset-3 text-center">
+                                            <ul class="pagination justify-content-center my-5">
+                                                {% if reportSaves.has_previous %}
+                                                <!-- 'First' and 'Previous' Buttons -->
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page=1">|&lt; First</a>
+                                                </li>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page={{ reportSaves.previous_page_number }}">&lt; Previous</a>
+                                                </li>
+                                                {% endif %}
+                                            
+                                                <!-- Numbered Buttons -->
+                                                {% for page in paginator.page_range %}
+                                                {% if reportSaves.number == page %}
+                                                    <li class="page-item">
+                                                    <a class="page-link" href="?page={{ page }}"><strong><u>{{ page }}</u></strong></a>
+                                                    </li>
+                                                {% elif page > reportSaves.number|add:'-3' and page < reportSaves.number|add:'3' %}
+                                                    <li class="page-item">
+                                                    <a class="page-link" href="?page={{ page }}">{{ page }}</a>
+                                                    </li>
+                                                {% endif %}
+                                                {% endfor %}
+                                            
+                                                <!-- 'Next' and 'Last' Buttons -->
+                                                {% if reportSaves.has_next %}
+                                                <li class="page-item">
+                                                    <a class="page-link" 
+                                                    href="?page={{ reportSaves.next_page_number }}">Next &gt;</a>
+                                                </li>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page={{ reportSaves.paginator.num_pages }}">Last &gt;|</a>
+                                                </li>
+                                                {% endif %}
+                                            </ul>
+                                        </div>
+                                    </div> <!-- /.page-turn -->
+                                </div>
+
+                           
+                        {% else %}
+                                <section>
+                                    <p style="position: center;">
+                                        We could not find the page you were looking for. 
+                                        Meanwhile, you may <a href='/signin'>login with your account</a> or <a href='/'>return to home page</a>.
+                                    </p>
+                                </section>   
+                        {% endif %}
+                    </div><!-- end page-wrapper -->
+                </div><!-- end col -->
+            </div><!-- end row -->
+	   </div><!-- end container -->
+  
+<!-- end wrapper -->
+
+
+
+{% endblock %}
+
+

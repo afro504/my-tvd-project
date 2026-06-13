@@ -1,0 +1,179 @@
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+
+{% block content %}
+
+        <main>
+            <div class="container">
+                <div class="row">
+
+                    <!-- blog-contents -->
+                    <section class="col-md-12">
+                        <article class="single-blog-item">
+                            <!-- title row -->
+            <div class="row">
+                <div class="col-xs-12">
+                    <h3 class="page-header">
+                        <i class="fa fa-list-ol"></i> <code>Saving indicator results </code> TVD
+                    </h3>                            
+                </div><!-- /.col -->
+            </div>
+                            <p>{{message}}</p>
+                            <div class="row invoice-info">                         
+                            </div><!-- /.row -->
+                            <div class="alert alert-info">
+                              <h4><strong>{{subComponent.subcomponent_name }}</strong></h4> 
+                            </div>
+                            <div class="alert">
+                                <h5>1. Scope of results:<b>{{subComponent.subcomponent_name }}</b></h5> 
+                               {% comment %} <h5>2. Date of the survey: <b> From {{subComponent.start_date }} To {{subComponent.end_date }}</b></h5>
+                                <h5>3. Survey location: <b>{{subComponent.location_survey }}</b></h5>
+                                {% endcomment %}
+                                <h5>4. Saving indicator results :</h5> 
+                                <div class="row tbl-fixed">
+
+                                    <table class="table responsible" style="width:100%">  
+                                        <thead>
+                                            <tr>
+                                                <th>Country</th>
+                                                <th>ISO</th>
+                                                <th>Indicator name</th>
+                                                <th>Indicator code</th>
+                                                <th>Dim1 type</th>
+                                                <th>Dim1</th>
+                                                <th>Dim2 type</th>
+                                                <th>Dim2</th>
+                                                <th>Dim3 type</th>
+                                                <th>Dim3</th>
+                                                <th>time_dim</th>
+                                                <th>alpha_value</th>
+                                                <th>numeric_value</th>
+                                                <th>publish_date</th>
+                                            </tr>                                    
+                                        </thead>
+                                        {% for subComponent in subComponents %}
+                                        <tbody>             
+                                            <tr>
+                                                <td>{{subComponent.subcomponent_indicator__indicator_repository__country__name}}</td>
+                                            
+                                                <td>{{subComponent.subcomponent_indicator__indicator_repository__spatial_dim}}</td>
+                                                <td>{{subComponent.subcomponent_indicator__indicator_repository__indicator__indicator_name}}</td>
+                                                <td>{{subComponent.subcomponent_indicator__indicator_repository__indicator_code}}</td>
+                                                <td>{{subComponent.subcomponent_indicator__indicator_repository__dim1_type}}</td>
+                                                <td>{{subComponent.subcomponent_indicator__indicator_repository__dim1}}</td>
+                                                <td>{{subComponent.subcomponent_indicator__indicator_repository__dim2_type}}</td>
+                                                <td>{{subComponent.subcomponent_indicator__indicator_repository__dim2}}</td>
+                                                <td>{{subComponent.subcomponent_indicator__indicator_repository__dim3_type}}</td>
+                                                <td>{{subComponent.subcomponent_indicator__indicator_repository__dim3}}</td>
+                                                <td>{{subComponent.subcomponent_indicator__indicator_repository__time_dim}}</td>
+                                                <td>{{subComponent.subcomponent_indicator__indicator_repository__alpha_value}}</td>
+                                                <td>{{subComponent.subcomponent_indicator__indicator_repository__numeric_value}}</td>
+                                                <td>{{subComponent.subcomponent_indicator__indicator_repository__publish_date}}</td>
+                                            </tr>
+                                        </tbody>
+                                        {% endfor %}
+                                    </table>
+
+                                </div>
+                               
+                            </div>
+                            <!-- Table row -->
+                        </article>
+
+
+                        <ul class="pagination justify-content-center my-5">
+                            {% if subComponents.has_previous %}
+                            <!-- 'First' and 'Previous' Buttons -->
+                              <li class="page-item">
+                                <a class="page-link" href="?page=1">|&lt; First</a>
+                              </li>
+                              <li class="page-item">
+                                <a class="page-link" href="?page={{ subComponents.previous_page_number }}">&lt; Previous</a>
+                              </li>
+                            {% endif %}
+                          
+                            <!-- Numbered Buttons -->
+                            {% for page in paginator.page_range %}
+                              {% if subComponents.number == page %}
+                                <li class="page-item">
+                                  <a class="page-link" href="?page={{ page }}"><strong><u>{{ page }}</u></strong></a>
+                                </li>
+                              {% elif page > subComponents.number|add:'-3' and page < subComponents.number|add:'3' %}
+                                <li class="page-item">
+                                  <a class="page-link" href="?page={{ page }}">{{ page }}</a>
+                                </li>
+                              {% endif %}
+                            {% endfor %}
+                          
+                            <!-- 'Next' and 'Last' Buttons -->
+                            {% if subComponents.has_next %}
+                              <li class="page-item">
+                                <a class="page-link" 
+                                  href="?page={{ subComponents.next_page_number }}">Next &gt;</a>
+                              </li>
+                              <li class="page-item">
+                                <a class="page-link" href="?page={{ subComponents.paginator.num_pages }}">Last &gt;|</a>
+                              </li>
+                            {% endif %}
+                          </ul>
+
+                          {% comment "" %}
+
+                        <div class="page-turn">
+                            <div class="row">
+                                <div class="col-md-6 col-md-offset-3 text-center">
+                                    <nav>
+                                        <ul class="pagination pagination-sm">
+                                            <li class="disabled">
+                                                <a href="#" aria-label="Previous">
+                                                    <span aria-hidden="true">Prev</span>
+                                                </a>
+                                            </li>
+                                            {% for page in paginator.page_range %}
+                                            {% if page == surveyDatasets.number %}
+                                            <li class="page-item active" aria-current="page">
+                                                <span class="page-link">{{page}}</span>
+                                            </li>                                 
+                                            {% else %}
+                                            <li><a href="?page={{page}}">{{page}}</a></li>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </ul> <!-- /.pagination -->
+                                    </nav>
+                                </div>
+                            </div>
+                        </div> <!-- /.page-turn -->
+                        {% endcomment %}
+                        <div class="row">
+                          
+                            <div class="col-md-6">
+                                <a class="btn btn-success" href="{% url 'export_repository_page' subComponentstartdate.pk %}"><i class="fa-list-ol"></i> Export to Excel</a>
+                                
+                            </div>
+                          
+                            <div class="col-md-3">
+                                <button class="btn btn-info" onclick="window.print();"><i class="fa fa-print"></i> Print</button>    
+                            </div>
+                            <div class="col-md-3 text-right">
+                                <p>Back to <a href="/repository_report">List</a></p>   
+                            </div>
+                        </div>
+                    </section>
+                    <!-- end of blog-contents -->
+                </div>
+            </div> <!-- end of /.container -->
+        </main>
+        <!-- smooth-scroll -->
+
+        <script>
+        $(function() {  
+            jQuery.scrollSpeed(100, 1000);
+        });
+        </script>
+
+
+        {% endblock %}
+        

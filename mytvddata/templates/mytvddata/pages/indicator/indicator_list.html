@@ -1,0 +1,88 @@
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+
+<link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+
+{% block title %}Indicators Management{% endblock title %}
+
+{% block content %}
+<div id="wrapper" class="wrapper row-offcanvas row-offcanvas-left">            
+    <div class="page-title lb single-wrapper">
+        <div class="container-fluid"> <!-- Full width -->
+
+            <!-- HEADER -->
+            <div class="row align-items-center mb-5">
+                <div class="col-lg-8">
+                    <h2 class="fw-bold text-primary display-6">
+                        ➕ Manage <code>Indicators</code> in <b>Program</b>
+                    </h2>
+                    <p class="text-muted fs-4">
+                        <i class="fa fa-star text-warning"></i> Total indicators: <b>{{ total_indicator }}</b>
+                    </p>
+                </div>
+                <div class="col-lg-4 text-end">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb bg-light rounded px-4 py-3 shadow-sm fs-5">
+                            <li class="breadcrumb-item"><a href="/"><i class="fa fa-reply"></i> Back</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'json_indicator' %}"><i class="fa fa-cog"></i> API Data</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'export_indicator' %}"><i class="fa fa-file-excel"></i> Export Excel</a></li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- TABLE -->
+            <div class="card shadow-lg border-0 mb-5 p-4">
+                <div class="card-header bg-dark text-white fw-bold fs-4 d-flex justify-content-between align-items-center">
+                    <span><i class="fa fa-list"></i> Indicators Table</span>
+                    <button type="button" class="btn btn-lg btn-light js-create-indicator" data-url="{% url 'create_indicator' %}">
+                        <i class="fa fa-plus text-success"></i> Add New
+                    </button>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped table-hover align-middle fs-5" id="indicator-table">
+                        <thead class="table-primary">
+                            <tr>
+                                <th>Code</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Target</th>
+                                <th>Metric</th>
+                                <th>Unit</th>
+                                <th>Frequency</th>
+                                <th>Source</th>
+                                <th>Category</th>
+                                <th>Forecast</th>
+                                <th>Performance</th>
+                                <th>Type</th>
+                                <th>Reference</th>
+                                <th>Subcomponent</th>
+                                <th>Component</th>
+                                <th colspan="2" class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% include 'mytvddata/pages/indicator/partial_indicator_list.html' %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- MODAL -->
+            <div class="modal fade" id="modal-indicator" tabindex="-1">
+                <div class="modal-dialog modal-xl modal-dialog-centered"> <!-- Larger modal -->
+                    <div class="modal-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/indicator.js' %}"></script>
+{% endblock scripts %}

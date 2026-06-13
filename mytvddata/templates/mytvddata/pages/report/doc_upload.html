@@ -1,0 +1,57 @@
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+{% block style %}
+   
+{% endblock style%}
+
+
+{% block content %}
+    <div class="container" id="my-workplans-table-container" style="width: 65rem;">
+        {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{message.tags}}" role="alert">
+                <p{% if message.tags %} class=""{% endif%}{{message}}></p>
+            </div>
+        {% endfor %}
+        {% endif %}
+        <div class="page-wrapper">
+            <div class="page-title lb single-wrapper">
+                <h3 class="news-title">Upload the Document in image format</h3>
+                <ol class="breadcrumb">
+                <li><a href="/"><i class="fa fa-reply"></i> Back</a></li>
+                </ol>
+            </div><!-- /.box-header -->
+                 <!-- form start -->
+            <form role="form"  action="/doc_import" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{form.as_p}}
+                <div class="box-footer">
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </form>
+           <hr>
+            <!-- display image curretly saved-->
+            {% if img_obj %}
+                        <h3>Succesfully uploaded : {{img_obj.name_doc}}</h3>
+                        <img src="{{ img_obj.file_doc.url}}" alt="connect" style="max-height:300px">
+            {% endif %}
+
+            <!-- display all image saved-->
+            {% for i in img_obj_all %}
+            {% if forloop.first %} <div class="row">{% endif %}
+                <div class="col-lg-4 col-md-4 col-12">
+                    <div class="text-center mt-2">
+                        <img src="{{ i.file_doc.url}}" height="60%" width="60%" class="img-thumbnail" alt="...">
+                        <h4 class="text-center">{{i.name_doc}}</h4></div>
+                    </div>
+                    {% if forloop.counter|divisibleby:3 %}
+                </div>
+                <div class="row">{% endif %}
+                    {% if forloop.last %}</div>{% endif %}
+            {% endfor %}
+        </div><!-- /.box -->
+    </div>
+{% endblock %}

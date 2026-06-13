@@ -1,0 +1,152 @@
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+
+{% block style %}
+<style>
+    body {
+        background: linear-gradient(135deg, #f4f6f9, #e9f2fb);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page-wrapper {
+        background: #fff;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        margin-top: 2rem;
+    }
+    h3 {
+        font-weight: 700;
+        color: #005eb8;
+    }
+    .breadcrumb {
+        background: transparent;
+        padding: 0;
+        margin-bottom: 1rem;
+    }
+    .breadcrumb-item a {
+        color: #005eb8;
+        font-weight: 500;
+    }
+    table {
+        font-size: 0.95rem;
+    }
+    th {
+        background: #005eb8;
+        color: #fff;
+        text-align: center;
+    }
+    td {
+        vertical-align: middle;
+    }
+    .btn {
+        border-radius: 6px;
+    }
+</style>
+{% endblock style %}
+
+{% block content %}
+<section class="section single-wrapper">
+    <div class="container-fluid" style="max-width: 95%;">
+        <div class="row">
+            <div class="col-12">
+                <div class="page-wrapper">
+                    {% if user.is_authenticated %}
+                        <section class="content-header mb-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h3>
+                                        Manage <b>Country Information</b>
+                                        <small class="text-muted">Dataset</small>
+                                    </h3>
+                                    <ol class="breadcrumb">
+                                        <li class="breadcrumb-item"><a href="/"><i class="fa fa-reply"></i> Back</a></li>
+                                        <li class="breadcrumb-item"><a href="/countries"><i class="fa fa-bars"></i> Country views</a></li>
+                                        <li class="breadcrumb-item"><a href="{% url 'export_country' %}"><i class="fa fa-external-link"></i> Export to Excel</a></li>
+                                        <li class="breadcrumb-item"><a href="{% url 'json_country' %}"><i class="fa fa-cog"></i> API data loaded</a></li>
+                                        <li class="breadcrumb-item"><a href="{% url 'json_location' %}"><i class="fa fa-flag-o"></i> API data GPS</a></li>
+                                    </ol>
+                                </div>
+                                <form method="GET" class="d-flex">
+                                    {% csrf_token %}
+                                    <input class="form-control me-2" name="name" type="text" placeholder="Search country...">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fa fa-search"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </section>
+
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover align-middle" id="myWorkplansTable1">
+                                <form method="POST" action="{% url 'add_country' %}">
+                                    {% csrf_token %}
+                                    <thead>
+                                        <tr>
+                                            <th>Flag</th>
+                                            <th>ISO</th>
+                                            <th>Name</th>
+                                            <th>Official</th>
+                                            <th>Capital</th>
+                                            <th>Subregion</th>
+                                            <th>Area</th>
+                                            <th>Population</th>
+                                            <th>Language</th>
+                                            <th>Map link</th>
+                                            <th>Ref data</th>
+                                            <th>Data link</th>
+                                            <th>Classification</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if not form.instance.id %}
+                                        <tr>
+                                            {% include 'mytvddata/pages/country/country_save.html' %}
+                                        </tr>
+                                        {% endif %}
+                                        {% for country in countries %}
+                                        <tr>
+                                            {% if form.instance.id == country.id %}
+                                                {% include 'mytvddata/pages/country/country_save.html' %}
+                                            {% else %}
+                                                <td>{{country.flag}}</td>
+                                                <td>{{country.cca3}}</td>
+                                                <td>{{country.name}}</td>
+                                                <td>{{country.official}}</td>
+                                                <td>{{country.capital}}</td>
+                                                <td>{{country.subregion}}</td>
+                                                <td>{{country.area}}</td>
+                                                <td>{{country.population}}</td>
+                                                <td>{{country.languages}}</td>
+                                                <td><a href="{{country.maps}}" target="_blank" class="text-primary">View</a></td>
+                                                <td>{{country.ref_data}}</td>
+                                                <td>{{country.data_source}}</td>
+                                                <td>{{country.country_class}}</td>
+                                                <td>
+                                                    <button formnovalidate name="edit" value="{{country.id}}" class="btn btn-primary btn-sm">Edit</button>
+                                                    <button formnovalidate name="delete" value="{{country.id}}" class="btn btn-danger btn-sm">Delete</button>
+                                                </td>
+                                            {% endif %}
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </form>
+                            </table>
+                        </div>
+                    {% else %}
+                        <section class="text-center py-5">
+                            <p>
+                                We could not find the page you were looking for.  
+                                Meanwhile, you may <a href='/signin'>login with your account</a> or <a href='/'>return to home page</a>.
+                            </p>
+                        </section>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

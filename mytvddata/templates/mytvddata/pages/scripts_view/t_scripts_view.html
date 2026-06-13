@@ -1,0 +1,131 @@
+{% extends "mytvddata/cover/baselog.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+
+{% block content %}
+
+<div class="wrapper row-offcanvas row-offcanvas-left">
+    <!-- Left side column. contains the logo and sidebar -->
+    <!-- Right side column. Contains the navbar and content of the page -->
+    <aside class="right-side">
+
+<!-- <link href="{% static 'css/myStyle/table.css' %}" rel="stylesheet" type="text/css" />-->
+
+        <section class="content-header">
+            <h3>
+                Add, view and edit <code><b>SCRIPTS</b></code> in <b>TVD Database</b>
+                {% for message in messages %}
+                <small><code>{{ message }}</code></small>
+                {% endfor %}
+            </h3>
+            <ol class="breadcrumb">
+                <li><a href="/"><i class="fa fa-reply"></i> Back</a></li>
+                {% comment "" %}
+                <li><a href="/sub_activity_report"><i class="fa fa-file-text-o"></i> Workplan summury</a></li>
+                <li><a href="export_to_excel_workplan/{{by_unit}}/{{end_date}}"><i class="fa fa-download"></i> Export unit's to Excel</a></li>
+                <li><a href="{% url 'export_subactivity_excel' %}"><i class="fa fa-table"></i>Export All to Excel</a></li>
+            
+                <li class="active">Enter sub activity</li>
+                {% endcomment %}
+            </ol>
+        </section>
+
+        <div class="container tbl-container"  style="width: 200rem;">
+            <div class="row">
+                <div class="col-xs-12 col-sm-4">
+                    <button type="button" class="btn btn-success"  data-toggle="modal" data-target="#addNewt_scriptsForm"><i class="fa fa-plus"></i> <span>Add New SCRIPTS</span></button>
+                </div>
+                <div class="col-xs-12 col-sm-4"> 
+                    <form class="example" method="GET" action="{% url 't_scripts_view' %}">
+                        {% csrf_token %}
+                        {{form_survey_title.as_p}}
+                        <button class="btn btn-success">Filter the title <i class="fa fa-download"></i></a></button>
+                    </form> 
+                </div>  
+                <div class="col-xs-12 col-sm-4">
+                    <form method="GET">
+                        {% csrf_token %}
+                        <div class="input-group margin-bottom-sm">
+                            <div class="row">
+                                <div class="col-md-10"><input class="form-control" name="ws_focalpoint" type="text" placeholder="Search here the focal point name "></div>
+                                <div class="col-md-2"><button type="submit" class="btn btn-success">
+                                    <i class="fa fa-search fa-fw"></i>
+                                </button></div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="row tbl-fixed">
+                <table class="table responsive table-condensed" id="myWorkplansTable1" style="width:100%"  data-toggle="table" data-pagination="true" data-search="true">
+                    <thead class="table-title">
+                        <tr class="head-row">
+                            <th scope="col">#</th>
+                            <th>Name of survey</th>
+                            <th>Type of collect</th>
+                            <th>Name of table</th>
+                            <th>Script of create table</th>
+                            <th>Script of insert table</th>
+                            <th>Script of select table</th>
+                            <th>Script of join table</th>
+                            <th>Script of pivot table</th>
+                            <th>Path of file</th>
+                            <th>Name of focal point</th>
+                            <th>Date of creation</th>
+                            <th>Edit</th>
+                            <th>Delete</th>
+                            <!-- <th colspan ="2" id="mid">Action</th>-->
+                    </thead>
+                    <tbody>
+                        {% for t_scripts_view in t_scripts_views %}
+                            <tr class="table-row">
+                            <th scope="row">{{forloop.counter}}</th>
+                            <td>{{ t_scripts_view.ws_title }}</td>
+                            <td>{{ t_scripts_view.ws_type}}</td>
+                            <td>{{ t_scripts_view.ws_table }}</td>
+                            <td>{{ t_scripts_view.ws_create }}</td>
+                            <td>{{ t_scripts_view.ws_insert }}</td>
+                            <td>{{ t_scripts_view.ws_select }}</td>
+                            <td>{{ t_scripts_view.ws_join }}</td>
+                            <td>{{ t_scripts_view.ws_pivot }}</td>
+                            <td>{{ t_scripts_view.ws_pathfile }}</td>
+                            <td>{{ t_scripts_view.ws_focalpoint }}</td>
+                            <td>{{ t_scripts_view.ws_date }}</td>
+                            <td> 
+                                <a data-toggle="modal" data-target="#editt_scriptsForm{{t_scripts_view.pk}}" title="edit" class="tools"><i class="fa fa-edit"></i></a>
+                            </td>
+                            <td>
+                                <a data-toggle="modal" data-target="#delett_scriptsForm{{t_scripts_view.pk}}" title="delete" class="tools"><i class="fa fa-trash-o"></i></a>
+                            </td>
+                            <!-- Modal Dialog Edit-->
+                           {% include "mytvddata/pages/scripts_view/edit_t_scripts_modal.html" %}
+                    
+                            <!-- Modal Dialog delete-->   
+                              {% include "mytvddata/pages/scripts_view/delete_t_scripts_modal.html" %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            
+            </div>        
+        </div>
+          {% include "mytvddata/pages/scripts_view/add_t_scripts_modal.html" %}
+          {% comment "" %}
+          {% else %}
+          <section>
+              <p style="position: center;">
+                  We could not find the page you were looking for. 
+                  Meanwhile, you may <a href='/signin'>login with your account</a> or <a href='/'>return to home page</a>.
+              </p>
+          </section>   
+          {% endif %}
+          {% endcomment %}
+    </aside><!-- /.right-side -->
+</div>
+ 
+
+
+{% endblock %}
+

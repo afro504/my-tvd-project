@@ -1,0 +1,148 @@
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+
+
+{% block style %}
+   
+{% endblock style%}
+
+{% block content %}
+
+
+<div id="wrapper">
+ 
+        <div class="page-title lb single-wrapper">
+            <div class="container">
+                <div class="row">
+
+                    <div class="col-lg-8 col-md-8 col-8">
+                            <h3 class="news-title">
+                                List of submitted <b>reports</b>  for backup in the platform
+                                <small><a href="/"><i class="fa fa-reply" aria-hidden="true"></i> Back</a></small>
+                            </h3>
+                        </div>
+                        <div class="col-lg-4 col-md-4 col-4">
+                           
+
+                            {% comment %} {% if user.is_authenticated %}
+                            <ul class="bread-list">
+                                <li><a href="/"><i class="fa fa-dashboard" aria-hidden="true"></i> Home</a></li>
+                                <li><a href="/report_upload"><i class="fa fa-edit" aria-hidden="true"></i> Load reports</a></li>
+                                <li class="active"><i class="fa fa-table" aria-hidden="true"></i> List of reports</li>
+                            </ul>
+                            {% endif %}{% endcomment %}
+
+                            {% if user.is_authenticated %}
+            
+                            {% endif %}
+
+                            <div class="search-widget">
+
+
+                                        <form method="GET">
+                                            {% csrf_token %}
+                                            <div class="input-group margin-bottom-sm">
+                                                <div class="row">
+                                                
+                                                    <input class="common-input" name="title_rep" type="text" placeholder="Search here title of report ">
+                                                    <button type="submit" class="btn btn-primary"><i class="fa fa-search fa-fw"></i></button>
+                                                    
+                                                </div>
+
+                                                
+                                            </div>
+                                        </form>
+                                    
+                                    </div>
+                        </div>
+                </div><!-- end row -->
+            </div><!-- end container -->
+        </div><!-- end page-title -->
+       {% comment "" %}{{countries}}{% endcomment %} 
+
+        <section class="section">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                        <div class="page-wrapper">
+                         <!-- blog-contents -->
+                                    {% for  reportSave in reportSaves  %}                            
+                                    <article class="blog-item box box-solid box-success">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <h4> 
+                                                    <a href="{{reportSave.file_rep}}">
+                                                        {% if reportSave.img_cp_rep  %}
+                                                            <img src="{{ reportSave.img_cp_rep.url}}" height="80%" width="100%" class="img-thumbnail" alt="...">
+                                                        {% else %}
+                                                            <img src="{% static 'images/afro.png' %}" height="80%" width="100%" class="img-thumbnail" alt="...">
+                                                        {% endif %}
+                                                    </a>
+                                                </h4>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <p>
+                                                    from 
+                                                <code><time>{{ reportSave.date_rep }}<time></code> 
+                                                    author
+                                                <code>{{ reportSave.author_rep }}</code> 
+                                                <!--
+                                                    <a href="export_survey_page/{{surveyDataset.pk}}">Export to Excel</a>
+                                                    -->
+                                                </p>
+                                                <h4>
+                                                <b><a href="{{reportSave.file_rep}}">{{ reportSave.title_rep }}</a></b> 
+                                                </h4>
+                                                <h5>{{ reportSave.summary_rep }}</h5>
+                                            </div>
+                                        </div>
+                                    </article> <!-- /.blog-item -->
+                                    {% endfor %}
+                                    <!--Pagination-->
+                                    <ul class="pagination justify-content-center my-5">
+                                        {% if reportSaves.has_previous %}
+                                        <!-- 'First' and 'Previous' Buttons -->
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=1">|&lt; First</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ reportSaves.previous_page_number }}">&lt; Previous</a>
+                                        </li>
+                                        {% endif %}
+                                        <!-- Numbered Buttons -->
+                                        {% for page in paginator.page_range %}
+                                        {% if reportSaves.number == page %}
+                                            <li class="page-item">
+                                            <a class="page-link" href="?page={{ page }}"><strong><u>{{ page }}</u></strong></a>
+                                            </li>
+                                        {% elif page > reportSaves.number|add:'-3' and page < reportSaves.number|add:'3' %}
+                                            <li class="page-item">
+                                            <a class="page-link" href="?page={{ page }}">{{ page }}</a>
+                                            </li>
+                                        {% endif %}
+                                        {% endfor %}
+                                        <!-- 'Next' and 'Last' Buttons -->
+                                        {% if reportSaves.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" 
+                                            href="?page={{ reportSaves.next_page_number }}">Next &gt;</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ reportSaves.paginator.num_pages }}">Last &gt;|</a>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                            <hr class="invis1">
+                        </div><!-- end page-wrapper -->
+                        <hr class="invis">
+                    </div><!-- end col -->
+                </div><!-- end row -->
+            </div><!-- end container -->
+        </section>
+    <div class="dmtop">Scroll to Top</div> 
+</div><!-- end wrapper -->
+
+{% endblock  %}

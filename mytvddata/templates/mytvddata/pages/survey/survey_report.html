@@ -1,0 +1,135 @@
+
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+
+{% block style %}
+    
+{% endblock style%}
+
+{% block content %}
+     
+        <div class="container" style="width: 95rem;">
+		    <div class="row">
+			    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">                 
+                    <div class="page-wrapper">
+                        {% if user.is_authenticated %}  
+                              <!-- Content Header (Page header) -->
+                           <div class="page-title lb single-wrapper">
+                                <div class="row">
+                                    <div class="col-lg-6 col-md-6 col-6">
+                                        <h3 class="news-title">
+                                            <b> List of <code>surveys</code>   <b>with</b> saved datasets</b> 
+                                        </h3>
+                                    </div>
+                                    <div class="col-lg-3 col-md-3 col-3">
+                                        <ul class="bread-list">
+                                            <li class="breadcrumb-item"><a href="/"><i class="fa fa-reply" aria-hidden="true"></i> Back</a></li>
+                                            <li class="breadcrumb-item"><a href="/index_survey"><i class="fa fa-edit" aria-hidden="true"></i> Edited data</a></li>
+                                        </ul>
+                                    </div>
+                                 <!-- search option -->
+                                    <div class="col-lg-3 col-md-3 col-3">
+                                            <form method="GET">
+                                                {% csrf_token %}
+                                                <div class="input-group margin-bottom-sm">
+                                                    <div class="row">
+                                                        <input class="common-input" name="responsible" type="text" placeholder="Filter by survey author">
+                                                        <button type="submit" class="btn btn-primary"><i class="fa fa-search fa-fw"></i></button>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                    </div>
+                                </div>
+                            </div>
+                            <section class="single-wrapper">
+                                <div class="container">
+                                    <div class="row">
+                                        <!-- blog-contents -->
+                                        <section class="col-md-8">
+                                            {% for  surveyProject in surveyProjects  %}                            
+                                            <article class="blog-item box box-solid box-success">
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <h5> 
+                                                            <a href="single_survey_page/{{surveyProject.pk}}">
+                                                            <b>{{ surveyProject.responsible }}</b>  
+                                                            </a>
+                                                        </h5>
+                                                    </div>
+                                                    <div class="col-md-8">
+                                                        <p>
+                                                            from 
+                                                        <code>{{ surveyProject.start_date }}</code> 
+                                                            to
+                                                        <code><time>{{ surveyProject.end_date }}<time></code> 
+                                                            <a href="export_survey_page/{{surveyProject.pk}}">Export to Excel</a>
+                                                        </p>
+                                                        <h4>
+                                                            <b><a href="single_survey_page/{{surveyProject.pk}}">{{ surveyProject.title_surv }}</a></b>
+                                                        </h4>
+                                                    </div>
+                                                </div>
+                                            </article> <!-- /.blog-item -->
+                                            {% endfor %}
+                                            <ul class="pagination justify-content-center my-5">
+                                                {% if surveyProjects.has_previous %}
+                                                <!-- 'First' and 'Previous' Buttons -->
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page=1">|&lt; First</a>
+                                                </li>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page={{ surveyProjects.previous_page_number }}">&lt; Previous</a>
+                                                </li>
+                                                {% endif %}
+                                                <!-- Numbered Buttons -->
+                                                {% for page in paginator.page_range %}
+                                                {% if surveyProjects.number == page %}
+                                                    <li class="page-item">
+                                                    <a class="page-link" href="?page={{ page }}"><strong><u>{{ page }}</u></strong></a>
+                                                    </li>
+                                                {% elif page > surveyProjects.number|add:'-3' and page < surveyProjects.number|add:'3' %}
+                                                    <li class="page-item">
+                                                    <a class="page-link" href="?page={{ page }}">{{ page }}</a>
+                                                    </li>
+                                                {% endif %}
+                                                {% endfor %}
+                                            
+                                                <!-- 'Next' and 'Last' Buttons -->
+                                                {% if surveyProjects.has_next %}
+                                                <li class="page-item">
+                                                    <a class="page-link" 
+                                                    href="?page={{ surveyProjects.next_page_number }}">Next &gt;</a>
+                                                </li>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page={{ surveyProjects.paginator.num_pages }}">Last &gt;|</a>
+                                                </li>
+                                                {% endif %}
+                                            </ul>
+                                        </section>
+                                        <!-- end of blog-contents -->
+                                    
+                                    </div>
+                                </div> <!-- end of /.container -->
+                            </section>
+                        
+                               
+                           
+                            {% else %}
+                                    <section>
+                                        <p style="position: center;">
+                                            We could not find the page you were looking for. 
+                                            Meanwhile, you may <a href='/signin'>login with your account</a> or <a href='/'>return to home page</a>.
+                                        </p>
+                                    </section>   
+                            {% endif %}
+                       </div><!-- end page-wrapper -->
+                    </div><!-- end col -->
+                </div><!-- end row -->
+	        </div><!-- end container -->
+      
+<!-- end wrapper -->
+ 
+{% endblock %}
