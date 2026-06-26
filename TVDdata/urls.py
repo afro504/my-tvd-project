@@ -16,6 +16,7 @@ Including another URLconf
 """
 
 from django.conf import settings
+from django.conf.urls.i18n import i18n_patterns
 from django.views.static import serve  ## SO HIDE
 from django.contrib import admin
 from django.urls import path, include,  re_path
@@ -26,9 +27,15 @@ urlpatterns = [
     path('admin/', admin.site.urls),
    # re_path(r'^static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_ROOT}),
   #  path('admin/', admin.site.urls),
+    path('i18n/', include('django.conf.urls.i18n')),  # ✅ ajoute le switch de langue
     path('', include('mytvddata.urls'))  
 ]
 
 handler500 = 'mytvddata.views.custom_500'
 handler404="mytvddata.views.handel404"
 handler403="mytvddata.views.handel403"
+
+
+urlpatterns += i18n_patterns(
+    path('', include('mytvddata.urls')),  # tes urls principales
+)

@@ -1,0 +1,26 @@
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+
+{% load static %}
+{% block content %}
+
+
+    <h2>{% if form.instance.pk %}Modifier{% else %}Ajouter{% endif %} un Staff</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            {{ form.as_p }}
+        </div>
+        <button type="submit" class="btn btn-primary">
+            {% if form.instance.pk %}Mettre à jour{% else %}Créer{% endif %}
+        </button>
+        <a href="{% url 'staff_list' %}" class="btn btn-secondary">Annuler</a>
+    </form>
+
+</body>
+
+{% endblock %}

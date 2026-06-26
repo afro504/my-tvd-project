@@ -10,9 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
-from pathlib import Path
+
 #import yaml
 import os
+from pathlib import Path
 
 #BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -38,9 +39,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-en0lhq9jy2kx$q4&^dijb8s6()r1h*nrb%g39v7dsvc)-g@(_h'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = ['*'] # For local
+
+# Choix de l'environnement : dev ou prod
+ENV = os.getenv("DJANGO_ENV", "dev")
+
+DEBUG = ENV == "dev"
+#DEBUG = True
+
+ALLOWED_HOSTS = ['*']  if DEBUG else ["localhost", "127.0.0.1", "yourdomain.com"]
 
 
 # Application definition
@@ -56,16 +63,23 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap4',
     'rest_framework',
-   # 'django_countries',
+   # 'django_countries',+------------------------------
    # 'django_filter',
     'lockdown',
+   # 'weasyprint',
+   # 'xhtml2pdf',
     'widget_tweaks',
    'import_export',
 ]
 
+# Ajout d’outils dev uniquement
+if ENV == "dev":
+    INSTALLED_APPS += ["debug_toolbar"]
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -73,6 +87,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+if ENV == "dev":
+    MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]
 
 ROOT_URLCONF = 'TVDdata.urls'
 
@@ -103,36 +120,55 @@ WSGI_APPLICATION = 'TVDdata.wsgi.application'
 #        'NAME': BASE_DIR / 'db.sqlite3',
 #    }
 #}
-DATABASES = {
-    'default': {
-        'ENGINE': 'mssql',
-        'NAME': 'tvd_dts',#'tvd_db',              # Exemple : TVD_DB
-        'HOST': 'DESKTOP-QVJV7NQ',    # ou ton serveur SQL
-        'PORT': '',                         # vide = port par défaut
-        'USER': '',                         # vide car Windows Auth
-        'PASSWORD': '',                     # vide car Windows Auth
-        'OPTIONS': {
-            'driver': 'ODBC Driver 17 for SQL Server',
-            'trusted_connection': 'yes',    # Authentification Windows
-            'TrustServerCertificate': 'yes' # accepte certificat auto-signé
-        },
-    }
-}
-
-
-#DATABASES = {
-#    'default': {
+# DATABASES = {
+#     'default': {
 #        'ENGINE': 'mssql',
-#        'NAME': 'tvd_db',
-#        'USER': 'sa',
-#        'PASSWORD': 'VotreMotDePasse123',
-#        'HOST': 'localhost',
-#       'PORT': '1433',
-#        'OPTIONS': {
-#            'driver': 'ODBC Driver 17 for SQL Server',
-#        },
-#   }
-#}
+#         'NAME': 'tvd_dts',#'tvd_db',              # Exemple : TVD_DB
+#         'HOST': 'DESKTOP-QVJV7NQ',    # ou ton serveur SQL # DESKTOP-QVJV7NQ
+#         'PORT': '',                         # vide = port par défaut
+#         'USER': '',                         # vide car Windows Auth
+#         'PASSWORD': '',                     # vide car Windows Auth
+#         'OPTIONS': {
+#             'driver': 'ODBC Driver 17 for SQL Server',
+#             'trusted_connection': 'yes',    # Authentification Windows
+#             'TrustServerCertificate': 'yes' # accepte certificat auto-signé
+#         },
+#     }
+# }
+
+if ENV == "dev":
+    # Connexion locale avec authentification Windows
+    DATABASES = {
+        "default": {
+            "ENGINE": "mssql",
+            "NAME": os.getenv("DB_NAME", "tvd_dts"),
+            "HOST": os.getenv("DB_HOST", "DESKTOP-QVJV7NQ"),
+            "OPTIONS": {
+                "driver": "ODBC Driver 17 for SQL Server",
+                "trusted_connection": "yes",
+                "TrustServerCertificate": "yes",
+            },
+        }
+    }
+else:
+    # Connexion en production avec utilisateur SQL
+    DATABASES = {
+        "default": {
+            "ENGINE": "mssql", #sql_server.pyodbc
+            "NAME": os.getenv("DB_NAME", "TVDdata"),
+            "HOST": os.getenv("DB_HOST", "db"),
+            "PORT": os.getenv("DB_PORT", "1433"),
+            "USER": os.getenv("DB_USER", "sa"),
+            "PASSWORD": os.getenv("DB_PASSWORD", "Reine2009#"),
+            "OPTIONS": {
+                "driver": "ODBC Driver 17 for SQL Server",
+                "TrustServerCertificate": "yes",
+            },
+        }
+    }
+
+
+
  
 
 
@@ -162,31 +198,47 @@ LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
 
-USE_I18N = True
+#USE_I18N = True
 
 USE_TZ = True
+
+
+
+USE_I18N = True
+USE_L10N = True
+
+#LANGUAGE_CODE = 'en'   # langue par défaut
+
+LANGUAGES = [
+    ('en', 'English'),
+    ('fr', 'Français'),
+    ('pt', 'Português'),
+]
+
+LOCALE_PATHS = [
+    BASE_DIR / 'locale',
+]
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-#STATIC_URL = 'static/'
-STATIC_URL = '/static/'
-#STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_URL = "/static/"
 
- 
 if DEBUG:
-    STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')] # for deploy use staticfiles
+    STATICFILES_DIRS = [BASE_DIR / "static"]
 else:
-    STATIC_ROOT = os.path.join(BASE_DIR, 'static') # for deploy use static
- 
+    STATIC_ROOT = BASE_DIR / "staticfiles"
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
- 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-#DYNAMIC_DATATB={
-#    'indicators':"app.models.Indicator",
-#}
-
+# =========================
+# Sécurité Prod
+# =========================
+if ENV == "prod":
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
  

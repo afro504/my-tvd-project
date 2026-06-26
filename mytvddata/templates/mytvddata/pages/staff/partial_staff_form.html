@@ -1,0 +1,12 @@
+<div class="modal-header">
+    <h5 class="modal-title">{% if form.instance.pk %}Modifier{% else %}Ajouter{% endif %} un Staff</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+    <form method="post" action="{% if form.instance.pk %}{% url 'staff_update' staff.id %}{% else %}{% url 'staff_create' %}{% endif %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">{% if form.instance.pk %}Mettre à jour{% else %}Créer{% endif %}</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+    </form>
+</div>

@@ -1,8 +1,76 @@
-{% extends "mytvddata/cover/baselog.html" %}
+{% extends "mytvddata/cover/base.html" %}
 {% load static %}
 {% load widget_tweaks %}
 {% load crispy_forms_tags %}
 {% load crispy_forms_field %}
+
+
+{% block style %}
+
+<style>
+
+    /* ✅ Conteneur large et centré */
+.tbl-container {
+    max-width: 95%;       /* Largeur quasi pleine page */
+    margin: 0 auto;       /* Centre le contenu */
+    background: #fff;     /* Fond blanc pour contraste */
+    padding: 2rem;        /* Espacement interne */
+    border-radius: 10px;  /* Coins arrondis */
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1); /* Ombre douce */
+}
+
+/* ✅ Titres */
+.content-header h3 {
+    font-size: 1.8rem;    /* Plus grand et lisible */
+    font-weight: 700;
+    color: #005b9e;
+    margin-bottom: 1rem;
+}
+
+/* ✅ Boutons */
+.btn {
+    font-size: 1rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+}
+
+/* ✅ Table design */
+.table {
+    font-size: 0.95rem;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table thead {
+    background-color: #005b9e;
+    color: #fff;
+    font-size: 1rem;
+}
+
+.table tbody tr:hover {
+    background-color: #f1f7ff;
+    transition: 0.2s;
+}
+
+.table td, .table th {
+    padding: 0.75rem;
+    vertical-align: middle;
+}
+
+/* ✅ Icônes d'action */
+.tools i {
+    font-size: 1.2rem;
+    color: #005b9e;
+    cursor: pointer;
+}
+.tools i:hover {
+    color: #ff6600;
+}
+
+</style>
+
+{% endblock style %}
+
 
 {% block content %}
 
@@ -58,7 +126,6 @@
                     </form>
                 </div>
             </div>
-
             <div class="row tbl-fixed">
                 <table class="table responsive table-condensed" id="myWorkplansTable1" style="width:100%"  data-toggle="table" data-pagination="true" data-search="true">
                     <thead class="table-title">
@@ -108,7 +175,6 @@
                         {% endfor %}
                     </tbody>
                 </table>
-            
             </div>        
         </div>
           {% include "mytvddata/pages/scripts_view/add_t_scripts_modal.html" %}
@@ -124,8 +190,9 @@
           {% endcomment %}
     </aside><!-- /.right-side -->
 </div>
- 
-
 
 {% endblock %}
+{% block scripts %}
+<script src="{% static 'js/indicator.js' %}"></script>
+{% endblock scripts %}
 

@@ -1,6 +1,7 @@
 # =========================
 # DJANGO CORE IMPORTS
 # =========================
+import io
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.http import HttpResponse, JsonResponse, FileResponse, HttpResponseRedirect
@@ -16,7 +17,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
 from django.views.decorators.csrf import csrf_exempt
- 
+from docx import Document
+
 # =========================
 # DJANGO GENERIC VIEWS
 # =========================
@@ -40,8 +42,10 @@ from .models import (
     Country, Component, Subcomponent, Indicator,
     RepositoryIndicator, SurveyProject, SurveyDataset,
     DocSave, ReportSave, LocationCountry, City,
-    WarehouseScript, ApiData, StoreAPI,ApiExtract, ApiFieldConfig,ApiFieldMapping
+    WarehouseScript, ApiData, StoreAPI,ApiExtract, 
+    ApiFieldConfig,ApiFieldMapping,StaffMember
 )
+
 
 
 # =========================
@@ -55,7 +59,8 @@ from .forms import (
     SelectUrlForm, SurveyDatasetForm, SelectSurveyForm,
     RepositoryIndicatorForm, WarehouseScriptForm,SelectUrlForms,
     S_table_nameForm, RepositoryUploadForm,
-    SelectRepositoryForm, SelectAPIForm, StoreAPIForm,  ApiFieldSelectionForm
+    SelectRepositoryForm, 
+    SelectAPIForm, StoreAPIForm,  ApiFieldSelectionForm,StaffMemberForm
 )
  
 # =========================
@@ -68,6 +73,7 @@ import requests
 import folium
 import streamlit as st
 from streamlit_folium import st_folium
+import csv
 
  
 # =========================
@@ -88,6 +94,8 @@ from django.template.loader import render_to_string, get_template
 from django.contrib.sites.shortcuts import get_current_site
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.encoding import force_bytes, force_str
+from django.core.mail import send_mail
+from django.contrib import messages
  
 # Compatibilité ancienne version Django
 try:
@@ -1110,6 +1118,28 @@ def upload_repository(request):
     return render(request, 'mytvddata/pages/repository/upload_repository.html')
 
 
+
+def upload_repository(request):
+    preview_data = None
+    if request.method == 'POST':
+        new_repository = request.FILES['myfile']
+        
+        if not new_repository.name.endswith('xlsx'):
+            messages.info(request, 'Wrong format, please upload .xlsx')
+            return render(request, 'mytvddata/pages/repository/upload_repository.html')
+
+        # ✅ Lire avec pandas pour prévisualiser
+        df = pd.read_excel(new_repository)
+        preview_data = df.head(3).to_html(classes="table table-striped")
+
+        # Stocker le fichier temporairement en session pour mapping
+        request.session['uploaded_file'] = new_repository.read()
+
+    return render(request, 'mytvddata/pages/repository/upload_repository.html', {
+        'preview_data': preview_data
+    })
+
+
 def repository_add_data(request):
   #  ct=ContentType.objects.get_for_model(SurveyDataset)
   #  if request.user.permissions.filter(codename="viw_repositoryindicator", contentype=ct).exists():
@@ -1961,21 +1991,22 @@ def export_to_excel_API(request,by_indicator,end_day):
 #    return HttpResponse(form['subcomponents'])
     
 # Method for CRUD Component
+from django.shortcuts import redirect
+
 def component_add(request):
-    context={}
+    context = {}
     form = ComponentsForm()
     components = Component.objects.all()
-    
-    if request.method=='GET':
-        st=request.GET.get('component_name')
-        if st!=None:
-            components= Component.objects.filter(component_name__icontains=st)
-    
+
+    if request.method == 'GET':
+        st = request.GET.get('component_name')
+        if st:
+            components = Component.objects.filter(component_name__icontains=st)
+
     page = request.GET.get('page')
     num_of_items = 10
-    # paginator of country 
     paginator = Paginator(components, num_of_items)
-       
+
     try:
         components = paginator.page(page)
     except PageNotAnInteger:
@@ -1984,37 +2015,37 @@ def component_add(request):
     except EmptyPage:
         page = paginator.num_pages
         components = paginator.page(page)
-            
-    context['components'] = components
-    context['paginator']=paginator
-    context['title'] ='home'
+
     if request.method == 'POST':
         if 'save' in request.POST:
             pk = request.POST.get('save')
             if not pk:
-                form=ComponentsForm(request.POST)
+                form = ComponentsForm(request.POST)
             else:
-                component = Component.objects.get(id = pk)
-                form = ComponentsForm(request.POST ,instance = component) 
-            form.save()
-            form = ComponentsForm()
-            messages.success(request, 'Component saved or updated successfully')
+                component = Component.objects.get(id=pk)
+                form = ComponentsForm(request.POST, instance=component)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Component saved or updated successfully')
+            return redirect('component_add')  # 🔑 redirection après POST
+
         elif 'delete' in request.POST:
-         #   if request.user.groups.filter(name='Manager and delete').exists(): ## Condition security
-                pk = request.POST.get('delete')
-                component = Component.objects.get(id = pk)
-                component.delete()
-                messages.success(request, 'Component deleted successfully')
-        #    else:
-        #        return render(request, 'pages/examples/403.html')
-    
+            pk = request.POST.get('delete')
+            component = Component.objects.get(id=pk)
+            component.delete()
+            messages.success(request, 'Component deleted successfully')
+            return redirect('component_add')  # 🔑 redirection après POST
+
         elif 'edit' in request.POST:
             pk = request.POST.get('edit')
-            component = Component.objects.get(id = pk)
-            form = ComponentsForm(instance = component)
-          
+            component = Component.objects.get(id=pk)
+            form = ComponentsForm(instance=component)
+
+    context['components'] = components
+    context['paginator'] = paginator
+    context['title'] = 'home'
     context['form'] = form
-   
+
     return render(request, 'mytvddata/pages/component/component.html', context)
 
 
@@ -2078,15 +2109,18 @@ def subcomponent_add(request):
             else:
                 subcomponent = Subcomponent.objects.get(id = pk)
                 form = SubcomponentsForm(request.POST ,instance = subcomponent) 
-            form.save()
-            form = SubcomponentsForm()
-            messages.success(request, 'Sub Component saved or updated successfully')
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Disease saved or updated successfully')
+            return redirect('subcomponent_add')  # 🔑 redirection après POST
+
         elif 'delete' in request.POST:
          #   if request.user.groups.filter(name='Manager and delete').exists(): ## Condition security
                 pk = request.POST.get('delete')
                 subcomponent = Subcomponent.objects.get(id = pk)
                 subcomponent.delete()
                 messages.success(request, 'Sub Component deleted successfully')
+                return redirect('subcomponent_add')  # 🔑 redirection après POST
         #    else:
         #        return render(request, 'pages/examples/403.html')
     
@@ -2096,11 +2130,9 @@ def subcomponent_add(request):
             form = SubcomponentsForm(instance = subcomponent)
           
     context['form'] = form
-    
-    
-    
-    
-   
+    context['paginator'] = paginator
+    context['title'] = 'home'
+  
     return render(request, 'mytvddata/pages/component/subcomponent.html', context)
 
 
@@ -2362,5 +2394,289 @@ def load_api_other(request):
     data_from_db = ApiExtract.objects.all().order_by("-date")
     return render(request, "mytvddata/cover/api_data_other.html", {"api_data": data_from_db})
 
+## FUnction for StaffMaping
 
+### GOOD -------------------------# Liste principale avec formulaire vide pour le modal "create"
+def staff_list(request):
+    staff = StaffMember.objects.all().prefetch_related('diseases', 'country')
+
+    # Filtres GET
+    country_filter = request.GET.get("country")
+    language_filter = request.GET.get("language")
+    disease_filter = request.GET.get("disease")
+
+    if country_filter:
+        staff = staff.filter(country__name__icontains=country_filter)
+
+    if language_filter:
+        staff = staff.filter(language__icontains=language_filter)  # JSONField ou TextField
+
+    if disease_filter:
+        staff = staff.filter(diseases__subcomponent_name__icontains=disease_filter).distinct()
+
+
+    # Distincts pour statistiques
+    all_countries = [c.name for s in StaffMember.objects.all() for c in s.country.all()]
+    distinct_countries = set(all_countries)
+
+    all_languages = [l for s in StaffMember.objects.all() if s.language for l in s.language]
+    distinct_languages = set(all_languages)
+
+    all_diseases = [d.subcomponent_name for s in StaffMember.objects.all() for d in s.diseases.all()]
+    distinct_diseases = set(all_diseases)
+
+    form = StaffMemberForm()
+
+    return render(
+        request,
+        "mytvddata/pages/staff/staff_list.html",
+        {
+            "staff": staff,
+            "form": form,
+            "countries": distinct_countries,
+            "languages": distinct_languages,
+            "diseases": distinct_diseases,
+        }
+    )
+
+def staff_create(request):
+    if request.method == "POST":
+        form = StaffMemberForm(request.POST)
+        if form.is_valid():
+            staff = form.save()
+            send_mail("Nouveau Staff ajouté", f"{staff.name} a été ajouté.", "admin@server.com", [staff.email], fail_silently=True)
+            messages.success(request, "Staff ajouté avec succès.")
+            return HttpResponse("OK")
+        return render(request, "mytvddata/pages/staff/partial_staff_form.html", {"form": form})
+    else:
+        form = StaffMemberForm()
+        return render(request, "mytvddata/pages/staff/partial_staff_form.html", {"form": form})
+
+def staff_update(request, pk):
+    staff = get_object_or_404(StaffMember, pk=pk)
+    if request.method == "POST":
+        form = StaffMemberForm(request.POST, instance=staff)
+        if form.is_valid():
+            staff = form.save()
+            send_mail("Mise à jour Staff", f"{staff.name} a été mis à jour.", "admin@server.com", [staff.email], fail_silently=True)
+            messages.success(request, "Staff mis à jour avec succès.")
+            return HttpResponse("OK")
+        return render(request, "mytvddata/pages/staff/partial_staff_form.html", {"form": form, "staff": staff})
+    else:
+        form = StaffMemberForm(instance=staff)
+        return render(request, "mytvddata/pages/staff/partial_staff_form.html", {"form": form, "staff": staff})
+
+def staff_delete(request, pk):
+    staff = get_object_or_404(StaffMember, pk=pk)
+    if request.method == "POST":
+        staff.delete()
+        messages.success(request, "Staff supprimé.")
+    return redirect("staff_list")
+
+
+
+
+
+def staff_export_xlsx(request):
+    staff = StaffMember.objects.all().prefetch_related("diseases", "country")
+
+    data = []
+    for s in staff:
+        data.append({
+            "Name": s.name,
+            "Email": s.email,
+            "Countries": ", ".join([c.name for c in s.country.all()]),
+            "Position": s.position,
+            "Grade": s.grade,
+            "Telephone": s.telephone,
+            "Office Affiliation": s.office_affiliation,
+            "Responsibility": s.responsibility,
+            "Languages": ", ".join(s.language if s.language else []),
+            "Diseases": ", ".join([d.subcomponent_name for d in s.diseases.all()]),
+            "Level Geo": s.level_geo,
+        })
+
+    df = pd.DataFrame(data)
+
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response["Content-Disposition"] = 'attachment; filename="staff.xlsx"'
+
+    with pd.ExcelWriter(response, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="Staff")
+
+    return response
+
+
+
+
+
+
+
+def staff_import_xlsx(request):
+    if request.method == "POST" and request.FILES.get("file"):
+        excel_file = request.FILES["file"]
+        df = pd.read_excel(excel_file)
+
+        for _, row in df.iterrows():
+            staff, created = StaffMember.objects.update_or_create(
+                email=row["Email"],
+                defaults={
+                    "name": row["Name"],
+                    "position": row.get("Position", ""),
+                    "grade": row.get("Grade", ""),
+                    "telephone": row.get("Telephone", ""),
+                    "office_affiliation": row.get("Office Affiliation", ""),
+                    "responsibility": row.get("Responsibility", ""),
+                    "level_geo": row.get("Level Geo", ""),
+                }
+            )
+
+            # Pays (ManyToMany)
+            if "Countries" in row and pd.notna(row["Countries"]):
+                countries = [c.strip() for c in row["Countries"].split(",")]
+                staff.country.set(Country.objects.filter(name__in=countries))
+
+            # Langues (JSONField)
+            if "Languages" in row and pd.notna(row["Languages"]):
+                staff.language = [l.strip() for l in row["Languages"].split(",")]
+
+            # Maladies (ManyToMany)
+            if "Diseases" in row and pd.notna(row["Diseases"]):
+                diseases = [d.strip() for d in row["Diseases"].split(",")]
+                staff.diseases.set(Subcomponent.objects.filter(name__in=diseases))
+
+            staff.save()
+
+        messages.success(request, "Importation XLSX réussie.")
+    return redirect("staff_list")
+
+
+
+
+
+def staff_template_xlsx(request):
+    # Exemple de colonnes attendues
+    columns = [
+        "Name", "Email", "Countries", "Position", "Grade",
+        "Telephone", "Office Affiliation", "Responsibility",
+        "Languages", "Diseases", "Level Geo"
+    ]
+
+    # Exemple de lignes vides ou pré-remplies
+    df = pd.DataFrame(columns=columns)
+    df.loc[0] = [
+        "Jean Dupont", "jean.dupont@example.com", "France",
+        "Analyste", "A1", "+33 123456789", "OMS Paris",
+        "Responsable indicateurs", "Français, Anglais",
+        "Diabète, Malaria", "Europe"
+    ]
+    df.loc[1] = [
+        "Maria Sanchez", "maria.sanchez@example.com", "Espagne",
+        "Coordinatrice", "B2", "+34 987654321", "OMS Madrid",
+        "Coordination projets", "Espagnol",
+        "Tuberculose", "Europe"
+    ]
+
+    # Réponse HTTP avec fichier Excel
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="staff_template.xlsx"'
+
+    with pd.ExcelWriter(response, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="Template")
+
+    return response
+
+## DASHBOARD
+
+def country_dashboard(request, pk):
+    country = get_object_or_404(Country, pk=pk)
+    indicators = Indicator.objects.filter(subcomponent__subcomponent_indicator__country_code=country.cca3).select_related('subcomponent')
+    api_data = ApiExtract.objects.filter(country_code=country.cca3)
+
+    context = {
+        'country': country,
+        'indicators': indicators,
+        'api_data': api_data,
+    }
+    return render(request, 'mytvddata/pages/dashboard/country_profile.html', context)
+
+
+
+def export_country_word(request, pk):
+    country = get_object_or_404(Country, pk=pk)
+    indicators = Indicator.objects.filter(subcomponent__subcomponent_indicator__country_code=country.cca3)
+    api_data = ApiExtract.objects.filter(country_code=country.cca3)
+
+    doc = Document()
+    doc.add_heading(f"Profil du pays : {country.name}", level=1)
+    doc.add_paragraph(f"Capitale : {country.capital}")
+    doc.add_paragraph(f"Population : {country.population}")
+    doc.add_paragraph(f"Langues : {country.languages}")
+
+    doc.add_heading("Indicateurs", level=2)
+    for data in api_data:
+        doc.add_paragraph(f"{data.indicator_name} ({data.indicator_code}) - {data.numeric_value} en {data.date}")
+
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    response["Content-Disposition"] = f'attachment; filename="{country.name}_profile.docx"'
+    doc.save(response)
+    return response
+
+
+
+
+
+def preview_json(request):
+    """
+    Vue pour prévisualiser le fichier JSON uploadé et proposer l'import en base.
+    """
+    preview_data = None
+
+    if request.method == "POST" and request.FILES.get("json_file"):
+        json_file = request.FILES["json_file"]
+        try:
+            preview_data = json.load(json_file)  # Charger le contenu JSON
+            request.session["preview_data"] = preview_data  # stocker en session
+            messages.success(request, "Fichier JSON chargé avec succès. Voici la prévisualisation.")
+        except Exception as e:
+            messages.error(request, f"Erreur lors du chargement du fichier JSON : {e}")
+
+    return render(request, "mytvddata/pages/country/preview_json.html", {"preview_data": preview_data})
+
+
+def import_json(request):
+    """
+    Vue pour importer en base le JSON prévisualisé.
+    """
+    preview_data = request.session.get("preview_data")
+
+    if preview_data:
+        try:
+            for c in preview_data:
+                Country.objects.update_or_create(
+                    cca3=c.get("cca3"),
+                    defaults={
+                        "flag": c.get("flag"),
+                        "name": c.get("name"),
+                        "official": c.get("official"),
+                        "capital": ", ".join(eval(c.get("capital"))) if c.get("capital") else "",
+                        "subregion": c.get("subregion"),
+                        "area": c.get("area"),
+                        "population": c.get("population"),
+                        "languages": c.get("languages"),
+                        "maps": c.get("data_source"),  # provisoire
+                        "ref_data": c.get("ref_data"),
+                        "data_source": c.get("data_source"),
+                        "country_class": c.get("country_class"),
+                    }
+                )
+            messages.success(request, "Importation réussie ! Les pays ont été ajoutés à la base.")
+        except Exception as e:
+            messages.error(request, f"Erreur lors de l’importation : {e}")
+    else:
+        messages.error(request, "Aucune donnée JSON à importer.")
+
+    return redirect("preview_json")
 

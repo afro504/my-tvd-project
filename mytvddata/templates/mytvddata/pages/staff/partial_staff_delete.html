@@ -1,0 +1,39 @@
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">⚠️ Confirmation de suppression</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p id="delete-message">Êtes-vous sûr de vouloir supprimer cet élément ?</p>
+      </div>
+      <div class="modal-footer">
+        <form method="post" id="delete-form">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">🗑️ Supprimer définitivement</button>
+        </form>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+$(function () {
+    $(".js-delete-staff").click(function () {
+        var staffId = $(this).data("id");
+        var staffName = $(this).data("name");
+        var url = $(this).data("url");
+
+        // Mettre à jour le message
+        $("#delete-message").text("Êtes-vous sûr de vouloir supprimer " + staffName + " ?");
+
+        // Mettre à jour l'action du formulaire
+        $("#delete-form").attr("action", url);
+
+        // Ouvrir le modal
+        $("#deleteModal").modal("show");
+    });
+});
+</script>

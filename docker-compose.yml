@@ -1,0 +1,54 @@
+version: "3"
+
+services:
+  web-dev:
+    build:
+      context: .
+      target: development
+    image: afrotvd-dev:latest   # 👈 image personnalisée pour Dev
+    container_name: django_dev
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=TVDdata.settings
+      - DJANGO_ENV=dev   # pour web-dev
+      # Superutilisateur auto-créé
+      - DJANGO_SUPERUSER_USERNAME=ondona
+      - DJANGO_SUPERUSER_EMAIL=ondona@who.int
+      - DJANGO_SUPERUSER_PASSWORD=Reine2009#
+
+    depends_on:
+      - db
+       
+
+  web-prod:
+    build:
+      context: .
+      target: production
+    image: afrotvd-prod:latest   # 👈 image personnalisée pour Prod
+    container_name: django_prod
+    ports:
+      - "8080:8080"
+    environment:
+      - DJANGO_SETTINGS_MODULE=TVDdata.settings
+      - DJANGO_ENV=prod  # pour web-prod
+       # Superutilisateur auto-créé
+      - DJANGO_SUPERUSER_USERNAME=ondona
+      - DJANGO_SUPERUSER_EMAIL=ondona@who.int
+      - DJANGO_SUPERUSER_PASSWORD=Reine2009#
+    depends_on:
+      - db
+        
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    environment:
+      SA_PASSWORD: "Reine2009#"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+ 
+  

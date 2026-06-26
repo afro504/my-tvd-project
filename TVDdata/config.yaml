@@ -17,7 +17,7 @@ database:
     HOST: SQLSERVER-PROD
     PORT: "1433"
     USER: admin_user
-    PASSWORD: strong_password_here
+    PASSWORD: "Reine2009#"
     OPTIONS:
       driver: "ODBC Driver 17 for SQL Server"
       trusted_connection: "no"

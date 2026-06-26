@@ -1,0 +1,33 @@
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+
+
+{% block content %}
+
+
+    <h1 class="mb-4">Importer les données JSON des pays</h1>
+
+    {% if messages %}
+        <div>
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="json_file" class="form-label">Choisir un fichier JSON externe :</label>
+            <input type="file" name="json_file" id="json_file" class="form-control" accept=".json">
+        </div>
+        <button type="submit" class="btn btn-primary">
+            Importer maintenant
+        </button>
+    </form>
+{% endblock %}

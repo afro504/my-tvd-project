@@ -1,0 +1,369 @@
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+
+ {% block style %}
+<style>
+    /* ====== Palette OMS ====== */
+:root {
+  --primary-color: #005eb8;       /* Bleu OMS */
+  --secondary-color: #0072ce;     /* Bleu clair OMS */
+  --accent-color: #00a9ce;        /* Turquoise OMS */
+  --danger-color: #d4351c;        /* Rouge OMS */
+  --success-color: #007f3b;       /* Vert OMS */
+  --light-bg: #f8f9fa;
+  --text-dark: #212529;
+}
+
+/* ====== Général ====== */
+body {
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--light-bg);
+  color: var(--text-dark);
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5 {
+  font-weight: 600;
+}
+
+/* ====== Header ====== */
+.bg-primary {
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.bg-primary h1 {
+  font-size: 2.2rem;
+  letter-spacing: 0.5px;
+}
+
+.bg-primary p {
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+/* ====== Boutons ====== */
+.btn {
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-success {
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+}
+
+.btn-info {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+.btn-danger {
+  background-color: var(--danger-color);
+  border-color: var(--danger-color);
+}
+
+/* ====== Cartes statistiques ====== */
+.card {
+  border: none;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: scale(1.03);
+}
+
+.bg-indigo {
+  background-color: #6610f2;
+}
+
+.bg-purple {
+  background-color: #6f42c1;
+}
+
+.bg-warning {
+  background-color: #fd7e14;
+}
+
+/* ====== Tableau ====== */
+.table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table thead {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(0, 94, 184, 0.08);
+}
+
+/* ====== Modal ====== */
+.modal-content {
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.modal-footer {
+  border-top: 1px solid #dee2e6;
+}
+
+/* ====== Select2 ====== */
+.select2-container--bootstrap-5 .select2-selection {
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ced4da;
+}
+
+.select2-container--bootstrap-5 .select2-selection__choice {
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+}
+
+/* ====== Footer ====== */
+footer {
+  margin-top: 40px;
+  padding: 20px;
+  background-color: var(--primary-color);
+  color: white;
+  text-align: center;
+  font-size: 0.9rem;
+  letter-spacing: 0.3px;
+}
+
+</style>
+{% endblock style%}
+{% block content %}
+
+<!-- HEADER -->
+
+
+<!-- ACTIONS -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+    <div>
+        <button class="btn btn-lg btn-primary js-create-staff" data-url="{% url 'staff_create' %}">
+            ➕ Add focal point
+        </button>
+    </div>
+    <div class="d-flex gap-2">
+        <form method="post" enctype="multipart/form-data" action="{% url 'staff_import_xlsx' %}">
+            {% csrf_token %}
+            <input type="file" name="file" class="form-control d-inline-block" style="width:220px;">
+            <button type="submit" class="btn btn-success">📥 Importer XLSX</button>
+        </form>
+        <a href="{% url 'staff_export_xlsx' %}" class="btn btn-info">📤 Exporter XLSX</a>
+        <a href="{% url 'staff_template_xlsx' %}" class="btn btn-danger">🗂 Télécharger Modèle XLSX</a>
+    </div>
+</div>
+
+
+<!-- STATISTIQUES -->
+<div class="row text-center mb-4">
+    <div class="col-md-3 mb-2">
+        <div class="card bg-indigo text-white shadow-sm">
+            <div class="card-body">
+                <h5>Total Staff</h5>
+                <h2>{{ staff|length }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-2">
+        <div class="card bg-success text-white shadow-sm">
+            <div class="card-body">
+                <h5>Pays Représentés</h5>
+                <h2>{{ countries|length }}</h2>
+                <p>Country : {{ countries|join:", " }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-2">
+        <div class="card bg-purple text-white shadow-sm">
+            <div class="card-body">
+                <h5>Langues Parlées</h5>
+                <h2>{{ languages|length }}</h2>
+                <small>Langues : {{ languages|join:", " }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-2">
+        <div class="card bg-warning text-white shadow-sm">
+            <div class="card-body">
+                <h5>Domaines de Santé</h5>
+                 <h2>{{ diseases|length }}</h2>
+                <small>{{ diseases|join:", " }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+ <!-- FILTRES -->
+<div class="card mb-4 shadow-sm">
+  <div class="card-body">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label for="country" class="form-label">Filtrer par Pays</label>
+        <select name="country" id="country" class="form-select">
+          <option value="">-- Tous --</option>
+          {% for c in countries %}
+            <option value="{{ c }}" {% if request.GET.country == c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label for="language" class="form-label">Filtrer par Langue</label>
+        <select name="language" id="language" class="form-select">
+          <option value="">-- Toutes --</option>
+          {% for l in languages %}
+            <option value="{{ l }}" {% if request.GET.language == l %}selected{% endif %}>{{ l }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label for="disease" class="form-label">Filtrer par Maladie</label>
+        <select name="disease" id="disease" class="form-select">
+          <option value="">-- Toutes --</option>
+          {% for d in diseases %}
+            <option value="{{ d }}" {% if request.GET.disease == d %}selected{% endif %}>{{ d }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-primary w-100">🔍 Rechercher</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- TABLEAU -->
+<div class="card shadow-lg">
+    <div class="card-header bg-light">
+        <h4 class="fw-bold mb-0">Liste du Staff</h4>
+    </div>
+    <div class="card-body">
+        <table class="table table-hover align-middle">
+            <thead class="table-primary">
+                <tr>
+                    <th>Nom</th>
+                    <th>Email</th>
+                    <th>Pays</th>
+                    <th>Langues</th>
+                    <th>Maladies</th>
+                    <th>Position</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in staff %}
+                <tr>
+                    <td>{{ s.name }}</td>
+                    <td>{{ s.email }}</td>
+                    <td>{% for c in s.country.all %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+                    <td>{{ s.language|join:", " }}</td>
+                    <td>{% for d in s.diseases.all %}{{ d.subcomponent_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+                    <td>{{ s.position }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning js-update-staff" data-url="{% url 'staff_update' s.id %}">✏️</button>
+                        <button class="btn btn-sm btn-danger js-delete-staff" data-id="{{ s.id }}" data-name="{{ s.name }}" data-url="{% url 'staff_delete' s.id %}">🗑️</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal fade" id="modal-staff" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content"></div>
+  </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">⚠️ Confirmation de suppression</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p id="delete-message">Êtes-vous sûr de vouloir supprimer cet élément ?</p>
+      </div>
+      <div class="modal-footer">
+        <form method="post" id="delete-form">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">🗑️ Supprimer définitivement</button>
+        </form>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(function () {
+    // Chargement des formulaires modaux
+    function loadForm(url) {
+        $("#modal-staff .modal-content").load(url, function () {
+            $("#modal-staff").modal("show");
+        });
+    }
+
+    $(".js-create-staff").click(function () { loadForm($(this).data("url")); });
+    $(".js-update-staff").click(function () { loadForm($(this).data("url")); });
+
+    // Soumission AJAX
+    $("#modal-staff").on("submit", "form", function (e) {
+        e.preventDefault();
+        var form = $(this);
+        $.ajax({
+            url: form.attr("action"),
+            type: form.attr("method"),
+            data: form.serialize(),
+            success: function (data) {
+                if (data.indexOf("<form") !== -1) {
+                    $("#modal-staff .modal-content").html(data);
+                } else {
+                    $("#modal-staff").modal("hide");
+                    location.reload();
+                }
+            }
+        });
+    });
+
+    // Suppression avec modal générique
+    $(".js-delete-staff").click(function () {
+        var staffName = $(this).data("name");
+        var url = $(this).data("url");
+        $("#delete-message").text("Voulez-vous vraiment supprimer " + staffName + " ?");
+        $("#delete-form").attr("action", url);
+        $("#deleteModal").modal("show");
+    });
+});
+</script>
+{% endblock %}

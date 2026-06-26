@@ -4,15 +4,23 @@ from django.core.exceptions import ValidationError
 from .models import (
     Country, Component, Subcomponent, Indicator,
     RepositoryIndicator, SurveyProject, SurveyDataset,
-    DocSave, ReportSave, WarehouseScript, StoreAPI,ApiFieldConfig
+    DocSave, ReportSave, WarehouseScript, StoreAPI,ApiFieldConfig,StaffMember
 )
- 
+import requests
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Row, Column
 from crispy_forms.bootstrap import FormActions
 import django_filters
  
- 
+
+LANGUAGE_CHOICES = [
+    ("fr", "Français"),
+    ("en", "Anglais"),
+    ("es", "Espagnol"),
+    ("pt", "Portugais"),
+]
+
+
 # =========================
 # WIDGET DATE (HTML5)
 # =========================
@@ -652,4 +660,54 @@ class ApiFieldSelectionForm(forms.Form):
             raise forms.ValidationError(f"Impossible de valider l’URL API : {e}")
         return url
 
-    
+
+
+class StaffMemberForm(forms.ModelForm):
+    country = forms.ModelMultipleChoiceField(
+        queryset=Country.objects.all(),
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-select select2',
+            'data-placeholder': 'Choisissez un ou plusieurs pays'
+        }),
+        required=False,
+        label="🌍 Pays"
+    )
+
+    diseases = forms.ModelMultipleChoiceField(
+        queryset=Subcomponent.objects.all(),
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-select select2',
+            'data-placeholder': 'Sélectionnez les maladies associées'
+        }),
+        required=False,
+        label="🦠 Maladies"
+    )
+
+    language = forms.MultipleChoiceField(
+        choices=LANGUAGE_CHOICES,
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-select select2',
+            'data-placeholder': 'Choisissez les langues parlées'
+        }),
+        required=False,
+        label="🗣️ Langues"
+    )
+
+    class Meta:
+        model = StaffMember
+        fields = [
+            "name", "email", "country", "language", "diseases",
+            "position", "grade", "telephone", "office_affiliation",
+            "responsibility", "level_geo"
+        ]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Nom complet"}),
+            "email": forms.EmailInput(attrs={"class": "form-control", "placeholder": "Adresse email"}),
+            "position": forms.TextInput(attrs={"class": "form-control", "placeholder": "Poste"}),
+            "grade": forms.TextInput(attrs={"class": "form-control", "placeholder": "Grade"}),
+            "telephone": forms.TextInput(attrs={"class": "form-control", "placeholder": "Téléphone"}),
+            "office_affiliation": forms.TextInput(attrs={"class": "form-control", "placeholder": "Affiliation"}),
+            "responsibility": forms.Textarea(attrs={"class": "form-control", "rows": 3, "placeholder": "Responsabilités"}),
+            "level_geo": forms.TextInput(attrs={"class": "form-control", "placeholder": "Niveau géographique"}),
+            "country_code": forms.HiddenInput(),
+        }

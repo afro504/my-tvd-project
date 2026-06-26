@@ -1,0 +1,82 @@
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+
+{% block content %}
+<div class="container-fluid my-4">
+
+    <!-- Menu d’export -->
+    <div class="d-flex justify-content-end mb-3">
+       
+        <a href="{% url 'mytvddata:country_dashboard_word' country.pk %}" class="btn btn-primary">
+            📝 Exporter en Word
+        </a>
+    </div>
+
+    <!-- PAGE 1 : Profil du pays -->
+    <div class="page-break">
+        <h2 class="fw-bold text-primary">{{ country.name }} ({{ country.cca3 }})</h2>
+        <div class="row">
+            <div class="col-md-4">
+                <img src="{{ country.flag }}" alt="Drapeau" class="img-fluid shadow-sm">
+            </div>
+            <div class="col-md-8">
+                <ul class="list-group">
+                    <li class="list-group-item"><strong>Nom officiel :</strong> {{ country.official }}</li>
+                    <li class="list-group-item"><strong>Capitale :</strong> {{ country.capital }}</li>
+                    <li class="list-group-item"><strong>Sous-région :</strong> {{ country.subregion }}</li>
+                    <li class="list-group-item"><strong>Superficie :</strong> {{ country.area }} km²</li>
+                    <li class="list-group-item"><strong>Population :</strong> {{ country.population|floatformat:0 }}</li>
+                    <li class="list-group-item"><strong>Langues :</strong> {{ country.languages }}</li>
+                    <li class="list-group-item"><strong>Classe :</strong> {{ country.country_class }}</li>
+                </ul>
+                <a href="{{ country.maps }}" target="_blank" class="btn btn-info mt-3">🌍 Voir la carte</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 2 : Indicateurs -->
+    <div class="page-break mt-5">
+        <h3 class="fw-bold text-secondary">📊 Résultats des indicateurs</h3>
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Composant</th>
+                    <th>Sous-composant</th>
+                    <th>Indicateur</th>
+                    <th>Catégorie</th>
+                    <th>Performance</th>
+                    <th>Valeur</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for data in api_data %}
+                <tr>
+                    <td>{{ data.disease_name }}</td>
+                    <td>{{ data.parent_location }}</td>
+                    <td>{{ data.indicator_name }}</td>
+                    <td>{{ data.indicator_code }}</td>
+                    <td>{{ data.alpha_value }}</td>
+                    <td>{{ data.numeric_value }}</td>
+                    <td>{{ data.date }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-muted">Aucune donnée disponible</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- CSS impression -->
+<style>
+.page-break { page-break-after: always; }
+@media print {
+    .btn, .breadcrumb { display: none; }
+}
+</style>
+{% endblock %}

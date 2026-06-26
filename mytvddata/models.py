@@ -406,8 +406,8 @@ class ApiFieldMapping(models.Model):
 
 
 class StaffMember(models.Model):
-    country_code = models.CharField("Country Code", max_length=10, blank=True, null=True)
-    country = models.CharField("Country", max_length=100, blank=True, null=True)
+   
+    country = models.ManyToManyField("Country", blank=True)
     grade = models.CharField("Grade", max_length=50, blank=True, null=True)
     name = models.CharField("Full Name", max_length=150)
     email = models.EmailField("Email", unique=True)
@@ -415,14 +415,15 @@ class StaffMember(models.Model):
     office_affiliation = models.CharField("Office Affiliation", max_length=150, blank=True, null=True)
     position = models.CharField("Position", max_length=100, blank=True, null=True)
     responsibility = models.TextField("Responsibility", blank=True, null=True)
-    language = models.CharField("Language", max_length=50, blank=True, null=True)
-    # Relation ManyToMany vers Subcomponent
-    diseases = models.ManyToManyField(Subcomponent, related_name="staff_members", blank=True)
+    language = models.JSONField("Languages", blank=True, null=True)  # stockage liste
+    diseases = models.ManyToManyField("Subcomponent", related_name="staff_members", blank=True)
     level_geo = models.CharField("Geographical Level", max_length=50, blank=True, null=True)
 
     class Meta:
         db_table = "staff_member"
-        ordering = ["country", "name"]
+        ordering = ["name"]
 
     def __str__(self):
-        return f"{self.name} ({self.country_code})"
+        return f"{self.name}"
+
+

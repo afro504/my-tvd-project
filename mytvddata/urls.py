@@ -20,6 +20,8 @@ urlpatterns = [
     path('countries/', views.countries, name='countries'),
     path('json_country/', views.json_country, name='json_country'),
     path('export_country/', views.export_country, name='export_country'),
+    path("preview-json/", views.preview_json, name="preview_json"),
+    path("import-json/", views.import_json, name="import_json"),
  
     path('json_location/', views.json_location, name='json_location'),
  
@@ -80,6 +82,9 @@ urlpatterns = [
     path('upload_repository/', views.upload_repository, name='upload_repository'),
     path('repository_report/', views.repository_report, name='repository_report'),
     path('datasets_repository/', views.repository_add_data, name='datasets_repository'),
+
+      # ✅ Nouvelle route pour le mapping
+    #path('map_fields/', views.map_fields, name='map_fields'),
  
     path('single_repository_page/<int:pk>/', views.single_repository_page, name='single_repository_page'),
  
@@ -126,6 +131,31 @@ urlpatterns = [
     path("api_data/", views.load_api_other, name="api_data_other"), # Page pour lancer l’extraction et afficher les données
    
     path("imported-data/", views.view_imported_data, name="view_imported_data"),
+
+
+    # CRUD for STAFF
+    path("staff/", views.staff_list, name="staff_list"),
+    path("staff/create/", views.staff_create, name="staff_create"),
+    path("staff/<int:pk>/update/", views.staff_update, name="staff_update"),
+    path("staff/<int:pk>/delete/", views.staff_delete, name="staff_delete"),
+     # Import / Export STAFF
+    path("staff/export/xlsx/", views.staff_export_xlsx, name="staff_export_xlsx"),
+    path("staff/import/xlsx/", views.staff_import_xlsx, name="staff_import_xlsx"),
+    # Telecharger model XLSX
+    path("staff/template/xlsx/", views.staff_template_xlsx, name="staff_template_xlsx"),
+
+
+
+
+     # Tableau de bord pays
+    path("country/<int:pk>/dashboard/", views.country_dashboard, name="country_dashboard"),
+
+    # Export PDF
+    #path("country/<int:pk>/dashboard/pdf/", views.export_country_pdf, name="country_dashboard_pdf"),
+
+    # Export Word
+    path("country/<int:pk>/dashboard/word/", views.export_country_word, name="country_dashboard_word"),
+
 
 ]
  
