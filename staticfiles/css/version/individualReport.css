@@ -1,0 +1,48 @@
+
+
+.blog-item {
+	background-color: #ffffff;
+	/*border: 1px solid #f1f1f1;*/
+	margin-bottom: 3px;
+	padding: 30px;
+}
+
+    .blog-item p {
+        font-size: 18px;
+        line-height: 1.75em;
+        text-transform: capitalize;
+    }
+
+    /*-------------------------------------  pagination -------------------------------*/
+
+    .pagination>.active>a, 
+    .pagination>.active>a:focus, 
+    .pagination>.active>a:hover, 
+    .pagination>.active>span, 
+    .pagination>.active>span:focus, 
+    .pagination>.active>span:hover {
+        background-color: #E4840D;
+        /*border-color: #AF6F20;*/
+        border-color: transparent;
+        color: #E6E6E6;
+    }
+    
+    .pagination>li>a:focus, 
+    .pagination>li>a:hover, 
+    .pagination>li>span:focus, 
+    .pagination>li>span:hover {
+        background-color: #E4840D;
+        color: #ffffff;
+    }
+    
+    .pagination>li>a, 
+    .pagination>li>span {
+        color: #9A6326;
+        margin-left: 5px;
+        border: 1px solid transparent;
+    }
+    
+    .pagination-sm>li>a, 
+    .pagination-sm>li>span {
+        font-size: 14px;
+    }

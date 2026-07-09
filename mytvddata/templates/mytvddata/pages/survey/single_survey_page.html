@@ -1,135 +1,124 @@
-
 {% extends "mytvddata/cover/base.html" %}
 {% load static %}
 {% load widget_tweaks %}
 {% load crispy_forms_tags %}
 {% load crispy_forms_field %}
+
 {% block style %}
-    
-{% endblock style%}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"/>
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css"/>
+{% endblock style %}
+
 {% block content %}
+<main>
+    <div class="container tbl-container" style="max-width: 90rem;">
+        <div class="row">
+            <section class="col-12">
+                <article class="single-blog-item">
 
-        <main>
-            <div class="container tbl-container" style="width: 90rem;">
-                
-                <div class="row">
-
-                    <!-- blog-contents -->
-                    <section class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                        <article class="single-blog-item">
-                            <!-- title row -->
-                               
-                                    <div class="page-title lb single-wrapper">
-                                        <div class="row">
-                                            <div class="col-lg-6 col-md-6 col-6">
-                                                <h3 class="news-title">
-                                                    <code>Survey</code> with Dataset submitted
-                                                </h3> 
-                                            </div>
-
-                                          
-                                            <div class="col-lg-2 col-md-2 col-2">
-                                                <a class="btn btn-success" href="{% url 'export_survey_page' surveyProject.pk %}"><i class="fa fa-external-link"></i> Export to Excel</a>
-                                            </div>
-                                            <div class="col-lg-2 col-md-2 col-2">
-                                                <button class="btn btn-info" onclick="window.print();"><i class="fa fa-print"></i> Print</button>    
-                                            </div>
-                                            <div class="col-lg-2 col-md-2 col-2">
-                                                <p>Back to <a href="/survey_report"><i class="fa fa-reply" aria-hidden="true"></i>List</a></p>   
-                                            </div>
-                                          
-                                        </div>                          
-                                    </div><!-- /.col -->
-                              
-                           <small><code>{{ message }}</code></small>
-                            
-                            <div class="alert alert-info">
-                              <h4><strong>{{surveyProject.title_surv }}</strong></h4> 
+                    <!-- Header -->
+                    <div class="page-title lb single-wrapper mb-3">
+                        <div class="row align-items-center">
+                            <div class="col-lg-6">
+                                <h3 class="news-title">
+                                    <code>Survey</code> with Dataset submitted
+                                </h3>
                             </div>
-                            <div class="alert">
-                                <h5>1. Survey author:<b>{{surveyProject.responsible }}</b></h5> 
-                                <h5>2. Date of the survey: <b> From {{surveyProject.start_date }} To {{surveyProject.end_date }}</b></h5>
-                                <h5>3. Survey location: <b>{{surveyProject.location_survey }}</b></h5>
-                                <h5>4. Survey data:</h5> 
-                                <table class="table responsible" style="width:100%">  
-                                    <thead>
-                                        <tr>
-                                            <th>Question code</th>
-                                            <th>Questions</th>
-                                            <th>Response in text format</th>
-                                            <th>Response in integer format</th>
-                                            <th>First geographic area</th>
-                                            <th>Second geographic area</th>
-                                        </tr>                                    
-                                    </thead>
-                                    {% for surveyDataset in surveyDatasets %}
-                                    <tbody>             
-                                        <tr>
-                                            <td>{{surveyDataset.project_surveyData__quest_code}}</td>
-                                            <td>{{surveyDataset.project_surveyData__question}}</td>
-                                            <td>{{surveyDataset.project_surveyData__response_text}}</td>
-                                            <td>{{surveyDataset.project_surveyData__response_num}}</td>
-                                            <td>{{surveyDataset.project_surveyData__level_1}}</td>
-                                            <td>{{surveyDataset.project_surveyData__level_2}}</td>
-                                        </tr>
-                                    </tbody>
-                                    {% endfor %}
-                                </table>
+                            <div class="col-lg-2">
+                                <a class="btn btn-success" href="{% url 'export_survey_page' surveyProject.pk %}">
+                                    <i class="fa fa-file-excel"></i> Export to Excel
+                                </a>
                             </div>
-                            <!-- Table row -->
-                        </article>
+                            <div class="col-lg-2">
+                                <button class="btn btn-info" onclick="window.print();">
+                                    <i class="fa fa-print"></i> Print
+                                </button>
+                            </div>
+                            <div class="col-lg-2">
+                                <a href="/survey_report" class="btn btn-secondary">
+                                    <i class="fa fa-reply"></i> Back to List
+                                </a>
+                            </div>
+                        </div>
+                    </div>
 
+                    <!-- Messages -->
+                    {% if message %}
+                        <div class="alert alert-warning">
+                            <small><code>{{ message }}</code></small>
+                        </div>
+                    {% endif %}
 
-                                <ul class="pagination justify-content-center my-5">
-                                    {% if surveyDatasets.has_previous %}
-                                    <!-- 'First' and 'Previous' Buttons -->
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page=1">|&lt; First</a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ surveyDatasets.previous_page_number }}">&lt; Previous</a>
-                                    </li>
-                                    {% endif %}
-                                
-                                    <!-- Numbered Buttons -->
-                                    {% for page in paginator.page_range %}
-                                    {% if surveyDatasets.number == page %}
-                                        <li class="page-item">
-                                        <a class="page-link" href="?page={{ page }}"><strong><u>{{ page }}</u></strong></a>
-                                        </li>
-                                    {% elif page > surveyDatasets.number|add:'-3' and page < surveyDatasets.number|add:'3' %}
-                                        <li class="page-item">
-                                        <a class="page-link" href="?page={{ page }}">{{ page }}</a>
-                                        </li>
-                                    {% endif %}
-                                    {% endfor %}
-                                
-                                    <!-- 'Next' and 'Last' Buttons -->
-                                    {% if surveyDatasets.has_next %}
-                                    <li class="page-item">
-                                        <a class="page-link" 
-                                        href="?page={{ surveyDatasets.next_page_number }}">Next &gt;</a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ surveyDatasets.paginator.num_pages }}">Last &gt;|</a>
-                                    </li>
-                                    {% endif %}
-                                </ul>
+                    <!-- Survey Info -->
+                    <div class="alert alert-info">
+                        <h4><strong>{{ surveyProject.title_surv }}</strong></h4>
+                    </div>
+                    <div class="alert alert-light">
+                        <h5>1. Survey author: <b>{{ surveyProject.responsible }}</b></h5>
+                        <h5>2. Date of the survey: <b>From {{ surveyProject.start_date }} To {{ surveyProject.end_date }}</b></h5>
+                        <h5>3. Survey location: <b>{{ surveyProject.location_survey }}</b></h5>
+                        <h5>4. Survey data:</h5>
+                    </div>
 
-                            
-                    </section>
-                    <!-- end of blog-contents -->
-                </div>
-            </div> <!-- end of /.container -->
-        </main>
-        <!-- smooth-scroll -->
+                    <!-- Data Table -->
+                    <div class="table-responsive">
+                        <table id="singleSurveyTable" class="table table-striped table-hover table-bordered align-middle" style="width:100%">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Question code</th>
+                                    <th>Questions</th>
+                                    <th>Response (Text)</th>
+                                    <th>Response (Number)</th>
+                                    <th>First Area</th>
+                                    <th>Second Area</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for surveyDataset in surveyDatasets %}
+                                <tr>
+                                    <td>{{ surveyDataset.project_surveyData__quest_code }}</td>
+                                    <td>{{ surveyDataset.project_surveyData__question }}</td>
+                                    <td>{{ surveyDataset.project_surveyData__response_text }}</td>
+                                    <td>{{ surveyDataset.project_surveyData__response_num }}</td>
+                                    <td>{{ surveyDataset.project_surveyData__level_1 }}</td>
+                                    <td>{{ surveyDataset.project_surveyData__level_2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
 
-        <script>
-        $(function() {  
-            jQuery.scrollSpeed(100, 1000);
-        });
-        </script>
+                </article>
+            </section>
+        </div>
+    </div>
+</main>
 
+<!-- ✅ DataTables JS -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
 
-        {% endblock %}
-        
+<script>
+$(document).ready(function() {
+    $('#singleSurveyTable').DataTable({
+        paging: true,
+        searching: true,
+        ordering: true,
+        pageLength: 10,
+        lengthMenu: [5, 10, 25, 50, 100],
+        dom: 'Bfrtip',
+        buttons: [
+            { extend: 'excel', text: '<i class="fa fa-file-excel"></i> Export Excel', className: 'btn btn-outline-success' },
+            { extend: 'csv', text: '<i class="fa fa-file-csv"></i> Export CSV', className: 'btn btn-outline-primary' },
+            { extend: 'pdf', text: '<i class="fa fa-file-pdf"></i> Export PDF', className: 'btn btn-outline-danger' },
+            { extend: 'print', text: '<i class="fa fa-print"></i> Print', className: 'btn btn-outline-secondary' }
+        ]
+    });
+});
+</script>
+{% endblock %}

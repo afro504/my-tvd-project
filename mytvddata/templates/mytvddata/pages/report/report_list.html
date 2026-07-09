@@ -4,145 +4,207 @@
 {% load crispy_forms_tags %}
 {% load crispy_forms_field %}
 
-
 {% block style %}
-   
-{% endblock style%}
+<style>
+    body {
+        background-color: #f4f6f9;
+        font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #333;
+        line-height: 1.6;
+    }
+
+    .page-wrapper {
+        background: #fff;
+        padding: 2.5rem;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+    }
+
+    .news-title {
+        font-weight: 700;
+        font-size: 1.8rem;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        border-left: 5px solid #3498db;
+        padding-left: 0.8rem;
+    }
+
+    .report-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        background: #fafafa;
+        padding: 1.8rem;
+        margin-bottom: 2rem;
+        transition: all 0.25s ease-in-out;
+    }
+    .report-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+        background: #ffffff;
+    }
+
+    .report-meta {
+        font-size: 0.95rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+    }
+
+    /* ✅ Preview Box très visible */
+    .preview-box {
+        margin-top: 1.5rem;
+        padding: 1.5rem;
+        border: 2px solid #3498db;
+        border-radius: 12px;
+        background: #eef6fb;
+        display: none; /* caché par défaut */
+        box-shadow: 0 6px 15px rgba(0,0,0,0.12);
+        max-width: 100%; /* ✅ occupe toute la largeur disponible */
+    }
+    .preview-box h6 {
+        font-weight: 700;
+        font-size: 1.3rem;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+    }
+    .preview-box h6 i {
+        color: #3498db;
+        margin-right: 8px;
+    }
+    .preview-box iframe {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        width: 100%;   /* ✅ largeur ajustée */
+        height: 500px; /* ✅ hauteur augmentée pour meilleure lisibilité */
+    }
+
+    /* Boutons */
+    .btn {
+        border-radius: 6px;
+        font-size: 0.85rem;
+        padding: 0.4rem 0.8rem;
+        margin-right: 0.4rem;
+    }
+    .btn i {
+        margin-right: 4px;
+    }
+
+    /* Pagination */
+    .pagination .page-link {
+        border-radius: 6px;
+        margin: 0 2px;
+        color: #3498db;
+    }
+    .pagination .page-item.active .page-link {
+        background-color: #3498db;
+        border-color: #3498db;
+        color: #fff;
+    }
+</style>
+
+{% endblock style %}
 
 {% block content %}
 
+<div class="container-fluid" style="max-width: 80rem;"> <!-- ✅ pleine largeur -->
+    <div class="page-title mb-4">
+        <h3 class="news-title">
+            📑 List of submitted <b>reports</b> for backup
+            <small><a href="/"><i class="fa fa-reply"></i> Back</a></small>
+        </h3>
+    </div>
 
-<div id="wrapper">
- 
-        <div class="page-title lb single-wrapper">
-            <div class="container">
-                <div class="row">
+    <div class="row">
+        {% for reportSave in reportSaves %}
+        <div>
+            <div class="report-card">
+                <h5>
+                    <a href="{{ reportSave.file_rep }}" class="text-decoration-none fw-bold">
+                        {{ reportSave.title_rep }}
+                    </a>
+                </h5>
+                <p class="report-meta">
+                    📅 {{ reportSave.date_rep }} | 👤 {{ reportSave.author_rep }}
+                </p>
+                <p class="text-muted">{{ reportSave.summary_rep }}</p>
 
-                    <div class="col-lg-8 col-md-8 col-8">
-                            <h3 class="news-title">
-                                List of submitted <b>reports</b>  for backup in the platform
-                                <small><a href="/"><i class="fa fa-reply" aria-hidden="true"></i> Back</a></small>
-                            </h3>
-                        </div>
-                        <div class="col-lg-4 col-md-4 col-4">
-                           
+                <!-- Actions -->
+                <a href="{{ reportSave.file_rep }}" class="btn btn-outline-info btn-sm">
+                    <i class="fa fa-eye"></i> View
+                </a>
+                <a href="{{ reportSave.file_rep }}" download class="btn btn-outline-success btn-sm">
+                    <i class="fa fa-download"></i> Download
+                </a>
+                <button class="btn btn-outline-primary btn-sm toggle-preview" data-target="preview-{{ forloop.counter }}">
+                    <i class="fa fa-eye"></i> Show Preview
+                </button>
 
-                            {% comment %} {% if user.is_authenticated %}
-                            <ul class="bread-list">
-                                <li><a href="/"><i class="fa fa-dashboard" aria-hidden="true"></i> Home</a></li>
-                                <li><a href="/report_upload"><i class="fa fa-edit" aria-hidden="true"></i> Load reports</a></li>
-                                <li class="active"><i class="fa fa-table" aria-hidden="true"></i> List of reports</li>
-                            </ul>
-                            {% endif %}{% endcomment %}
+                <!-- Preview Section -->
+                <div id="preview-{{ forloop.counter }}" class="preview-box mt-3">
+                    <h6><i class="fa fa-eye"></i> Preview of Report</h6>
+                    {% with reportSave.file_rep.url|lower as file_url %}
+                        {% if ".pdf" in file_url %}
+                            <iframe src="{{ reportSave.file_rep.url }}" width="100%" height="300px" style="border:1px solid #ccc; border-radius:6px;"></iframe>
+                        {% elif ".html" in file_url %}
+                            <iframe src="{{ reportSave.file_rep.url }}" width="100%" height="300px" style="border:1px solid #ccc; border-radius:6px;"></iframe>
+                        {% elif ".docx" in file_url %}
+                            <a href="https://view.officeapps.live.com/op/embed.aspx?src={{ file_url }}" 
+                               target="_blank" class="btn btn-outline-info btn-sm">
+                               <i class="fa fa-file-word"></i> Open Word Document
+                            </a>
+                        {% elif ".pptx" in file_url %}
+                            <a href="https://view.officeapps.live.com/op/embed.aspx?src={{ file_url }}" 
+                               target="_blank" class="btn btn-outline-warning btn-sm">
+                               <i class="fa fa-file-powerpoint"></i> Open PowerPoint Presentation
+                            </a>
+                        {% else %}
+                            <p class="text-muted">No preview available for this file type.</p>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 
-                            {% if user.is_authenticated %}
-            
-                            {% endif %}
+    <!-- Pagination -->
+    <ul class="pagination justify-content-center my-5">
+        {% if reportSaves.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page=1">|&lt; First</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ reportSaves.previous_page_number }}">&lt; Previous</a></li>
+        {% endif %}
+        {% for page in paginator.page_range %}
+            {% if reportSaves.number == page %}
+                <li class="page-item active"><a class="page-link" href="?page={{ page }}">{{ page }}</a></li>
+            {% elif page > reportSaves.number|add:'-3' and page < reportSaves.number|add:'3' %}
+                <li class="page-item"><a class="page-link" href="?page={{ page }}">{{ page }}</a></li>
+            {% endif %}
+        {% endfor %}
+        {% if reportSaves.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ reportSaves.next_page_number }}">Next &gt;</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ reportSaves.paginator.num_pages }}">Last &gt;|</a></li>
+        {% endif %}
+    </ul>
+</div>
 
-                            <div class="search-widget">
-
-
-                                        <form method="GET">
-                                            {% csrf_token %}
-                                            <div class="input-group margin-bottom-sm">
-                                                <div class="row">
-                                                
-                                                    <input class="common-input" name="title_rep" type="text" placeholder="Search here title of report ">
-                                                    <button type="submit" class="btn btn-primary"><i class="fa fa-search fa-fw"></i></button>
-                                                    
-                                                </div>
-
-                                                
-                                            </div>
-                                        </form>
-                                    
-                                    </div>
-                        </div>
-                </div><!-- end row -->
-            </div><!-- end container -->
-        </div><!-- end page-title -->
-       {% comment "" %}{{countries}}{% endcomment %} 
-
-        <section class="section">
-            <div class="container">
-                <div class="row">
-                    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                        <div class="page-wrapper">
-                         <!-- blog-contents -->
-                                    {% for  reportSave in reportSaves  %}                            
-                                    <article class="blog-item box box-solid box-success">
-                                        <div class="row">
-                                            <div class="col-md-4">
-                                                <h4> 
-                                                    <a href="{{reportSave.file_rep}}">
-                                                        {% if reportSave.img_cp_rep  %}
-                                                            <img src="{{ reportSave.img_cp_rep.url}}" height="80%" width="100%" class="img-thumbnail" alt="...">
-                                                        {% else %}
-                                                            <img src="{% static 'images/afro.png' %}" height="80%" width="100%" class="img-thumbnail" alt="...">
-                                                        {% endif %}
-                                                    </a>
-                                                </h4>
-                                            </div>
-                                            <div class="col-md-8">
-                                                <p>
-                                                    from 
-                                                <code><time>{{ reportSave.date_rep }}<time></code> 
-                                                    author
-                                                <code>{{ reportSave.author_rep }}</code> 
-                                                <!--
-                                                    <a href="export_survey_page/{{surveyDataset.pk}}">Export to Excel</a>
-                                                    -->
-                                                </p>
-                                                <h4>
-                                                <b><a href="{{reportSave.file_rep}}">{{ reportSave.title_rep }}</a></b> 
-                                                </h4>
-                                                <h5>{{ reportSave.summary_rep }}</h5>
-                                            </div>
-                                        </div>
-                                    </article> <!-- /.blog-item -->
-                                    {% endfor %}
-                                    <!--Pagination-->
-                                    <ul class="pagination justify-content-center my-5">
-                                        {% if reportSaves.has_previous %}
-                                        <!-- 'First' and 'Previous' Buttons -->
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page=1">|&lt; First</a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ reportSaves.previous_page_number }}">&lt; Previous</a>
-                                        </li>
-                                        {% endif %}
-                                        <!-- Numbered Buttons -->
-                                        {% for page in paginator.page_range %}
-                                        {% if reportSaves.number == page %}
-                                            <li class="page-item">
-                                            <a class="page-link" href="?page={{ page }}"><strong><u>{{ page }}</u></strong></a>
-                                            </li>
-                                        {% elif page > reportSaves.number|add:'-3' and page < reportSaves.number|add:'3' %}
-                                            <li class="page-item">
-                                            <a class="page-link" href="?page={{ page }}">{{ page }}</a>
-                                            </li>
-                                        {% endif %}
-                                        {% endfor %}
-                                        <!-- 'Next' and 'Last' Buttons -->
-                                        {% if reportSaves.has_next %}
-                                        <li class="page-item">
-                                            <a class="page-link" 
-                                            href="?page={{ reportSaves.next_page_number }}">Next &gt;</a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ reportSaves.paginator.num_pages }}">Last &gt;|</a>
-                                        </li>
-                                        {% endif %}
-                                    </ul>
-                            <hr class="invis1">
-                        </div><!-- end page-wrapper -->
-                        <hr class="invis">
-                    </div><!-- end col -->
-                </div><!-- end row -->
-            </div><!-- end container -->
-        </section>
-    <div class="dmtop">Scroll to Top</div> 
-</div><!-- end wrapper -->
-
-{% endblock  %}
+<!-- JS pour toggle -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll(".toggle-preview").forEach(function(button) {
+        button.addEventListener("click", function() {
+            const targetId = this.getAttribute("data-target");
+            const previewBox = document.getElementById(targetId);
+            if (previewBox.style.display === "none" || previewBox.style.display === "") {
+                previewBox.style.display = "block";
+                this.innerHTML = '<i class="fa fa-eye-slash"></i> Hide Preview';
+            } else {
+                previewBox.style.display = "none";
+                this.innerHTML = '<i class="fa fa-eye"></i> Show Preview';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

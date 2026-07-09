@@ -1,40 +1,47 @@
-{% load widget_tweaks %}
-{% load crispy_forms_tags %}
-{% load crispy_forms_field %}
-<!-- Modal Add New Sub activity-->
-<div class="modal fade bd-example-modal-lg" {% block modal-id %} id="addNewt_scriptsForm" {% endblock modal-id %}  tabindex="-1" role="dialog" aria-labelledby="addNet_scriptsFormLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <form class="form" {% block Action %} action="/add_t_scripts/new" {% endblock Action %} method= "POST" id="add_new_t_script_form">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h4 class="modal-title" id="addNet_scriptsFormLabel"> {% block modal-title %} <i class="fa fa-plus"></i>&nbsp;&nbsp;Add New Scripts {% endblock modal-title %}</h4>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                    </button>
+<!-- Add Modal -->
+<div class="modal fade" id="addScriptModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="addScriptForm" method="POST" action="{% url 'add_new_t_scripts' %}">
+                {% csrf_token %}
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="fa fa-plus"></i> Add New Script
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    {% csrf_token %}
-                    {% block value-id %}{% endblock value-id %}
-                    {{ form.media }}
-                    <!--{{ form.as_div }} --> 
-                    {% block value-input %}
+                    <div class="alert alert-info mb-3">
+                        <i class="fa fa-info-circle"></i> Fill in the fields below to add a new script.
+                    </div>
 
-                    {% include "mytvddata/pages/scripts_view/t_scripts_modal.html" %}
-
-                   
-                    {% endblock value-input %}
-                    <!--  
-                    {{form.gsmWorkplan}}-->
+                    <!-- Champs du formulaire -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Title</label>
+                        {{ form.ws_title }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Author</label>
+                        {{ form.ws_focalpoint }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Date</label>
+                        {{ form.ws_date }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Summary</label>
+                        {{ form.ws_summary }}
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-secondary">  {% block btn-action %}<i class="fa fa-plus"></i>&nbsp;&nbsp;Submit{% endblock btn-action %}</button>
-                    <!--  <button type="button" class="btn btn-secondary" onclick=onclick="addNewWorkplan()"><i class="fa fa-plus"></i>&nbsp;&nbsp;Submit</button>-->
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>          
-                    <button type="reset" class="btn btn-warning btn-sm" title="Reset"><i class="fa fa-edit"></i></button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fa fa-save"></i> Save Script
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fa fa-times"></i> Cancel
+                    </button>
                 </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 </div>
-
-             

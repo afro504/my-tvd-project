@@ -1,13 +1,16 @@
+
+
+
 {% for indicator in indicators %}
-  <tr>
-    <td>{{ indicator.indicator_code }}</td>
+<tr>
+  <td>{{ indicator.indicator_code }}</td>
     <td>{{ indicator.indicator_name}}</td>
     <td>{{ indicator.indicator_description }}</td>
     <td>{{ indicator.indicator_target }}</td>
     <td>{{ indicator.indicator_metric }}</td>
     <td>{{ indicator.indicator_unit }}</td>
     <td>{{ indicator.indicator_frequency }}</td>
-    <td><a href="{{indicator.indicator_source}}">{{indicator.indicator_source}}</a></td>
+    <td><a href="{{indicator.indicator_source}}" target="_blank" class="text-primary">{{indicator.indicator_source}}</a></td>
     <td>{{ indicator.category_indicator }}</td>
     <td>{{ indicator.forecasting_indicator }}</td>
     <td>{{ indicator.performance_indicator }}</td>
@@ -17,34 +20,22 @@
     <td>{{ indicator.subcomponent.subcomponent_name }}</td>
     <td>{{ indicator.subcomponent.component.component_name }}</td>
     
-    {% comment "" %}
-    <td><a href="{% url 'update_indicator' indicator.id %}">Edit</a> </td>
-    {% endcomment %}
-    <td>
-      
-      <button type="button"
-              class="btn btn-warning btn-sm js-update-indicator"
-              data-url="{% url 'update_indicator' indicator.pk %}">
-        <span class="glyphicon glyphicon-pencil"></span> Edit
-      </button>
-     
-    </td>
-    <td>
-      
-     
-      <button type="button"
-              class="btn btn-danger btn-sm js-delete-indicator"
-              data-url="{% url 'delete_indicator' indicator.pk %}">
-        <span class="glyphicon glyphicon-trash"></span> Delete
-      </button>
-    </td>
-    
-  </tr>
-  {% include 'mytvddata/pages/indicator/partial_indicator_form.html' %}
-  
+  <td>
+    <button class="btn btn-sm btn-info js-update-indicator"
+            data-url="{% url 'update_indicator' indicator.pk %}">
+      Edit
+    </button>
+    <button class="btn btn-sm btn-danger js-delete-indicator"
+            data-url="{% url 'delete_indicator' indicator.pk %}">
+      Delete
+    </button>
+  </td>
+</tr>
+
 {% empty %}
   <tr>
     <td colspan="8" class="text-center bg-warning">No Indicator</td>
   </tr>
 
 {% endfor %}
+

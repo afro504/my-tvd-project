@@ -1,0 +1,75 @@
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+{% block style %}
+
+    <table id="surveyTable" class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>Projet</th>
+                <th>Organisation</th>
+                <th>Population cible</th>
+                <th>Lieu</th>
+                <th>Date début</th>
+                <th>Date fin</th>
+                <th>Données associées</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for project in projects %}
+            <tr>
+                <td>{{ project.title_surv }}</td>
+                <td>{{ project.responsible }}</td>
+                <td>{{ project.target_population }}</td>
+                <td>{{ project.location_survey }}</td>
+                <td>{{ project.start_date }}</td>
+                <td>{{ project.end_date }}</td>
+                <td>
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Question</th>
+                                <th>Réponse texte</th>
+                                <th>Réponse num</th>
+                                <th>Niveau 1</th>
+                                <th>Niveau 2</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for data in project.project_surveyData.all %}
+                            <tr>
+                                <td>{{ data.quest_code }}</td>
+                                <td>{{ data.question }}</td>
+                                <td>{{ data.response_text }}</td>
+                                <td>{{ data.response_num }}</td>
+                                <td>{{ data.level_1 }}</td>
+                                <td>{{ data.level_2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endblock %}
+{% block extra_js %}
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#surveyTable').DataTable({
+                pageLength: 5,
+                lengthMenu: [5, 10, 25, 50],
+                language: {
+                    url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json"
+                }
+            });
+        });
+    </script>
+{% endblock %}

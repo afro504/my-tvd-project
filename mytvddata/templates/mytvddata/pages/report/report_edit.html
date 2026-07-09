@@ -1,32 +1,128 @@
-{% extends "mytvddata/cover/baselog.html" %}
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_field %}
+
+{% block style %}
+<style>
+    .page-wrapper {
+        background: #fff;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .page-title h4 {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    .breadcrumb a {
+        text-decoration: none;
+        color: #3498db;
+    }
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+    .preview-box {
+        margin-top: 2rem;
+        padding: 1rem;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background: #f9f9f9;
+    }
+</style>
+{% endblock style %}
 
 {% block content %}
-<div class="container" id="my-workplans-table-container" style="width: 140rem;">
-{% if messages %}
-{% for message in messages %}
-<div class="alert alert-{{message.tags}}" role="alert">
-    <p{% if message.tags %} class=""{% endif%}{{message}}></p>
-</div>
+<div class="container" style="max-width: 80rem;">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
 
-{% endfor %}
-{% endif %}
-<div class="box box-primary">
-    <div class="box-header">
-        <h4 class="box-title">Edit <b>downloaded report</b></h4>
-        <small><a href="/"><i class="fa fa-reply" aria-hidden="true"></i> Back</a></small>
-    </div><!-- /.box-header -->
-    <!-- form start -->
-    <form role="form"  action="/edit_report/{{reportSave.pk}}" method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{form.as_p}}
-        <div class="box-footer">
-            <button type="submit" class="btn btn-primary">Save changed</button>
+    <div class="page-wrapper">
+        <!-- Header -->
+        <div class="page-title mb-4">
+            <h4>Edit <b>Downloaded Report</b></h4>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="/"><i class="fa fa-reply"></i> Back</a>
+                </li>
+            </ol>
         </div>
-    </form>
-    <hr>
-    
-   
 
-</div><!-- /.box -->
+        <!-- Form -->
+        <form action="/edit_report/{{ reportSave.pk }}" method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-save"></i> Save Changes
+                </button>
+                <a href="/report_list" class="btn btn-secondary">
+                    <i class="fa fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+
+        <!-- Preview Section -->
+{% if reportSave.file_rep %}
+<div class="preview-box mt-4">
+    <h5><i class="fa fa-eye"></i> Preview of Report</h5>
+    <p><b>Title:</b> {{ reportSave.title_rep }}</p>
+    <p><b>Author:</b> {{ reportSave.author_rep }}</p>
+    <p><b>Date:</b> {{ reportSave.date_rep }}</p>
+
+    {% with reportSave.file_rep.url|lower as file_url %}
+        {% if ".pdf" in file_url %}
+            <!-- PDF preview -->
+            <iframe src="{{ reportSave.file_rep.url }}" width="100%" height="600px" style="border:1px solid #ccc; border-radius:6px;"></iframe>
+            <a href="{{ reportSave.file_rep.url }}" download class="btn btn-outline-success mt-2">
+                <i class="fa fa-download"></i> Download PDF
+            </a>
+
+        {% elif ".html" in file_url %}
+            <!-- HTML preview -->
+            <iframe src="{{ reportSave.file_rep.url }}" width="100%" height="600px" style="border:1px solid #ccc; border-radius:6px;"></iframe>
+            <a href="{{ reportSave.file_rep.url }}" download class="btn btn-outline-success mt-2">
+                <i class="fa fa-download"></i> Download HTML
+            </a>
+
+        {% elif ".docx" in file_url %}
+            <!-- Word preview via Office Online -->
+            <a href="https://view.officeapps.live.com/op/embed.aspx?src={{ file_url }}" 
+               target="_blank" class="btn btn-outline-info">
+               <i class="fa fa-file-word"></i> Open Word Document
+            </a>
+            <a href="{{ reportSave.file_rep.url }}" download class="btn btn-outline-success mt-2">
+                <i class="fa fa-download"></i> Download Word
+            </a>
+
+        {% elif ".pptx" in file_url %}
+            <!-- PowerPoint preview via Office Online -->
+            <a href="https://view.officeapps.live.com/op/embed.aspx?src={{ file_url }}" 
+               target="_blank" class="btn btn-outline-warning">
+               <i class="fa fa-file-powerpoint"></i> Open PowerPoint Presentation
+            </a>
+            <a href="{{ reportSave.file_rep.url }}" download class="btn btn-outline-success mt-2">
+                <i class="fa fa-download"></i> Download PowerPoint
+            </a>
+
+        {% else %}
+            <p class="text-muted">No preview available for this file type.</p>
+            <a href="{{ reportSave.file_rep.url }}" download class="btn btn-outline-success mt-2">
+                <i class="fa fa-download"></i> Download File
+            </a>
+        {% endif %}
+    {% endwith %}
+</div>
+{% endif %}
+
+
+    </div>
 </div>
 {% endblock %}

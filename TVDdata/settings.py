@@ -31,6 +31,7 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+#BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -71,22 +72,30 @@ INSTALLED_APPS = [
     'widget_tweaks',
    'import_export',
 ]
+# Choisis le pack de templates
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"
+CRISPY_TEMPLATE_PACK = "bootstrap4"
+
 
 # Ajout d’outils dev uniquement
 if ENV == "dev":
     INSTALLED_APPS += ["debug_toolbar"]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.locale.LocaleMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+   "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # <--- important pour Docker
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'django_auto_logout.middleware.auto_logout', # Django auto logout (1)
+ 
+
 ]
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 if ENV == "dev":
     MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]
@@ -100,9 +109,11 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django_auto_logout.context_processors.auto_logout_client', # Django auto logout (2)
             ],
         },
     },
@@ -219,16 +230,35 @@ LOCALE_PATHS = [
     BASE_DIR / 'locale',
 ]
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = "/static/"
 
-if DEBUG:
-    STATICFILES_DIRS = [BASE_DIR / "static"]
-else:
-    STATIC_ROOT = BASE_DIR / "staticfiles"
+
+#if DEBUG:
+
+STATIC_URL = "static/"
+
+
+STATICFILES_DIRS = [
+        BASE_DIR / "static",
+        BASE_DIR / "static/js",
+        BASE_DIR / "static/images",
+        BASE_DIR / "static/report",
+        BASE_DIR / "static/upload",
+    ]
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+
+
+#STATIC_URL = 'static/'
+
+#STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+AUTO_LOGOUT = {'IDLE_TIME': 1200, 'REDIRECT_TO_LOGIN_IMMEDIATELY': True,
+               'MESSAGE': 'The session has expired. Please login again to continue.',}  # logout after 10 minutes of downtime (4)
+ 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Default primary key field type

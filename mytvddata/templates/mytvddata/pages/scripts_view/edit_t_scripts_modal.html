@@ -1,81 +1,23 @@
-{% extends "mytvddata/pages/scripts_view/add_t_scripts_modal.html" %}
 
-{% load widget_tweaks %}
-{% load crispy_forms_tags %}
-{% load crispy_forms_field %}
- <!-- Modal Edit form-->
-             
-     <!-- Modal id-->
-    {% block modal-id %} id="editt_scriptsForm{{t_scripts_view.pk}}" {% endblock modal-id %}
-       <!-- Modal Title-->
-    {% block modal-title %} <i class="fa fa-edit"></i>&nbsp;&nbsp;Edit SCRIPTS under the <code>Survey name: </code><b>{{t_scripts_view.ws_title}}</b>{% endblock modal-title %}
-      <!-- Form Action-->
-      {% block Action %} action="/edit_t_scripts/{{t_scripts_view.pk}}" {% endblock Action %}
-
-       <!-- Button action-->
-    {% block btn-action %} <i class="fa fa-server"></i>&nbsp;&nbsp;Save Changes {% endblock btn-action %}
-
-    <!-- ALL INPUTS-->
-
-   <!-- Block ID -->
-
-    {% block value-id %}{% endblock value-id %}
+<div class="modal-header bg-primary text-white">
+    <h5 class="modal-title">
+        <i class="fa fa-edit"></i> Edit Script
+    </h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
 
 
-    {% block value-input %} 
-
-    
-        <div class="form-group col-md-12 mb-0">
-                <label>Name of survey</label>
-                <textarea name="ws_title" class="form-control" rows="2">{{t_scripts_view.ws_title}}</textarea>
-        </div>
-        
-   
-    <div class="form-row">
-        <div class="form-group col-md-4 mb-0">
-            <label>Type of collect:<code>Last reporting<b> :{{t_scripts_view.ws_type}}</b></code></label>
-            {% render_field form.ws_type value=form.ws_type.label class+="form-control" style="border: 2px dashed green;" %}
-        </div>
-        <div class="form-group col-md-8 mb-0">
-            <label>Name of table</label>
-            <textarea name="ws_table" class="form-control" rows="1">{{t_scripts_view.ws_table}}</textarea>
-        </div>
+<form id="editScriptForm" method="POST" action="{% url 'edit_t_scripts' t_script.id %}">
+    {% csrf_token %}
+    <div class="modal-body">
+        {{ form.as_p }}
     </div>
-
-    <div class="form-row">
-        <div class="form-group col-md-6 mb-0">
-            <label>Script of create table</label>
-            <textarea name="ws_create" class="form-control" rows="2">{{t_scripts_view.ws_create}}</textarea>
-        </div>
-        <div class="form-group col-md-6 mb-0">
-            <label>Script of insert table</label>
-            <textarea name="ws_insert" class="form-control" rows="2">{{t_scripts_view.ws_insert}}</textarea>     
-        </div>
+    <div class="modal-footer">
+        <button type="submit" class="btn btn-success">
+            <i class="fa fa-save"></i> Save Changes
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cancel
+        </button>
     </div>
-    <div class="form-row">
-        <div class="form-group col-md-6 mb-0">
-            <label>Script of select table</label>
-            <textarea name="ws_select" class="form-control" rows="2">{{t_scripts_view.ws_select}}</textarea>
-        </div>
-        <div class="form-group col-md-6 mb-0">
-            <label>Script of join table</label>
-            <textarea name="ws_join" class="form-control" rows="2">{{t_scripts_view.ws_join}}</textarea>
-        </div>
-    </div>
-    <div class="form-row">
-        <div class="form-group col-md-12 mb-0">
-            <label>Script of pivot table</label>
-            <textarea name="ws_pivot" class="form-control" rows="2">{{t_scripts_view.ws_pivot}}</textarea>
-        </div>
-    </div>
-    <div class="form-row">
-        <div class="form-group col-md-12 mb-0">
-            <label>Path of file</label>
-            <textarea name="ws_pathfile" class="form-control" rows="2">{{t_scripts_view.ws_pathfile}}</textarea>
-        </div>    
-    </div>
-    <div class="form-group col-md-12 mb-0">
-        <label>Name of focal point</label>
-        <input type="text" name="ws_focalpoint" value="{{t_scripts_view.ws_focalpoint}}" class="form-control">
-    </div>
-    {% endblock value-input %}
+</form>

@@ -4,133 +4,130 @@
 {% load crispy_forms_tags %}
 {% load crispy_forms_field %}
 
-{% block style %}
-  
-{% endblock style%}
 {% block content %}
+<section class="section single-wrapper">
+    <div class="container-fluid" style="max-width: 140rem;">
+        <div class="row">
+            <div class="col-12">
+                <div class="page-wrapper">
 
-     <section class="section single-wrapper">
-        <div class="container-fluid" id="my-workplans-table-container" style="width: 140rem;">
-		    <div class="row">
-			    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">                 
-                    <div class="page-wrapper">
-                        {% if user.is_authenticated %}  
-                                <section class="content-header">
-                                        <div class="col-xs-12 col-sm-12">
-                                            <h4 class="text-left caption">
-                                                {% for message in messages %}
-                                                <small><code>{{ message }}</code></small>
-                                                {% endfor %}
-                                            </h2>
-                                            <h3>
-                                                Add, view and edit <b>the survey Project name</b>
-                                                <small>Dataset</small>                  
-                                            </h3>        
-                                            <ol class="breadcrumb">
-                                                <li class="breadcrumb-item"><a href="/"><i class="fa fa-reply"></i> Back</a></li>
-                                                <li class="breadcrumb-item"><a href="/survey_report"><i class="fa fa-bars"></i> Survey views</a></li>
-                                                <li class="breadcrumb-item"><a href="{% url 'export_project_survey' %}"><i class="fa fa-external-link"></i> Export to Excel</a></li>
-                                                <li class="breadcrumb-item"><a href="{% url 'json_surveyproject' %}"><i class="fa fa-cog"></i> API survey project</a></li>
-                                                <li class="breadcrumb-item"><a href="/index_survey"><i class="fa fa-window-restore"></i> Enter datasate</a></li>
-                                            </ol>
-                                            <form method="GET">
-                                                {% csrf_token %}
-                                                <div class="row">
-                                                    <div><input class="form-control" name="title_surv" type="text" placeholder="Search here title"></div>
-                                                    <div><button type="submit" class="btn btn-success">
-                                                        <i class="fa fa-search fa-fw"></i>
-                                                    </button></div>
-                                                </div>
-                                            </form>
-                                        </div>
-                                </section>
-                                <div class="row tbl-fixed">
-                                    <table class="table responsive" id="myWorkplansTable1" style="width:100%"  data-toggle="table" data-pagination="true" data-search="true">
-                                        <form method="POST" action="{% url 'project_survey' %}">
-                                            {% csrf_token %}
-                                                <tr>
-                                                    <th>Responsible for the survey</th>
-                                                    <th>Survey title</th>
-                                                    <th>Target population</th>
-                                                    <th>Start date</th>
-                                                    <th>End date</th>
-                                                    <th>Survey location</th>
-                                                </tr>
-                                                {% if not form.instance.id %}
-                                                <tr> 
-                                                    {% include 'mytvddata/pages/survey/survey_project_save.html' %}
-                                                </tr>
-                                                {% endif %}
+                    {% if user.is_authenticated %}
+                        <!-- Messages -->
+                        {% for message in messages %}
+                            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+
+                        <!-- Header -->
+                        <div class="content-header mb-4">
+                            <h3>
+                                Gestion des <b>Survey Projects</b>
+                                <small class="text-muted">Dataset</small>
+                            </h3>
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item"><a href="/"><i class="fa fa-reply"></i> Retour</a></li>
+                                <li class="breadcrumb-item"><a href="/survey_report"><i class="fa fa-bars"></i> Survey views</a></li>
+                                <li class="breadcrumb-item"><a href="{% url 'export_project_survey' %}"><i class="fa fa-file-excel"></i> Export Excel</a></li>
+                                <li class="breadcrumb-item"><a href="{% url 'json_surveyproject' %}"><i class="fa fa-cog"></i> API</a></li>
+                                <li class="breadcrumb-item"><a href="/index_survey"><i class="fa fa-plus"></i> Ajouter dataset</a></li>
+                            </ol>
+                        </div>
+
+                        <!-- Search -->
+                        <form method="GET" class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <input class="form-control" name="title_surv" type="text" placeholder="Rechercher un titre">
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="fa fa-search"></i> Rechercher
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Table -->
+                        <div class="card">
+                            <div class="card-body">
+                                <form method="POST" action="{% url 'project_survey' %}">
+                                    {% csrf_token %}
+                                    <table class="table table-striped table-hover table-bordered align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Responsable</th>
+                                                <th>Titre</th>
+                                                <th>Population cible</th>
+                                                <th>Date début</th>
+                                                <th>Date fin</th>
+                                                <th>Lieu</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% if not form.instance.id %}
+                                                <tr>{% include 'mytvddata/pages/survey/survey_project_save.html' %}</tr>
+                                            {% endif %}
+
                                             {% for surveyProject in surveyProjects %}
                                                 <tr>
                                                     {% if form.instance.id == surveyProject.id %}
-                                                    {% include 'mytvddata/pages/survey/survey_project_save.html' %}
-                                                    {% else %} 
-                                                    <td>{{surveyProject.responsible}}</td>
-                                                    <td>{{surveyProject.title_surv}}</td>
-                                                    <td>{{surveyProject.target_population}}</td>
-                                                    <td>{{surveyProject.start_date}}</td>
-                                                    <td>{{surveyProject.end_date}}</td>
-                                                    <td>{{surveyProject.location_survey}}</td>
-                                                    
-                                                    <td><button formnovalidate name="edit" value="{{surveyProject.id}}" class="btn btn-primary btn-sm">Edit</button></td>
-                                                    <td><button formnovalidate name="delete" value="{{surveyProject.id}}" class="btn btn-warning btn-sm">delete</button></td>
+                                                        {% include 'mytvddata/pages/survey/survey_project_save.html' %}
+                                                    {% else %}
+                                                        <td>{{ surveyProject.responsible }}</td>
+                                                        <td>{{ surveyProject.title_surv }}</td>
+                                                        <td>{{ surveyProject.target_population }}</td>
+                                                        <td>{{ surveyProject.start_date }}</td>
+                                                        <td>{{ surveyProject.end_date }}</td>
+                                                        <td>{{ surveyProject.location_survey }}</td>
+                                                        <td>
+                                                            <button formnovalidate name="edit" value="{{ surveyProject.id }}" class="btn btn-primary btn-sm">
+                                                                <i class="fa fa-edit"></i> Modifier
+                                                            </button>
+                                                            <button formnovalidate name="delete" value="{{ surveyProject.id }}" class="btn btn-danger btn-sm">
+                                                                <i class="fa fa-trash"></i> Supprimer
+                                                            </button>
+                                                        </td>
                                                     {% endif %}
                                                 </tr>
-                                            {% endfor %} 
-                                        </form>
+                                            {% endfor %}
+                                        </tbody>
                                     </table>
-                                </div>
-                                {% comment "" %}
-                                <ul class="pagination justify-content-center my-5">
-                                    {% if surveyProjects.has_previous %}
-                                    <!-- 'First' and 'Previous' Buttons -->
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page=1">|&lt; First</a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ surveyProjects.previous_page_number }}">&lt; Previous</a>
-                                    </li>
-                                    {% endif %}  
-                                    <!-- Numbered Buttons -->
-                                    {% for page in paginator.page_range %}
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Pagination -->
+                        <nav class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if surveyProjects.has_previous %}
+                                    <li class="page-item"><a class="page-link" href="?page=1">« Première</a></li>
+                                    <li class="page-item"><a class="page-link" href="?page={{ surveyProjects.previous_page_number }}">‹ Précédent</a></li>
+                                {% endif %}
+                                {% for page in paginator.page_range %}
                                     {% if surveyProjects.number == page %}
-                                        <li class="page-item">
-                                        <a class="page-link" href="?page={{ page }}"><strong><u>{{ page }}</u></strong></a>
-                                        </li>
+                                        <li class="page-item active"><span class="page-link">{{ page }}</span></li>
                                     {% elif page > surveyProjects.number|add:'-3' and page < surveyProjects.number|add:'3' %}
-                                        <li class="page-item">
-                                        <a class="page-link" href="?page={{ page }}">{{ page }}</a>
-                                        </li>
+                                        <li class="page-item"><a class="page-link" href="?page={{ page }}">{{ page }}</a></li>
                                     {% endif %}
-                                    {% endfor %}       
-                                    <!-- 'Next' and 'Last' Buttons -->
-                                    {% if surveyProjects.has_next %}
-                                    <li class="page-item">
-                                        <a class="page-link" 
-                                        href="?page={{ surveyProjects.next_page_number }}">Next &gt;</a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ surveyProjects.paginator.num_pages }}">Last &gt;|</a>
-                                    </li>
-                                    {% endif %}
-                                </ul>
-                                {% endcomment %}
-                           
-                        {% else %}
-                                <section>
-                                    <p style="position: center;">
-                                        We could not find the page you were looking for. 
-                                        Meanwhile, you may <a href='/signin'>login with your account</a> or <a href='/'>return to home page</a>.
-                                    </p>
-                                </section>   
-                        {% endif %}
-                    </div><!-- end page-wrapper -->
-                </div><!-- end col -->
-            </div><!-- end row -->
-	   </div><!-- end container -->
-    </section>
-<!-- end wrapper -->
+                                {% endfor %}
+                                {% if surveyProjects.has_next %}
+                                    <li class="page-item"><a class="page-link" href="?page={{ surveyProjects.next_page_number }}">Suivant ›</a></li>
+                                    <li class="page-item"><a class="page-link" href="?page={{ surveyProjects.paginator.num_pages }}">Dernière »</a></li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+
+                    {% else %}
+                        <section>
+                            <p class="text-center">
+                                Page non trouvée. Veuillez <a href='/signin'>vous connecter</a> ou <a href='/'>retourner à l’accueil</a>.
+                            </p>
+                        </section>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 {% endblock %}
-
-

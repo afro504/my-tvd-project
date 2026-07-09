@@ -1,20 +1,9 @@
 
 
-<form method="post" action="{% url 'update_indicator' form.instance.pk %}" class="js-indicator-update-form">
+
+<form method="post" class="js-indicator-update-form" action="{% url 'update_indicator' indicator.pk %}">
   {% csrf_token %}
-  <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-      <span aria-hidden="true">&times;</span>
-    </button>
-    <h4 class="modal-title">Update indicator</h4>
-  </div>
-  <div class="modal-body">
-    
-    {% include 'mytvddata/pages/indicator/partial_indicator_form.html' %}
-  
-  </div>
-  <div class="modal-footer">
-    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-    <button type="submit" class="btn btn-primary">Update</button>
-  </div>
+  {{ form.as_p }}
+  <button type="submit" class="btn btn-primary">Update</button>
+  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 </form>

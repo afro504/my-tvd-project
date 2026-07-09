@@ -25,9 +25,6 @@
         padding: 0;
         margin-bottom: 1rem;
     }
-    .tbl-container {
-        max-width: 100%;
-    }
     table {
         background: #fafafa;
     }
@@ -40,131 +37,265 @@
         vertical-align: middle;
     }
 </style>
+
+
+<!-- ✅ DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"/>
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css"/>
 {% endblock style %}
 
 {% block content %}
 <section class="section single-wrapper">
-    <div class="container tbl-container" style="max-width: 95%;">
+    <div class="container-fluid" style="max-width: 95%;">
         <div class="row">
             <div class="col-12">
                 <div class="page-wrapper">
+
                     {% if user.is_authenticated %}
-                    <section class="content-header mb-4">
-                        <div class="row">
-                            <div class="col-lg-12">
-                                <h2 class="caption">
-                                    {% for message in messages %}
-                                    <small><code>{{ message }}</code></small>
-                                    {% endfor %}
-                                </h2>
-                                <h3>
-                                    Add, view and edit <b>Data from survey</b>
-                                    <small class="text-muted">Display</small>
-                                </h3>
+                        <!-- Messages -->
+                        {% for message in messages %}
+                            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
+                        {% endfor %}
+
+                        <!-- Header -->
+                        <div class="content-header mb-4">
+                            <h2 class="caption">Gestion des données SurveyDataset</h2>
+                            <h3>
+                                Ajouter, consulter et modifier <b>les données d’enquête</b>
+                                <small class="text-muted">Affichage</small>
+                            </h3>
                         </div>
 
-                        <!-- Breadcrumb -->
-                        <div class="row mb-3">
-                            <div class="col-lg-8">
-                                <ol class="breadcrumb">
-                                    <li class="breadcrumb-item"><a href="/"><i class="fa fa-reply"></i> Back</a></li>
-                                    <li class="breadcrumb-item"><a href="/project_survey"><i class="fa fa-bars"></i> Survey project</a></li>
-                                    <li class="breadcrumb-item"><a href="export_to_excel_survey_dataset/{{by_survey}}/{{end_day}}"><i class="fa fa-download"></i> Export survey dataset</a></li>
-                                    <li class="breadcrumb-item"><a href="{% url 'export_to_excel' %}"><i class="fa fa-external-link"></i> Export to Excel</a></li>
-                                    <li class="breadcrumb-item"><a href="{% url 'json_surveydataset' %}"><i class="fa fa-cog"></i> API dataset</a></li>
-                                    <li class="breadcrumb-item active"><i class="fa fa-tasks"></i> Enter Data</li>
-                                </ol>
-                            </div>
-                            <div class="col-lg-4">
-                                <form method="GET" class="d-flex">
+                        <!-- Actions Import/Export -->
+                        <div class="mb-3 d-flex gap-2">
+                            <a href="{% url 'download_survey_template' %}" class="btn btn-outline-primary">
+                                <i class="fa fa-download"></i> Télécharger modèle Excel
+                            </a>
+
+                            <a href="{% url 'export_to_excel' %}" class="btn btn-outline-info">
+                                <i class="fa fa-file-excel"></i> Exporter données Excel
+                            </a>
+                            <button class="btn btn-outline-success" data-bs-toggle="collapse" data-bs-target="#importForm">
+                                <i class="fa fa-upload"></i> Importer données Excel
+                            </button>
+                        </div>
+
+                        <!-- Formulaire Import Excel -->
+                        <div id="importForm" class="collapse mb-4">
+                            <div class="card card-body">
+                                <form method="POST" enctype="multipart/form-data" action="{% url 'preview_import_survey' %}">
                                     {% csrf_token %}
-                                    <input class="form-control me-2" name="quest_code" type="text" placeholder="Filter by question code">
-                                    <button type="submit" class="btn btn-success"><i class="fa fa-search"></i></button>
+                                    <div class="row g-3 align-items-center">
+                                        <div class="col-md-8">
+                                            <input type="file" name="excel_file" class="form-control" accept=".xlsx,.xls" required>
+                                        </div>
+                                        <div class="col-md-4 d-grid">
+                                            <button type="submit" class="btn btn-success fw-bold">
+                                                <i class="fa fa-eye"></i> Prévisualiser
+                                            </button>
+                                        </div>
+                                    </div>
                                 </form>
                             </div>
                         </div>
 
-                        <!-- Filter Form -->
-                         <form method="GET" action="{% url 'index_survey' %}" class="mb-4">
-                            {% csrf_token %}
-                            <div class="row g-3 align-items-end">
-                                <div class="col-md-6">
-                                    <label class="form-label">Survey Title</label>
-                                    {% render_field form_survey_title.by_survey class+="form-control" placeholder=form_survey_title.by_survey.label %}
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Survey End Date (mm/dd/yyyy)</label>
-                                    <input type="date" name="end" id="end" class="form-control" required>
-                                </div>
-                                <div class="col-md-2 d-grid">
-                                    <button class="btn btn-success fw-bold">
-                                        <i class="fa fa-filter"></i> Filter
-                                    </button>
-                                </div>
+                        <!-- Prévisualisation -->
+                        {% if preview_data %}
+                        <div class="card mb-4">
+                            <div class="card-header bg-light fw-bold">
+                                Prévisualisation des données importées
                             </div>
-                        </form>
+                            <div class="card-body table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Survey Title</th>
+                                            <th>Question Code</th>
+                                            <th>Question</th>
+                                            <th>Réponse (Texte)</th>
+                                            <th>Réponse (Numérique)</th>
+                                            <th>Zone 1</th>
+                                            <th>Zone 2</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in preview_data %}
+                                        <tr>
+                                            <td>{{ row.title_surv }}</td>
+                                            <td>{{ row.quest_code }}</td>
+                                            <td>{{ row.question }}</td>
+                                            <td>{{ row.response_text }}</td>
+                                            <td>{{ row.response_num }}</td>
+                                            <td>{{ row.level_1 }}</td>
+                                            <td>{{ row.level_2 }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                <form method="POST" action="{% url 'confirm_import_survey' %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fa fa-check"></i> Confirmer importation
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endif %}
 
-                      
-                    </section>
+                        <!-- Rapport -->
+                       {% if import_report %}
+                        <div class="alert alert-secondary">
+                            <h5>Rapport d’importation</h5>
+                            <p>Total lignes traitées : {{ import_report.total }}</p>
+                            <p>Lignes insérées : {{ import_report.inserted }}</p>
+                            <p>Erreurs : {{ import_report.errors }}</p>
 
-                    <!-- Data Table -->
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Title</th>
-                                    <th>Question Code</th>
-                                    <th>Question</th>
-                                    <th>Response (Text)</th>
-                                    <th>Response (Number)</th>
-                                    <th>First Area</th>
-                                    <th>Second Area</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if not form.instance.id %}
-                                <tr>{% include 'mytvddata/pages/survey/survey_dataset_save.html' %}</tr>
-                                {% endif %}
-                                {% for surveyDataset in surveyDatasets %}
-                                <tr>
-                                    {% if form.instance.id == surveyDataset.id %}
-                                        {% include 'tvdapp/pages/survey/survey_dataset_save.html' %}
-                                    {% else %}
-                                       <td class="text-center">
-                                            <button type="submit" class="btn btn-primary fw-bold">
-                                                <i class="fa fa-save"></i> Save
-                                            </button>
-                                        </td>
-                                        <td>{{surveyDataset.surveyProject.title_surv}}</td>
-                                        <td>{{surveyDataset.quest_code}}</td>
-                                        <td>{{surveyDataset.question}}</td>
-                                        <td>{{surveyDataset.response_text}}</td>
-                                        <td>{{surveyDataset.response_num}}</td>
-                                        <td>{{surveyDataset.level_1}}</td>
-                                        <td>{{surveyDataset.level_2}}</td>
-                                        <td>
-                                            <button formnovalidate name="edit" value="{{surveyDataset.id}}" class="btn btn-primary btn-sm">Edit</button>
-                                            <button formnovalidate name="delete" value="{{surveyDataset.id}}" class="btn btn-danger btn-sm">Delete</button>
-                                        </td>
-                                    {% endif %}
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <section class="text-center">
-                        <p>
-                            We could not find the page you were looking for.  
-                            Meanwhile, you may <a href='/signin'>login</a> or <a href='/'>return home</a>.
-                        </p>
-                    </section>
-                    {% endif %}
-                </div>
-            </div>
+                            <!-- ✅ Bouton Export -->
+                            <a href="{% url 'export_surveyimport_report' %}" class="btn btn-outline-primary mt-2">
+                                <i class="fa fa-file-excel"></i> Exporter le rapport en Excel
+                            </a>
+                        </div>
+                        {% endif %}
+
+                        {% if report_data %}
+<div class="card mt-4">
+    <div class="card-header bg-light fw-bold">
+        Détail du rapport d’importation
+    </div>
+    <div class="card-body table-responsive">
+        <table class="table table-sm table-bordered table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Status</th>
+                    <th>Raison</th>
+                    <th>Survey Project</th>
+                    <th>Code Question</th>
+                    <th>Question</th>
+                    <th>Réponse (Texte)</th>
+                    <th>Réponse (Numérique)</th>
+                    <th>Zone 1</th>
+                    <th>Zone 2</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in report_data %}
+                <tr>
+                    <td>{{ row.status }}</td>
+                    <td>{{ row.raison }}</td>
+                    <td>{{ row.surveyProject_id }}</td>
+                    <td>{{ row.quest_code }}</td>
+                    <td>{{ row.question }}</td>
+                    <td>{{ row.response_text }}</td>
+                    <td>{{ row.response_num }}</td>
+                    <td>{{ row.level_1 }}</td>
+                    <td>{{ row.level_2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Boutons Export -->
+        <div class="mt-3">
+            <a href="{% url 'export_surveyimport_report' %}" class="btn btn-outline-primary">
+                <i class="fa fa-file-excel"></i> Exporter rapport en Excel
+            </a>
+            <a href="{% url 'export_import_report_pdf' %}" class="btn btn-outline-danger">
+                <i class="fa fa-file-pdf"></i> Exporter rapport en PDF
+            </a>
         </div>
+    </div>
+</div>
+{% endif %}
+        <!-- Table existante -->
+        <div class="table-responsive">
+            <form method="POST" action="{% url 'index_survey' %}">
+                {% csrf_token %}
+                <table class="table table-striped table-hover table-bordered align-middle" id="surveyTable">
+                    <thead>
+                        <tr>
+                            <th>Survey Title</th>
+                            <th>Question Code</th>
+                            <th>Question</th>
+                            <th>Réponse (Texte)</th>
+                            <th>Réponse (Numérique)</th>
+                            <th>Zone 1</th>
+                            <th>Zone 2</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if not form.instance.id %}
+                            <tr>{% include 'mytvddata/pages/survey/survey_dataset_save.html' %}</tr>
+                        {% endif %}
+                        {% for surveyDataset in surveyDatasets %}
+                            <tr>
+                                {% if form.instance.id == surveyDataset.id %}
+                                    {% include 'mytvddata/pages/survey/survey_dataset_save.html' %}
+                                {% else %}
+                                    <td>{{ surveyDataset.surveyProject.title_surv }}</td>
+                                    <td>{{ surveyDataset.quest_code }}</td>
+                                    <td>{{ surveyDataset.question }}</td>
+                                    <td>{{ surveyDataset.response_text }}</td>
+                                    <td>{{ surveyDataset.response_num }}</td>
+                                    <td>{{ surveyDataset.level_1 }}</td>
+                                    <td>{{ surveyDataset.level_2 }}</td>
+                                    <td>
+                                        <button formnovalidate name="edit" value="{{ surveyDataset.id }}" class="btn btn-primary btn-sm">
+                                            <i class="fa fa-edit"></i> Modifier
+                                        </button>
+                                        <button formnovalidate name="delete" value="{{ surveyDataset.id }}" class="btn btn-danger btn-sm">
+                                            <i class="fa fa-trash"></i> Supprimer
+                                        </button>
+                                    </td>
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </form>
+        </div>
+    {% else %}
+        <section class="text-center">
+            <p>
+                Page non trouvée.  
+                Veuillez <a href='/signin'>vous connecter</a> ou <a href='/'>retourner à l’accueil</a>.
+            </p>
+        </section>
+    {% endif %}
+    </div>
+</div>
+</div>
     </div>
 </section>
 {% endblock %}
+
+{% block scripts %}
+<!-- ✅ DataTables JS -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+
+<script>
+$(document).ready(function() {
+    $('#surveyTable').DataTable({
+        paging: true,
+        searching: true,
+        ordering: true,
+        pageLength: 10,
+        lengthMenu: [5, 10, 25, 50, 100],
+        dom: 'Bfrtip',
+        buttons: [
+            { extend: 'excel', text: '<i class="fa fa-file-excel"></i> Export Excel', className: 'btn btn-outline-success' },
+            { extend: 'csv', text: '<i class="fa fa-file-csv"></i> Export CSV', className: 'btn btn-outline-primary' },
+            { extend: 'pdf', text: '<i class="fa fa-file-pdf"></i> Export PDF', className: 'btn btn-outline-danger' },
+            { extend: 'print', text: '<i class="fa fa-print"></i> Imprimer', className: 'btn btn-outline-secondary' }
+        ]
+    });
+});
+</script>
+{% endblock scripts %}
+

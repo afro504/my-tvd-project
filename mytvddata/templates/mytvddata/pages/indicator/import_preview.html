@@ -1,0 +1,58 @@
+{% extends "mytvddata/cover/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3>Preview Indicators</h3>
+
+  <!-- ✅ Résumé -->
+  <p class="alert alert-info">
+    {{ preview_data|length }} indicators will be imported if you confirm.
+  </p>
+
+  <form method="post" action="{% url 'confirm_import' %}">
+    {% csrf_token %}
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Description</th>
+          <th>Target</th>
+          <th>Metric</th>
+          <th>Unit</th>
+          <th>Frequency</th>
+          <th>Type</th>
+          <th>Source</th>
+          <th>Subcomponent</th>
+          <th>Category</th>
+          <th>Forecast</th>
+          <th>Performance</th>
+          <th>Ref Data</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in preview_data %}
+        <tr>
+          <td>{{ row.code }}</td>
+          <td>{{ row.name }}</td>
+          <td>{{ row.description }}</td>
+          <td>{{ row.target }}</td>
+          <td>{{ row.metric }}</td>
+          <td>{{ row.unit }}</td>
+          <td>{{ row.frequency }}</td>
+          <td>{{ row.type }}</td>
+          <td>{{ row.source }}</td>
+          <td>{{ row.subcomponent }}</td>
+          <td>{{ row.category }}</td>
+          <td>{{ row.forecast }}</td>
+          <td>{{ row.performance }}</td>
+          <td>{{ row.ref_data }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <button type="submit" class="btn btn-success">Confirm Import</button>
+    <a href="{% url 'list_indicator' %}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}

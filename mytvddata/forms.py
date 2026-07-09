@@ -273,7 +273,17 @@ class ReportSaveForm(forms.ModelForm):
             raise forms.ValidationError("L'image ne doit pas dépasser 5MB")
  
         return cleaned_data
+    
+    def clean_file_rep(self):
+        file = self.cleaned_data.get("file_rep")
+        valid_extensions = [".pdf", ".docx", ".pptx", ".html"]
+        if not any(file.name.lower().endswith(ext) for ext in valid_extensions):
+            raise forms.ValidationError("Seuls PDF, Word, PowerPoint et HTML sont autorisés.")
+        return file
  
+
+
+
 
 # =========================
 # SURVEY PROJECT
@@ -284,19 +294,17 @@ class SurveyProjectForm(forms.ModelForm):
         model = SurveyProject
         fields = '__all__'
         widgets = {
-            'start_date': DateInput(),
-            'end_date': DateInput(),
+            'start_date': DateInput(format='%Y-%m-%d'),
+            'end_date': DateInput(format='%Y-%m-%d')
         }
- 
-    def clean(self):
-        cleaned_data = super().clean()
-        start = cleaned_data.get("start_date")
-        end = cleaned_data.get("end_date")
- 
-        if start and end and end <= start:
-            raise ValidationError("End date must be greater than start date")
- 
-        return cleaned_data
+       
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+     
+
+        # ✅ Optionnel : utiliser Crispy Forms pour un rendu propre
+        self.helper = FormHelper()
+        self.helper.form_method = "post"
  
 
 class SurveyDatasetForm(forms.ModelForm):
@@ -409,23 +417,38 @@ class SurveyUploadForm(forms.Form):
 # REPOSITORY INDICATOR
 # =========================
 class RepositoryIndicatorForm(forms.ModelForm):
- 
     class Meta:
         model = RepositoryIndicator
-        fields = '__all__'
+        fields = [
+            "country",          # Country
+            "spatial_dim",      # ISO
+            "indicator_code",   # Indicator code
+            "indicator",        # Indicator name (FK vers Indicator)
+            "dim1_type",        # Dim1 type
+            "dim1",             # Dim1
+            "dim2_type",        # Dim2 type
+            "dim2",             # Dim2
+            "dim3_type",        # Dim3 type
+            "dim3",             # Dim3
+            "time_dim",         # Time_dim
+            "alpha_value",      # Alpha value
+            "numeric_value",    # Numeric value
+            "publish_date",     # Publish date
+        ]
         widgets = {
-            'publish_date': DateInput()
+            "publish_date": DateInput(format='%Y-%m-%d')
         }
- 
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
- 
-        # ✅ Optimisation
-        self.fields['indicator'].queryset = Indicator.objects.select_related('subcomponent')
- 
+
+        # ✅ Optimisation de la queryset pour le champ indicator
+        self.fields["indicator"].queryset = Indicator.objects.select_related("subcomponent")
+
+        # ✅ Optionnel : utiliser Crispy Forms pour un rendu propre
         self.helper = FormHelper()
-        self.helper.form_method = 'post'
- 
+        self.helper.form_method = "post"
+
  
 class SelectRepositoryForm(forms.Form):
  
@@ -507,40 +530,45 @@ class S_table_nameForm(forms.Form):
 # =========================
 class SelectAPIForm(DateRangeMixin, forms.Form):
     by_indicator = forms.ChoiceField(label='Indicator')
- 
+
     start = forms.DateField(widget=DateInput())
     end = forms.DateField(widget=DateInput())
- 
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['by_indicator'].choices = [
-            (i.indicator_code, i.indicator_code)
-            for i in StoreAPI.objects.all()
-        ]
+        indicators = StoreAPI.objects.values_list('indicator_code', flat=True).distinct().order_by('indicator_code')
+        self.fields['by_indicator'].choices = [(i, i) for i in indicators]
+
  
 
+
 class SelectUrlForm(forms.Form):
- 
-    indicator_code = forms.ChoiceField(label="Indicator code")
- 
-    start = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
-    end = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
- 
+    indicator_code = forms.ChoiceField(label="Indicateur", widget=forms.Select(attrs={"class": "form-select"}))
+    start = forms.DateField(label="Date de début", required=False, widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}))
+    end = forms.DateField(label="Date de fin", required=False, widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}))
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
- 
-        # ✅ dynamique
+        # ✅ Liste déroulante dynamique des indicateurs
         self.fields['indicator_code'].choices = [
             (i.indicator_code, i.indicator_code)
             for i in Indicator.objects.only('indicator_code')
         ]
- 
+
     def clean(self):
         cleaned_data = super().clean()
         if cleaned_data.get('start') and cleaned_data.get('end'):
             if cleaned_data['end'] < cleaned_data['start']:
-                raise forms.ValidationError("Invalid date range")
+                raise forms.ValidationError("La date de fin doit être postérieure à la date de début.")
         return cleaned_data
+
+
+
+class UploadExcelForm(forms.Form):
+    file = forms.FileField(label="Importer un fichier Excel")
+
+
+
  
 
 # =========================
@@ -711,3 +739,17 @@ class StaffMemberForm(forms.ModelForm):
             "level_geo": forms.TextInput(attrs={"class": "form-control", "placeholder": "Niveau géographique"}),
             "country_code": forms.HiddenInput(),
         }
+
+
+
+
+
+
+class SurveyUploadForm(forms.Form):
+    responsible = forms.CharField(required=False, label="Organisation responsable")
+    title_surv = forms.CharField(required=False, label="Sujet de l’enquête")
+    target_population = forms.CharField(required=False, label="Population cible")
+    start_date = forms.DateField(required=False, widget=forms.DateInput(attrs={'type':'date'}))
+    end_date = forms.DateField(required=False, widget=forms.DateInput(attrs={'type':'date'}))
+    location_survey = forms.CharField(required=False, label="Lieu de l’enquête")
+    file = forms.FileField(label="Fichier Excel (.xlsx)")

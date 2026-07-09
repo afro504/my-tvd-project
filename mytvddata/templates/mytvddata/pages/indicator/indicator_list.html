@@ -1,88 +1,162 @@
+
 {% extends "mytvddata/cover/base.html" %}
 {% load static %}
 {% load widget_tweaks %}
 {% load crispy_forms_tags %}
 {% load crispy_forms_field %}
 
-<link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+  
+
+{% block style %}
+<style>
+  /* Fixer l'entête du tableau */
+  #indicator-table thead th {
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa; /* couleur de fond pour éviter transparence */
+    z-index: 2; /* pour que ça reste au-dessus du contenu */
+  }
+
+  /* Optionnel : fixer aussi la première colonne */
+  #indicator-table tbody td:first-child,
+  #indicator-table thead th:first-child {
+    position: sticky;
+    left: 0;
+    background-color: #fff;
+    z-index: 1;
+  }
+
+  /* Ajout d'une bordure pour lisibilité */
+  #indicator-table th {
+    border-bottom: 2px solid #dee2e6;
+  }
+</style>
+{% endblock style%}
 
 {% block title %}Indicators Management{% endblock title %}
 
+
 {% block content %}
-<div id="wrapper" class="wrapper row-offcanvas row-offcanvas-left">            
-    <div class="page-title lb single-wrapper">
-        <div class="container-fluid"> <!-- Full width -->
+  <!-- HEADER -->
+  <div class="row align-items-center mb-5">
+      <div class="col-lg-8">
+          <h2 class="fw-bold text-primary display-6">
+              ➕ Manage <code>Indicators</code> in <b>Program</b>
+          </h2>
+          <p class="text-muted fs-4">
+              <i class="fa fa-star text-warning"></i> Total indicators: <b>{{ total_indicator }}</b>
+          </p>
+      </div>
+      <div class="col-lg-4 text-end">
+          <nav aria-label="breadcrumb">
+              <ol class="breadcrumb bg-light rounded px-4 py-3 shadow-sm fs-5">
+                  <li class="breadcrumb-item"><a href="/"><i class="fa fa-reply"></i> Back</a></li>
+                  <li class="breadcrumb-item"><a href="{% url 'json_indicator' %}"><i class="fa fa-cog"></i> API Data</a></li>
+                  <li class="breadcrumb-item"><a href="{% url 'export_indicator' %}"><i class="fa fa-file-excel"></i> Export Excel</a></li>
+              </ol>
+          </nav>        
+          <div class="mb-3">
+            <!-- Bouton Export -->
+            <a href="{% url 'export_indicator' %}" class="btn btn-success">Export Excel</a>
 
-            <!-- HEADER -->
-            <div class="row align-items-center mb-5">
-                <div class="col-lg-8">
-                    <h2 class="fw-bold text-primary display-6">
-                        ➕ Manage <code>Indicators</code> in <b>Program</b>
-                    </h2>
-                    <p class="text-muted fs-4">
-                        <i class="fa fa-star text-warning"></i> Total indicators: <b>{{ total_indicator }}</b>
-                    </p>
-                </div>
-                <div class="col-lg-4 text-end">
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb bg-light rounded px-4 py-3 shadow-sm fs-5">
-                            <li class="breadcrumb-item"><a href="/"><i class="fa fa-reply"></i> Back</a></li>
-                            <li class="breadcrumb-item"><a href="{% url 'json_indicator' %}"><i class="fa fa-cog"></i> API Data</a></li>
-                            <li class="breadcrumb-item"><a href="{% url 'export_indicator' %}"><i class="fa fa-file-excel"></i> Export Excel</a></li>
-                        </ol>
-                    </nav>
-                </div>
-            </div>
+            <!-- Formulaire Import -->
+            <form method="post" enctype="multipart/form-data" action="{% url 'import_preview' %}" style="display:inline;">
+              {% csrf_token %}
+              <input type="file" name="excel_file" required>
+              <button type="submit" class="btn btn-primary">Preview Import</button>
+            </form>
+          </div>
+      </div>
+  </div>
 
-            <!-- TABLE -->
-            <div class="card shadow-lg border-0 mb-5 p-4">
-                <div class="card-header bg-dark text-white fw-bold fs-4 d-flex justify-content-between align-items-center">
-                    <span><i class="fa fa-list"></i> Indicators Table</span>
-                    <button type="button" class="btn btn-lg btn-light js-create-indicator" data-url="{% url 'create_indicator' %}">
-                        <i class="fa fa-plus text-success"></i> Add New
-                    </button>
-                </div>
-                <div class="card-body">
-                    <table class="table table-striped table-hover align-middle fs-5" id="indicator-table">
-                        <thead class="table-primary">
-                            <tr>
-                                <th>Code</th>
-                                <th>Name</th>
-                                <th>Description</th>
-                                <th>Target</th>
-                                <th>Metric</th>
-                                <th>Unit</th>
-                                <th>Frequency</th>
-                                <th>Source</th>
-                                <th>Category</th>
-                                <th>Forecast</th>
-                                <th>Performance</th>
-                                <th>Type</th>
-                                <th>Reference</th>
-                                <th>Subcomponent</th>
-                                <th>Component</th>
-                                <th colspan="2" class="text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% include 'mytvddata/pages/indicator/partial_indicator_list.html' %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+<!-- Bouton Create -->
+<button id="btn-create-indicator" class="btn btn-primary"
+        data-url="{% url 'create_indicator' %}">
+  Add Indicator
+</button>
 
-            <!-- MODAL -->
-            <div class="modal fade" id="modal-indicator" tabindex="-1">
-                <div class="modal-dialog modal-xl modal-dialog-centered"> <!-- Larger modal -->
-                    <div class="modal-content"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- Tableau -->
+<table id="indicator-table" class="table">
+  <thead>
+    <tr>
+      <th>Code</th>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Target</th>
+        <th>Metric</th>
+        <th>Unit</th>
+        <th>Frequency</th>
+        <th>Source</th>
+        <th>Category</th>
+        <th>Forecast</th>
+        <th>Performance</th>
+        <th>Type</th>
+        <th>Reference</th>
+        <th>Subcomponent</th>
+        <th>Component</th>
+      <th colspan="2" class="text-center">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% include 'mytvddata/pages/indicator/partial_indicator_list.html' %}
+  </tbody>
+</table>
+
+<!-- Modal -->
+<div class="modal fade" id="modal-indicator" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content"></div>
+  </div>
 </div>
 
 {% endblock %}
 
-{% block scripts %}
-<script src="{% static 'js/indicator.js' %}"></script>
-{% endblock scripts %}
+{% block extra_js %}
+<script>
+  var loadForm = function () {
+    var btn = $(this);
+    $.ajax({
+      url: btn.attr("data-url"),
+      type: 'get',
+      dataType: 'json',
+      beforeSend: function () {
+        $("#modal-indicator .modal-content").html("");
+        $("#modal-indicator").modal("show");
+      },
+      success: function (data) {
+        $("#modal-indicator .modal-content").html(data.html_form);
+      }
+    });
+  };
+
+  var saveForm = function () {
+    var form = $(this);
+    $.ajax({
+      url: form.attr("action"),
+      data: form.serialize(),
+      type: form.attr("method"),
+      dataType: 'json',
+      success: function (data) {
+        if (data.form_is_valid) {
+          $("#indicator-table tbody").html(data.html_indicator_list);
+          $("#modal-indicator").modal("hide");
+        } else {
+          $("#modal-indicator .modal-content").html(data.html_form);
+        }
+      }
+    });
+    return false;
+  };
+
+  $(document).ready(function () {
+    $("#btn-create-indicator").click(loadForm);
+    $("#modal-indicator").on("submit", ".js-indicator-create-form", saveForm);
+
+    $("#indicator-table").on("click", ".js-update-indicator", loadForm);
+    $("#modal-indicator").on("submit", ".js-indicator-update-form", saveForm);
+
+    $("#indicator-table").on("click", ".js-delete-indicator", loadForm);
+    $("#modal-indicator").on("submit", ".js-indicator-delete-form", saveForm);
+  });
+</script>
+{% endblock %}

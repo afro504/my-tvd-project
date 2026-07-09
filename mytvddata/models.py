@@ -2,6 +2,7 @@
 from django.db import models
 from django.urls import reverse
 
+
 # ============================
 # TABLE DES PAYS (Country)
 # ============================
@@ -32,7 +33,6 @@ class Country(models.Model):
 
 
 
-from django.db import models
 
 # ============================
 # TABLE DES PAYS AVEC COORDONNÉES

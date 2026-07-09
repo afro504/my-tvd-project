@@ -30,6 +30,11 @@ RUN apt-get update && ACCEPT_EULA=Y apt-get install -y msodbcsql17 mssql-tools \
 # Ajouter sqlcmd au PATH
 ENV PATH="$PATH:/opt/mssql-tools/bin"
 
+# Créer le dossier staticfiles
+RUN mkdir -p /app/staticfiles
+
+
+
 # Copier requirements
 COPY requirements.txt .
 
@@ -43,8 +48,13 @@ RUN pip install --upgrade pip && pip install -r requirements.txt \
 
 COPY . .
 
+
+
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
+
+# Collecter les fichiers statiques au build
+RUN python manage.py collectstatic --noinput
 
 EXPOSE 8000
 ENTRYPOINT ["/app/entrypoint.sh"]
@@ -61,6 +71,9 @@ COPY . .
 
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
+
+# Collecter les fichiers statiques au build
+RUN python manage.py collectstatic --noinput
 
 EXPOSE 8080
 ENTRYPOINT ["/app/entrypoint.sh"]

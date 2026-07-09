@@ -6,7 +6,105 @@
 
 {% block style %}
     
-{% endblock style%}
+<style>
+    body {
+        background-color: #f4f6f9;
+        font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #333;
+        line-height: 1.6;
+    }
+
+    .page-wrapper {
+        background: #fff;
+        padding: 2.5rem;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+    }
+
+    .news-title {
+        font-weight: 700;
+        font-size: 1.8rem;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        border-left: 5px solid #3498db;
+        padding-left: 0.8rem;
+    }
+
+    .breadcrumb a {
+        text-decoration: none;
+        color: #3498db;
+    }
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    /* ✅ Table modernisée */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+    thead {
+        background-color: #3498db;
+        color: #fff;
+    }
+    thead th {
+        padding: 1rem;
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    tbody tr {
+        border-bottom: 1px solid #e0e0e0;
+        transition: background 0.2s ease-in-out;
+    }
+    tbody tr:hover {
+        background-color: #f9f9f9;
+    }
+    tbody td {
+        padding: 0.8rem;
+        text-align: center;
+        font-size: 0.9rem;
+    }
+
+    /* ✅ Boutons et icônes */
+    .fa-edit, .fa-trash-o {
+        font-size: 1.2rem;
+        color: #3498db;
+        transition: color 0.2s ease-in-out;
+    }
+    .fa-edit:hover {
+        color: #2ecc71;
+    }
+    .fa-trash-o:hover {
+        color: #e74c3c;
+    }
+
+    /* ✅ Pagination */
+    .pagination .page-link {
+        border-radius: 6px;
+        margin: 0 2px;
+        color: #3498db;
+    }
+    .pagination .page-item.active .page-link {
+        background-color: #3498db;
+        border-color: #3498db;
+        color: #fff;
+    }
+
+    /* ✅ Search bar */
+    .common-input {
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 0.5rem;
+        width: 70%;
+        margin-right: 0.5rem;
+    }
+</style>
+{% endblock style %}
+
+
 
 {% block content %}
         <div class="container" id="my-workplans-table-container" style="width: 100rem;">

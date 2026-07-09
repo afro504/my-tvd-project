@@ -1,198 +1,223 @@
 {% extends "mytvddata/cover/base.html" %}
 {% load static %}
-{% load widget_tweaks %}
 {% load crispy_forms_tags %}
-{% load crispy_forms_field %}
-
 
 {% block style %}
-
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"/>
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css"/>
 <style>
-
-    /* ✅ Conteneur large et centré */
-.tbl-container {
-    max-width: 95%;       /* Largeur quasi pleine page */
-    margin: 0 auto;       /* Centre le contenu */
-    background: #fff;     /* Fond blanc pour contraste */
-    padding: 2rem;        /* Espacement interne */
-    border-radius: 10px;  /* Coins arrondis */
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1); /* Ombre douce */
-}
-
-/* ✅ Titres */
-.content-header h3 {
-    font-size: 1.8rem;    /* Plus grand et lisible */
-    font-weight: 700;
-    color: #005b9e;
-    margin-bottom: 1rem;
-}
-
-/* ✅ Boutons */
-.btn {
-    font-size: 1rem;
-    padding: 0.6rem 1.2rem;
-    border-radius: 6px;
-}
-
-/* ✅ Table design */
-.table {
-    font-size: 0.95rem;
-    border-collapse: separate;
-    border-spacing: 0;
-}
-
-.table thead {
-    background-color: #005b9e;
-    color: #fff;
-    font-size: 1rem;
-}
-
-.table tbody tr:hover {
-    background-color: #f1f7ff;
-    transition: 0.2s;
-}
-
-.table td, .table th {
-    padding: 0.75rem;
-    vertical-align: middle;
-}
-
-/* ✅ Icônes d'action */
-.tools i {
-    font-size: 1.2rem;
-    color: #005b9e;
-    cursor: pointer;
-}
-.tools i:hover {
-    color: #ff6600;
-}
-
+    body {
+        background-color: #f4f6f9;
+        font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .page-wrapper {
+        background: #fff;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    }
+    .news-title {
+        font-weight: 700;
+        font-size: 1.8rem;
+        color: #2c3e50;
+        border-left: 5px solid #3498db;
+        padding-left: 0.8rem;
+    }
+    .btn i { margin-right: 4px; }
 </style>
-
 {% endblock style %}
 
-
 {% block content %}
+<div class="container-fluid" style="max-width: 95rem;">
+    <div class="page-wrapper">
+        <h3 class="news-title">📑 Manage Scripts</h3>
+        <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addScriptModal">
+            <i class="fa fa-plus"></i> Add New Script
+        </button>
 
-<div class="wrapper row-offcanvas row-offcanvas-left">
-    <!-- Left side column. contains the logo and sidebar -->
-    <!-- Right side column. Contains the navbar and content of the page -->
-    <aside class="right-side">
-
-<!-- <link href="{% static 'css/myStyle/table.css' %}" rel="stylesheet" type="text/css" />-->
-
-        <section class="content-header">
-            <h3>
-                Add, view and edit <code><b>SCRIPTS</b></code> in <b>TVD Database</b>
-                {% for message in messages %}
-                <small><code>{{ message }}</code></small>
+        <!-- Table -->
+        <table id="scriptsTable" class="table table-striped table-hover table-bordered align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Date</th>
+                    <th>Summary</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for script in t_scripts_views %}
+                <tr id="scriptRow{{ script.id }}">
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ script.ws_title }}</td>
+                    <td>{{ script.ws_focalpoint }}</td>
+                    <td>{{ script.ws_date }}</td>
+                    <td>{{ script.ws_summary }}</td>
+                    <td>
+                        <button class="btn btn-outline-info btn-sm edit-btn" data-id="{{ script.id }}">
+                            <i class="fa fa-edit"></i> Edit
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm delete-btn" data-id="{{ script.id }}">
+                            <i class="fa fa-trash"></i> Delete
+                        </button>
+                    </td>
+                </tr>
                 {% endfor %}
-            </h3>
-            <ol class="breadcrumb">
-                <li><a href="/"><i class="fa fa-reply"></i> Back</a></li>
-                {% comment "" %}
-                <li><a href="/sub_activity_report"><i class="fa fa-file-text-o"></i> Workplan summury</a></li>
-                <li><a href="export_to_excel_workplan/{{by_unit}}/{{end_date}}"><i class="fa fa-download"></i> Export unit's to Excel</a></li>
-                <li><a href="{% url 'export_subactivity_excel' %}"><i class="fa fa-table"></i>Export All to Excel</a></li>
-            
-                <li class="active">Enter sub activity</li>
-                {% endcomment %}
-            </ol>
-        </section>
-
-        <div class="container tbl-container"  style="width: 200rem;">
-            <div class="row">
-                <div class="col-xs-12 col-sm-4">
-                    <button type="button" class="btn btn-success"  data-toggle="modal" data-target="#addNewt_scriptsForm"><i class="fa fa-plus"></i> <span>Add New SCRIPTS</span></button>
-                </div>
-                <div class="col-xs-12 col-sm-4"> 
-                    <form class="example" method="GET" action="{% url 't_scripts_view' %}">
-                        {% csrf_token %}
-                        {{form_survey_title.as_p}}
-                        <button class="btn btn-success">Filter the title <i class="fa fa-download"></i></a></button>
-                    </form> 
-                </div>  
-                <div class="col-xs-12 col-sm-4">
-                    <form method="GET">
-                        {% csrf_token %}
-                        <div class="input-group margin-bottom-sm">
-                            <div class="row">
-                                <div class="col-md-10"><input class="form-control" name="ws_focalpoint" type="text" placeholder="Search here the focal point name "></div>
-                                <div class="col-md-2"><button type="submit" class="btn btn-success">
-                                    <i class="fa fa-search fa-fw"></i>
-                                </button></div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            <div class="row tbl-fixed">
-                <table class="table responsive table-condensed" id="myWorkplansTable1" style="width:100%"  data-toggle="table" data-pagination="true" data-search="true">
-                    <thead class="table-title">
-                        <tr class="head-row">
-                            <th scope="col">#</th>
-                            <th>Name of survey</th>
-                            <th>Type of collect</th>
-                            <th>Name of table</th>
-                            <th>Script of create table</th>
-                            <th>Script of insert table</th>
-                            <th>Script of select table</th>
-                            <th>Script of join table</th>
-                            <th>Script of pivot table</th>
-                            <th>Path of file</th>
-                            <th>Name of focal point</th>
-                            <th>Date of creation</th>
-                            <th>Edit</th>
-                            <th>Delete</th>
-                            <!-- <th colspan ="2" id="mid">Action</th>-->
-                    </thead>
-                    <tbody>
-                        {% for t_scripts_view in t_scripts_views %}
-                            <tr class="table-row">
-                            <th scope="row">{{forloop.counter}}</th>
-                            <td>{{ t_scripts_view.ws_title }}</td>
-                            <td>{{ t_scripts_view.ws_type}}</td>
-                            <td>{{ t_scripts_view.ws_table }}</td>
-                            <td>{{ t_scripts_view.ws_create }}</td>
-                            <td>{{ t_scripts_view.ws_insert }}</td>
-                            <td>{{ t_scripts_view.ws_select }}</td>
-                            <td>{{ t_scripts_view.ws_join }}</td>
-                            <td>{{ t_scripts_view.ws_pivot }}</td>
-                            <td>{{ t_scripts_view.ws_pathfile }}</td>
-                            <td>{{ t_scripts_view.ws_focalpoint }}</td>
-                            <td>{{ t_scripts_view.ws_date }}</td>
-                            <td> 
-                                <a data-toggle="modal" data-target="#editt_scriptsForm{{t_scripts_view.pk}}" title="edit" class="tools"><i class="fa fa-edit"></i></a>
-                            </td>
-                            <td>
-                                <a data-toggle="modal" data-target="#delett_scriptsForm{{t_scripts_view.pk}}" title="delete" class="tools"><i class="fa fa-trash-o"></i></a>
-                            </td>
-                            <!-- Modal Dialog Edit-->
-                           {% include "mytvddata/pages/scripts_view/edit_t_scripts_modal.html" %}
-                    
-                            <!-- Modal Dialog delete-->   
-                              {% include "mytvddata/pages/scripts_view/delete_t_scripts_modal.html" %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>        
-        </div>
-          {% include "mytvddata/pages/scripts_view/add_t_scripts_modal.html" %}
-          {% comment "" %}
-          {% else %}
-          <section>
-              <p style="position: center;">
-                  We could not find the page you were looking for. 
-                  Meanwhile, you may <a href='/signin'>login with your account</a> or <a href='/'>return to home page</a>.
-              </p>
-          </section>   
-          {% endif %}
-          {% endcomment %}
-    </aside><!-- /.right-side -->
+            </tbody>
+        </table>
+    </div>
 </div>
 
-{% endblock %}
-{% block scripts %}
-<script src="{% static 'js/indicator.js' %}"></script>
-{% endblock scripts %}
+<!-- Add Modal -->
+<div class="modal fade" id="addScriptModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="addScriptForm" method="POST" action="{% url 'add_new_t_scripts' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">➕ Add New Script</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    {{ form.as_p }}
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
+<!-- Edit Modal -->
+<div class="modal fade" id="editScriptModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" id="editScriptContent">
+            <!-- Formulaire injecté par AJAX -->
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteScriptModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="deleteScriptForm" method="POST">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger">⚠️ Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="deleteMessage"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+
+<script>
+    $(document).ready(function() {
+        // ✅ DataTable
+        $('#scriptsTable').DataTable({
+            paging: true,
+            searching: true,
+            ordering: true,
+            pageLength: 10,
+            dom: 'Bfrtip',
+            buttons: [
+                { extend: 'excel', text: '<i class="fa fa-file-excel"></i> Excel', className: 'btn btn-outline-success' },
+                { extend: 'csv', text: '<i class="fa fa-file-csv"></i> CSV', className: 'btn btn-outline-primary' },
+                { extend: 'pdf', text: '<i class="fa fa-file-pdf"></i> PDF', className: 'btn btn-outline-danger' },
+                { extend: 'print', text: '<i class="fa fa-print"></i> Print', className: 'btn btn-outline-secondary' }
+            ]
+        });
+
+        $.ajaxSetup({
+            headers: { "X-CSRFToken": "{{ csrf_token }}" }
+        });
+
+
+        // ✅ Add Script AJAX
+        $('#addScriptForm').on('submit', function(e) {
+            e.preventDefault();
+            $.post($(this).attr('action'), $(this).serialize(), function(data) {
+                if (data.msg === 'Data saved') {
+                    location.reload();
+                } else {
+                    alert('Error saving script');
+                }
+            });
+        });
+
+
+
+
+
+        // ✅ Edit Script AJAX
+            // ✅ Charger le formulaire Edit dans le modal
+        $('.edit-btn').on('click', function() {
+            const id = $(this).data('id');
+            $.get(`/edit_t_scripts/${id}/`, function(html) {
+                $('#editScriptContent').html(html);
+                $('#editScriptModal').modal('show');
+            });
+        });
+
+        // ✅ Soumettre le formulaire Edit en AJAX
+        $(document).on('submit', '#editScriptForm', function(e) {
+            e.preventDefault();
+            $.post($(this).attr('action'), $(this).serialize(), function(data) {
+                if (data.msg === 'updated') {
+                    $('#editScriptModal').modal('hide');
+                    location.reload(); // ou mettre à jour la ligne directement
+                } else {
+                    alert('Error updating script');
+                }
+            });
+        });
+
+
+            // ✅ Delete Script AJAX
+        $('.delete-btn').on('click', function() {
+            const id = $(this).data('id');
+            // Injecter l'URL correcte dans l'action du formulaire
+            $('#deleteScriptForm').attr('action', `/delete_t_scripts/${id}/`);
+            // Message clair dans le modal
+            $('#deleteMessage').text(`Are you sure you want to delete script #${id}?`);
+            // Ouvrir le modal
+            $('#deleteScriptModal').modal('show');
+        });
+
+        // ✅ Soumission AJAX
+        $(document).on('submit', '#deleteScriptForm', function(e) {
+            e.preventDefault();
+            $.post($(this).attr('action'), $(this).serialize(), function(data) {
+                if (data.msg === 'deleted') {
+                    $('#deleteScriptModal').modal('hide');
+                    location.reload(); // ou retirer la ligne directement
+                } else {
+                    alert('Error deleting script');
+                }
+            });
+        });
+
+
+    });
+</script>
+{% endblock extra_js%}

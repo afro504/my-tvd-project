@@ -1,65 +1,137 @@
 {% extends "mytvddata/cover/base.html" %}
-
 {% load static %}
 {% load widget_tweaks %}
 {% load crispy_forms_tags %}
 {% load crispy_forms_field %}
+
 {% block style %}
-   
-{% endblock style%}
+<style>
+    body {
+        background-color: #f4f6f9;
+        font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #333;
+        line-height: 1.6;
+    }
+
+    .page-wrapper {
+        background: #fff;
+        padding: 2.5rem;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+    }
+
+    .news-title {
+        font-weight: 700;
+        font-size: 1.8rem;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        border-left: 5px solid #3498db;
+        padding-left: 0.8rem;
+    }
+
+    .breadcrumb a {
+        text-decoration: none;
+        color: #3498db;
+    }
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    .card {
+        border-radius: 12px;
+        transition: transform 0.2s ease-in-out;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    }
+
+    .card-body h5 {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .btn {
+        border-radius: 6px;
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+        margin: 0.2rem;
+    }
+    .btn i {
+        margin-right: 4px;
+    }
+
+    .alert {
+        border-radius: 8px;
+        font-size: 0.95rem;
+    }
+</style>
+{% endblock style %}
 
 {% block content %}
-    <div class="container tbl-container" style="width: 80rem;">
-        {% if messages %}
+<div class="container tbl-container" style="max-width: 85rem;">
+    {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-{{message.tags}}" role="alert">
-                <p{% if message.tags %} class=""{% endif%}{{message}}></p>
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-
         {% endfor %}
-        {% endif %}
-        <div class="page-wrapper">
-            <div class="page-title lb single-wrapper">
-                <h3 class="news-title">Upload the Report in pdf format</h3>
-                <ol class="breadcrumb">
+    {% endif %}
+
+    <div class="page-wrapper">
+        <!-- Header -->
+        <div class="page-title lb single-wrapper mb-4">
+            <h3 class="news-title">📤 Upload a Report (PDF, Word, PowerPoint, HTML)</h3>
+            <ol class="breadcrumb">
                 <li><a href="/"><i class="fa fa-reply"></i> Back</a></li>
-                </ol>
-            </div><!-- /.box-header -->
-    <!-- form start -->
-            <form role="form"  action="/report_upload" method="POST" enctype="multipart/form-data">
-                {% csrf_token %}
-                {{form.as_p}}
-                <div class="box-footer">
-                    <button type="submit" class="btn btn-primary">Upload</button>
-                </div>
-            </form>
-            <hr>
-            <!-- display image curretly saved-->
-            {% if img_report_obj %}
-            <h3>Succesfully uploaded : {{img_report_obj.title_rep}}</h3>
-            <img src="{{ img_report_obj.img_cp_rep.url}}" alt="connect" style="max-height:300px">
-            {% endif %}
+            </ol>
+        </div>
 
-            <!-- display all image saved-->
+        <!-- Upload form -->
+        <form action="{% url 'report_upload' %}" method="POST" enctype="multipart/form-data" class="mb-4">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">
+                <i class="fa fa-upload"></i> Upload Report
+            </button>
+        </form>
+
+        <hr>
+
+        <!-- Display last uploaded -->
+        {% if img_report_obj %}
+            <div class="alert alert-success">
+                ✅ Successfully uploaded: <b>{{ img_report_obj.title_rep }}</b><br>
+                <b>Author:</b> {{ img_report_obj.author_rep }} | <b>Date:</b> {{ img_report_obj.date_rep }}<br>
+                <a href="{{ img_report_obj.file_rep.url }}" target="_blank" class="btn btn-outline-info mt-2">
+                    <i class="fa fa-eye"></i> View Report
+                </a>
+            </div>
+        {% endif %}
+
+        <!-- Display all reports -->
+        <h4 class="mt-4 mb-3">📑 All Reports</h4>
+        <div class="row">
             {% for i in img_report_obj_all %}
-            {% if forloop.first %} <div class="row">{% endif %}
-                <div class="col-lg-4 col-md-4 col-12">
-                    <div class="text-center mt-2">
-                        {% if i.img_cp_rep %}
-                        <img src="{{ i.img_cp_rep.url}}" height="60%" width="60%" class="img-thumbnail" alt="...">
-                        
-                        {% endif %}
-                        
-                        <h5 class="text-center">{{i.title_rep}}</h5>
-                        <h5 class="text-center">{{i.author_rep}}</h5>
-                        <h6 class="text-center">{{i.date_rep}}</h6></div>
+            <div class="col-lg-4 col-md-6 col-12 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <h5>{{ i.title_rep }}</h5>
+                        <p class="text-muted mb-1">👤 {{ i.author_rep }}</p>
+                        <small class="text-secondary">📅 {{ i.date_rep }}</small><br>
+                        <a href="{{ i.file_rep.url }}" target="_blank" class="btn btn-outline-primary btn-sm mt-3">
+                            <i class="fa fa-eye"></i> View
+                        </a>
+                        <a href="{{ i.file_rep.url }}" download class="btn btn-outline-success btn-sm mt-3">
+                            <i class="fa fa-download"></i> Download
+                        </a>
                     </div>
-                    {% if forloop.counter|divisibleby:3 %}
                 </div>
-                <div class="row">{% endif %}
-                    {% if forloop.last %}</div>{% endif %}
+            </div>
             {% endfor %}
-
-        </div><!-- /.box -->
+        </div>
     </div>
+</div>
 {% endblock %}

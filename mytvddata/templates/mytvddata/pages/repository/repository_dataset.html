@@ -1,168 +1,278 @@
 {% extends "mytvddata/cover/base.html" %}
+{% load crispy_forms_tags %}
 {% load static %}
 {% load widget_tweaks %}
-{% load crispy_forms_tags %}
-{% load crispy_forms_field %}
-
 {% block style %}
+
+
+
 <style>
-    body {
-        background: #f5f7fa;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  #apiDatasetTable th, 
+    #apiDatasetTable td {
+      vertical-align: middle;
+      padding: 6px 8px;          /* réduit l’espace interne */
     }
-    .page-wrapper {
-        background: #fff;
-        border-radius: 12px;
-        padding: 2.5rem;
-        box-shadow: 0 6px 25px rgba(0,0,0,0.1);
-        margin: 2rem auto;
-        max-width: 95%;
-    }
-    h3 {
-        font-weight: 700;
-        color: #0a3d62;
-        margin-bottom: 1rem;
-    }
-    .breadcrumb {
-        background: transparent;
-        padding: 0;
-        margin-bottom: 1rem;
-    }
-    .breadcrumb-item a {
-        color: #0a3d62;
-        font-weight: 500;
-    }
-    .search-widget input {
-        border-radius: 8px;
-        width: 300px;
-    }
-    table {
-        font-size: 0.95rem;
-    }
-    th {
-        background: #0a3d62;
-        color: #fff;
-        text-align: center;
-    }
-    td {
-        vertical-align: middle;
-    }
-    .btn {
-        border-radius: 6px;
-    }
+
+    #apiDatasetTable th:nth-child(5),
+    #apiDatasetTable td:nth-child(5) { width: 6%; }   /* Dim1 type */
+    #apiDatasetTable th:nth-child(6),
+    #apiDatasetTable td:nth-child(6) { width: 8%; }   /* Dim1 */
+    #apiDatasetTable th:nth-child(7),
+    #apiDatasetTable td:nth-child(7) { width: 6%; }   /* Dim2 type */
+    #apiDatasetTable th:nth-child(8),
+    #apiDatasetTable td:nth-child(8) { width: 8%; }   /* Dim2 */
+    #apiDatasetTable th:nth-child(9),
+    #apiDatasetTable td:nth-child(9) { width: 6%; }   /* Dim3 type */
+    #apiDatasetTable th:nth-child(10),
+    #apiDatasetTable td:nth-child(10) { width: 8%; }  /* Dim3 */
+    #apiDatasetTable th:nth-child(11),
+    #apiDatasetTable td:nth-child(11) { width: 8%; }  /* Time_dim */
+    #apiDatasetTable th:nth-child(12),
+    #apiDatasetTable td:nth-child(12) { width: 6%; }  /* Alpha value */
+
+  body {
+    background: #f5f7fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  .page-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 6px 25px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+  }
+  h3 {
+    font-weight: 700;
+    color: #0a3d62;
+  }
+  .breadcrumb-item a {
+    color: #0a3d62;
+    font-weight: 500;
+  }
+  table.dataTable thead th {
+    background: #0a3d62;
+    color: #fff;
+    text-align: center;
+  }
+  table.dataTable tbody tr:hover {
+    background-color: #eaf2f8 !important;
+  }
+  .btn {
+    border-radius: 6px;
+  }
+  .toast-body {
+    font-weight: 500;
+  }
+
+  #apiDatasetTable thead tr:nth-child(2) th {
+  background: #f9f9f9;
+  font-weight: normal;
+}
+
+
+#apiDatasetTable td:empty {
+  display: none;             /* ✅ supprime les cases vides */
+}
+
+
 </style>
 {% endblock style %}
-
 {% block content %}
+<section class="container-fluid my-5">
 
-<div class="container-fluid" style="max-width:95%;">
-    <div id="wrapper">
-        <div class="page-title lb single-wrapper">
-            <div class="page-wrapper">
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h3>
-                            Add, view and edit <b>Data Repository</b>
-                            <small class="ms-3"><a href="/"><i class="fa fa-reply"></i> Back</a></small>
-                        </h3>
-                        <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="export_to_excel_repositoring/{{by_subcomponent}}/{{end_day}}"><i class="fa fa-external-link"></i> Export filtered data</a></li>
-                            <li class="breadcrumb-item"><a href="{% url 'export_repository' %}"><i class="fa fa-file-excel-o"></i> Export all data</a></li>
-                            <li class="breadcrumb-item"><a href="{% url 'json_repository' %}"><i class="fa fa-cog"></i> API data</a></li>
-                        </ol>
-                    </div>
-                </div>
-
-                <!-- Search and Filters -->
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <form method="GET" class="d-flex">
-                            {% csrf_token %}
-                            <input class="form-control me-2" name="indicator_code" type="text" placeholder="Filter by indicator">
-                            <button type="submit" class="btn btn-success"><i class="fa fa-search"></i></button>
-                        </form>
-                    </div>
-                    <div class="col-md-6">
-                        <form method="GET" action="{% url 'datasets_repository' %}" class="row g-3">
-                            {% csrf_token %}
-                            <div class="col-md-4">
-                                {% render_field form_select_repository.by_subcomponent class+="form-control" placeholder=form_select_repository.by_subcomponent.label %}
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Start update:</label>
-                                <input type="date" name="startdate" id="startdate" class="form-control" required/>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">End update:</label>
-                                <input type="date" name="end" id="end" class="form-control" required/>
-                            </div>
-                            <div class="col-12">
-                                <button class="btn btn-primary mt-2">Filter <i class="fa fa-download"></i></button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Data Table -->
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover align-middle">
-                        <thead>
-                            <tr>
-                                <th>Country</th>
-                                <th>ISO</th>
-                                <th>Indicator name</th>
-                                <th>Indicator code</th>
-                                <th>Dim1 type</th>
-                                <th>Dim1</th>
-                                <th>Dim2 type</th>
-                                <th>Dim2</th>
-                                <th>Dim3 type</th>
-                                <th>Dim3</th>
-                                <th>Time_dim</th>
-                                <th>Alpha value</th>
-                                <th>Numeric value</th>
-                                <th>Publish date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% if not form.instance.id and user.is_authenticated %}
-                            <tr>{% include 'mytvddata/pages/repository/repositrory_dataset_save.html' %}</tr>
-                            {% endif %}
-                            {% for repositoryIndicator in repositoryIndicators %}
-                            <tr>
-                                {% if form.instance.id == repositoryIndicator.id and user.is_authenticated %}
-                                    {% include 'mytvddata/pages/repository/repositrory_dataset_save.html' %}
-                                {% else %}
-                                    <td>{{repositoryIndicator.country.name}}</td>
-                                    <td>{{repositoryIndicator.spatial_dim}}</td>
-                                    <td>{{repositoryIndicator.indicator.indicator_name}}</td>
-                                    <td>{{repositoryIndicator.indicator_code}}</td>
-                                    <td>{{repositoryIndicator.dim1_type}}</td>
-                                    <td>{{repositoryIndicator.dim1}}</td>
-                                    <td>{{repositoryIndicator.dim2_type}}</td>
-                                    <td>{{repositoryIndicator.dim2}}</td>
-                                    <td>{{repositoryIndicator.dim3_type}}</td>
-                                    <td>{{repositoryIndicator.dim3}}</td>
-                                    <td>{{repositoryIndicator.time_dim}}</td>
-                                    <td>{{repositoryIndicator.alpha_value}}</td>
-                                    <td>{{repositoryIndicator.numeric_value}}</td>
-                                    <td>{{repositoryIndicator.publish_date}}</td>
-                                    {% if user.is_authenticated %}
-                                    <td>
-                                        <button formnovalidate name="edit" value="{{repositoryIndicator.id}}" class="btn btn-primary btn-sm">Edit</button>
-                                        <button formnovalidate name="delete" value="{{repositoryIndicator.id}}" class="btn btn-danger btn-sm">Delete</button>
-                                    </td>
-                                    {% endif %}
-                                {% endif %}
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-
-            </div><!-- end page-wrapper -->
+  <!-- Toast container -->
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="toast align-items-center text-bg-{{ message.tags }} border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+          <div class="d-flex">
+            <div class="toast-body">
+              {{ message }}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+          </div>
         </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <!-- HEADER -->
+  <div class="page-card mb-4">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h3 class="fw-bold text-primary mb-2">📊 Repository Dataset</h3>
+        <p class="text-muted">Add, view and edit <b>Data Repository</b></p>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/"><i class="fa fa-reply"></i> Back</a></li>
+            <li class="breadcrumb-item"><a href="/export_to_excel_repositoring/{{by_subcomponent}}/{{end_day}}"><i class="fa fa-external-link"></i> Export filtered</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'export_repository' %}"><i class="fa fa-file-excel-o"></i> Export all</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'json_repository' %}"><i class="fa fa-cog"></i> API data</a></li>
+          </ol>
+        </nav>
+      </div>
+      <div class="col-md-4 text-end">
+        <a href="{% url 'download_repository_template' %}" class="btn btn-outline-info fw-bold me-2">
+          📥 Modèle Excel
+        </a>
+        <a href="{% url 'export_repository_to_excel' %}" class="btn btn-outline-success fw-bold me-2">
+          📤 Exporter
+        </a>
+          <a href="{% url 'import_excel_repository' %}" class="btn btn-outline-success fw-bold me-2">
+          📤 Importer
+        </a>
+ 
+      </div>
     </div>
+  </div>
+
+<form method="get" class="row g-3 mb-3">
+  <div class="col-md-3">
+    <select name="country" class="form-select">
+      <option value="">-- Filtrer par pays --</option>
+      {% for country in countries %}
+        <option name="country" value="{{ country.id }}" {% if request.GET.country == country.id|stringformat:"s" %}selected{% endif %}>
+          {{ country.name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-md-3">
+    <select name="indicator" class="form-select">
+      <option value="">-- Filtrer par indicateur --</option>
+      {% for indicator in indicators %}
+        <option value="{{ indicator.id }}" {% if request.GET.indicator == indicator.id|stringformat:"s" %}selected{% endif %}>
+          {{ indicator.indicator_name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+
+ 
+  <div class="col-md-3">
+    <button type="submit" class="btn btn-primary w-100">🔎 Rechercher</button>
+  </div>
+</form>
+
+
+  <!-- TABLE -->
+  <div class="page-card mb-4">
+  <form method="POST" action="{% url 'datasets_repository' %}">
+    {% csrf_token %}
+    <div class="table-responsive">
+      <table id="apiDatasetTable" class="table table-striped table-hover table-bordered align-middle w-100">
+        <thead class="table-light">
+          <tr>
+            <th>Country</th>
+            <th>ISO</th>
+            <th>Indicator name</th>
+            <th>Indicator code</th>
+            <th>Dim1 type</th>
+            <th>Dim1</th>
+            <th>Dim2 type</th>
+            <th>Dim2</th>
+            <th>Dim3 type</th>
+            <th>Dim3</th>
+            <th>Time_dim</th>
+            <th>Alpha value</th>
+            <th>Numeric value</th>
+            <th>Publish date</th>
+            <th colspan="2" class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if not form.instance.id %}
+          <tr>
+            {% include 'mytvddata/pages/repository/repositrory_dataset_save.html' %}
+          </tr>
+          {% endif %}
+
+          {% for repositoryIndicator in repositoryIndicators %}
+          <tr>
+            {% if form.instance.id == repositoryIndicator.id %}
+              {% include 'mytvddata/pages/repository/repositrory_dataset_save.html' %}
+            {% else %}
+              <td>{{repositoryIndicator.country.name}}</td>
+              <td>{{repositoryIndicator.spatial_dim}}</td>
+              <td>{{repositoryIndicator.indicator.indicator_name}}</td>
+              <td>{{repositoryIndicator.indicator_code}}</td>
+              <td>{{repositoryIndicator.dim1_type}}</td>
+              <td>{{repositoryIndicator.dim1}}</td>
+              <td>{{repositoryIndicator.dim2_type}}</td>
+              <td>{{repositoryIndicator.dim2}}</td>
+              <td>{{repositoryIndicator.dim3_type}}</td>
+              <td>{{repositoryIndicator.dim3}}</td>
+              <td>{{repositoryIndicator.time_dim}}</td>
+              <td>{{repositoryIndicator.alpha_value}}</td>
+              <td>{{repositoryIndicator.numeric_value}}</td>
+              <td>{{repositoryIndicator.publish_date}}</td>
+              <td><button formnovalidate name="edit" value="{{repositoryIndicator.id}}" class="btn btn-primary btn-sm">✏️ Edit</button></td>
+              <td><button formnovalidate name="delete" value="{{repositoryIndicator.id}}" class="btn btn-danger btn-sm">❌ Delete</button></td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </form>
 </div>
+
+
+                        <nav aria-label="Repository pagination">
+  <ul class="pagination justify-content-center my-4">
+    {% if page_repos.has_previous %}
+      <li class="page-item"><a class="page-link" href="?page=1">|&lt; First</a></li>
+      <li class="page-item"><a class="page-link" href="?page={{ page_repos.previous_page_number }}">&lt; Previous</a></li>
+    {% endif %}
+
+    {% for page in page_repos.paginator.page_range %}
+      {% if page_repos.number == page %}
+        <li class="page-item active"><a class="page-link" href="?page={{ page }}">{{ page }}</a></li>
+      {% elif page > page_repos.number|add:'-3' and page < page_repos.number|add:'3' %}
+        <li class="page-item"><a class="page-link" href="?page={{ page }}">{{ page }}</a></li>
+      {% endif %}
+    {% endfor %}
+
+    {% if page_repos.has_next %}
+      <li class="page-item"><a class="page-link" href="?page={{ page_repos.next_page_number }}">Next &gt;</a></li>
+      <li class="page-item"><a class="page-link" href="?page={{ page_repos.paginator.num_pages }}">Last &gt;|</a></li>
+    {% endif %}
+  </ul>
+</nav>
+
+
+
+  
+ 
+</section>
+
+
+
+
+
+{% block scripts %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+
+
+<script>
+$(document).ready(function() {
+  // Ajout des champs de recherche par colonne
+ table.columns.adjust().draw();
+
+
+
+  // ✅ Toasts Bootstrap auto
+  const toastElList = [].slice.call(document.querySelectorAll('.toast'))
+  const toastList = toastElList.map(function(toastEl) {
+    return new bootstrap.Toast(toastEl, { delay: 4000 })
+  });
+  toastList.forEach(toast => toast.show());
+});
+</script>
+{% endblock scripts %}
+
 {% endblock %}
