@@ -224,6 +224,10 @@ urlpatterns = [
 
     path("geocountries/data/", views.geocountry_data, name="geocountry_data"),
 
+    path("factsheet/", views.regional_factsheet_select, name="regional_factsheet_select"),
+    path("factsheet/<int:subcomponent_id>/", views.regional_factsheet_results, name="regional_factsheet_results"),
+    path("factsheet/<int:subcomponent_id>/export_word/", views.export_regional_factsheet_word, name="export_regional_factsheet_word"),
+
 
 ]
 
