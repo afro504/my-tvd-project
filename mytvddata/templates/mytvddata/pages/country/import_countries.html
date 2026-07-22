@@ -8,7 +8,7 @@
 {% block content %}
 
 
-    <h1 class="mb-4">Importer les données JSON des pays</h1>
+    <h1 class="mb-4">Import JSON country data</h1>
 
     {% if messages %}
         <div>
@@ -23,11 +23,11 @@
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="mb-3">
-            <label for="json_file" class="form-label">Choisir un fichier JSON externe :</label>
+            <label for="json_file" class="form-label">Choose an external JSON file:</label>
             <input type="file" name="json_file" id="json_file" class="form-control" accept=".json">
         </div>
         <button type="submit" class="btn btn-primary">
-            Importer maintenant
+            Import JSON data
         </button>
     </form>
 {% endblock %}

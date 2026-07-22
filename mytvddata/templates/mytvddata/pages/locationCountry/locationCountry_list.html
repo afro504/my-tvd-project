@@ -1,0 +1,170 @@
+{% extends "mytvddata/cover/base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>List of countries</h2>
+
+  <!-- Recherche Ajax -->
+
+
+  <form id="search-form" class="input-group mb-3">
+    <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="🔍 Rechercher un pays...">
+    <button type="submit" class="btn btn-primary">
+        <i class="fa-solid fa-search"></i> Search
+    </button>
+</form>
+
+
+  <!-- Boutons export -->
+  <div class="mb-3">
+    <a href="{% url 'export_json_geocountry' %}" class="btn btn-success"><i class="fa-solid fa-download"></i> Export JSON</a>
+    <a href="{% url 'export_csv_geocountry' %}" class="btn btn-info"><i class="fa-solid fa-file-csv"></i> Export CSV</a>
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createModal"><i class="fa-solid fa-plus"></i> Add Country</button>
+  </div>
+
+  <!-- Conteneur Ajax -->
+  <div id="country-table">
+    {% include "mytvddata/pages/locationCountry/_country_table.html" %}
+  </div>
+</div>
+
+<!-- Modal Create -->
+<div class="modal fade" id="createModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'geocountry_create' %}" class="ajax-form">
+        {% csrf_token %}
+        <div class="modal-header"><h5 class="modal-title">Add a country</h5></div>
+        <div class="modal-body">
+          <input type="text" name="iso3" placeholder="ISO3" class="form-control mb-2">
+          <input type="text" name="name" placeholder="Nom du pays" class="form-control mb-2">
+          <input type="number" step="any" name="latitude" placeholder="Latitude" class="form-control mb-2">
+          <input type="number" step="any" name="longitude" placeholder="Longitude" class="form-control mb-2">
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">💾 Save</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Update (réutilisable) -->
+<div class="modal fade" id="updateModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="update-form" method="post" class="ajax-form">
+        {% csrf_token %}
+        <div class="modal-header"><h5 class="modal-title">Edit country</h5></div>
+        <div class="modal-body">
+          <input type="hidden" id="update-id">
+          <input type="text" id="update-iso3" name="iso3" class="form-control mb-2">
+          <input type="text" id="update-name" name="name" class="form-control mb-2">
+          <input type="number" step="any" id="update-lat" name="latitude" class="form-control mb-2">
+          <input type="number" step="any" id="update-lng" name="longitude" class="form-control mb-2">
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">💾 Save</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Delete (réutilisable) -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="delete-form" method="post" class="ajax-form">
+        {% csrf_token %}
+        <div class="modal-header"><h5 class="modal-title">Delete</h5></div>
+        <div class="modal-body"><p id="delete-text"></p></div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-danger">🗑️ Delete</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // Recherche Ajax
+  document.getElementById("search-form").addEventListener("submit", function(e) {
+    e.preventDefault();
+    let formData = new FormData(this);
+    fetch("{% url 'geocountry_list' %}?q=" + formData.get("q"), {
+      headers: {"x-requested-with": "XMLHttpRequest"}
+    })
+    .then(r => r.text())
+    .then(html => { document.getElementById("country-table").innerHTML = html; });
+  });
+
+  // Pagination Ajax
+  document.addEventListener("click", function(e) {
+    if (e.target.classList.contains("page-link")) {
+      e.preventDefault();
+      fetch(e.target.href, {headers: {"x-requested-with": "XMLHttpRequest"}})
+      .then(r => r.text())
+      .then(html => { document.getElementById("country-table").innerHTML = html; });
+    }
+  });
+
+  // Update modal
+  document.addEventListener("click", function(e) {
+    if (e.target.classList.contains("edit-btn")) {
+      let btn = e.target.closest("button");
+      document.getElementById("update-id").value = btn.dataset.id;
+      document.getElementById("update-iso3").value = btn.dataset.iso3;
+      document.getElementById("update-name").value = btn.dataset.name;
+      document.getElementById("update-lat").value = btn.dataset.lat;
+      document.getElementById("update-lng").value = btn.dataset.lng;
+      document.getElementById("update-form").action = "/geocountries/" + btn.dataset.id + "/update/";
+    }
+  });
+
+  // Delete modal
+  document.addEventListener("click", function(e) {
+    if (e.target.classList.contains("delete-btn")) {
+      let btn = e.target.closest("button");
+      document.getElementById("delete-text").innerText = "Voulez-vous supprimer " + btn.dataset.name + " ?";
+      document.getElementById("delete-form").action = "/geocountries/" + btn.dataset.id + "/delete/";
+    }
+  });
+
+  // CRUD Ajax
+  document.addEventListener("submit", function(e) {
+    if (e.target.classList.contains("ajax-form")) {
+      e.preventDefault();
+      fetch(e.target.action, {method: "POST", body: new FormData(e.target)})
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          // Recharge la table Ajax
+          fetch("{% url 'geocountry_list' %}", {headers: {"x-requested-with": "XMLHttpRequest"}})
+          .then(r => r.text())
+          .then(html => { document.getElementById("country-table").innerHTML = html; });
+          bootstrap.Modal.getInstance(e.target.closest(".modal")).hide();
+        } else {
+          alert("Erreur: " + JSON.stringify(data.errors));
+        }
+      });
+    }
+  });
+});
+</script>
+{% endblock scripts %}
+
+
+
+
+
+
+
+
+
+
+

@@ -170,10 +170,10 @@ footer {
         <form method="post" enctype="multipart/form-data" action="{% url 'staff_import_xlsx' %}">
             {% csrf_token %}
             <input type="file" name="file" class="form-control d-inline-block" style="width:220px;">
-            <button type="submit" class="btn btn-success">📥 Importer XLSX</button>
+            <button type="submit" class="btn btn-success">📥 Import XLSX</button>
         </form>
-        <a href="{% url 'staff_export_xlsx' %}" class="btn btn-info">📤 Exporter XLSX</a>
-        <a href="{% url 'staff_template_xlsx' %}" class="btn btn-danger">🗂 Télécharger Modèle XLSX</a>
+        <a href="{% url 'staff_export_xlsx' %}" class="btn btn-info">📤 Export XLSX</a>
+        <a href="{% url 'staff_template_xlsx' %}" class="btn btn-danger">🗂 Download XLSX Template</a>
     </div>
 </div>
 
@@ -191,7 +191,7 @@ footer {
     <div class="col-md-3 mb-2">
         <div class="card bg-success text-white shadow-sm">
             <div class="card-body">
-                <h5>Pays Représentés</h5>
+                <h5>Countries Represented</h5>
                 <h2>{{ countries|length }}</h2>
                 <p>Country : {{ countries|join:", " }}</p>
             </div>
@@ -200,7 +200,7 @@ footer {
     <div class="col-md-3 mb-2">
         <div class="card bg-purple text-white shadow-sm">
             <div class="card-body">
-                <h5>Langues Parlées</h5>
+                <h5>Languages Spoken</h5>
                 <h2>{{ languages|length }}</h2>
                 <small>Langues : {{ languages|join:", " }}</small>
             </div>
@@ -209,7 +209,7 @@ footer {
     <div class="col-md-3 mb-2">
         <div class="card bg-warning text-white shadow-sm">
             <div class="card-body">
-                <h5>Domaines de Santé</h5>
+                <h5>Health Domains</h5>
                  <h2>{{ diseases|length }}</h2>
                 <small>{{ diseases|join:", " }}</small>
             </div>
@@ -223,34 +223,34 @@ footer {
   <div class="card-body">
     <form method="get" class="row g-3 align-items-end">
       <div class="col-md-3">
-        <label for="country" class="form-label">Filtrer par Pays</label>
+        <label for="country" class="form-label">Filter by Country</label>
         <select name="country" id="country" class="form-select">
-          <option value="">-- Tous --</option>
+          <option value="">-- All --</option>
           {% for c in countries %}
             <option value="{{ c }}" {% if request.GET.country == c %}selected{% endif %}>{{ c }}</option>
           {% endfor %}
         </select>
       </div>
       <div class="col-md-3">
-        <label for="language" class="form-label">Filtrer par Langue</label>
+        <label for="language" class="form-label">Filter by Language</label>
         <select name="language" id="language" class="form-select">
-          <option value="">-- Toutes --</option>
+          <option value="">-- All --</option>
           {% for l in languages %}
             <option value="{{ l }}" {% if request.GET.language == l %}selected{% endif %}>{{ l }}</option>
           {% endfor %}
         </select>
       </div>
       <div class="col-md-3">
-        <label for="disease" class="form-label">Filtrer par Maladie</label>
+        <label for="disease" class="form-label">Filter by Disease</label>
         <select name="disease" id="disease" class="form-select">
-          <option value="">-- Toutes --</option>
+          <option value="">-- All --</option>
           {% for d in diseases %}
             <option value="{{ d }}" {% if request.GET.disease == d %}selected{% endif %}>{{ d }}</option>
           {% endfor %}
         </select>
       </div>
       <div class="col-md-3">
-        <button type="submit" class="btn btn-primary w-100">🔍 Rechercher</button>
+        <button type="submit" class="btn btn-primary w-100">🔍 Search</button>
       </div>
     </form>
   </div>
@@ -259,17 +259,17 @@ footer {
 <!-- TABLEAU -->
 <div class="card shadow-lg">
     <div class="card-header bg-light">
-        <h4 class="fw-bold mb-0">Liste du Staff</h4>
+        <h4 class="fw-bold mb-0">List of Staff</h4>
     </div>
     <div class="card-body">
         <table class="table table-hover align-middle">
             <thead class="table-primary">
                 <tr>
-                    <th>Nom</th>
+                    <th>Name</th>
                     <th>Email</th>
-                    <th>Pays</th>
-                    <th>Langues</th>
-                    <th>Maladies</th>
+                    <th>Countries</th>
+                    <th>Languages</th>
+                    <th>Diseases</th>
                     <th>Position</th>
                     <th>Actions</th>
                 </tr>
@@ -305,18 +305,18 @@ footer {
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title">⚠️ Confirmation de suppression</h5>
+        <h5 class="modal-title">⚠️ Delete Confirmation</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <p id="delete-message">Êtes-vous sûr de vouloir supprimer cet élément ?</p>
+        <p id="delete-message">Are you sure you want to delete this item?</p>
       </div>
       <div class="modal-footer">
         <form method="post" id="delete-form">
           {% csrf_token %}
-          <button type="submit" class="btn btn-danger">🗑️ Supprimer définitivement</button>
+          <button type="submit" class="btn btn-danger">🗑️ Delete Permanently</button>
         </form>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
       </div>
     </div>
   </div>

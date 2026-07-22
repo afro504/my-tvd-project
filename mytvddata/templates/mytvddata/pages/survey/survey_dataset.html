@@ -62,24 +62,24 @@
 
                         <!-- Header -->
                         <div class="content-header mb-4">
-                            <h2 class="caption">Gestion des données SurveyDataset</h2>
+                            <h2 class="caption">Survey Dataset Management</h2>
                             <h3>
-                                Ajouter, consulter et modifier <b>les données d’enquête</b>
-                                <small class="text-muted">Affichage</small>
+                                <b>Add, View, and Edit Survey Data</b>
+                                <small class="text-muted">Display</small>
                             </h3>
                         </div>
 
                         <!-- Actions Import/Export -->
                         <div class="mb-3 d-flex gap-2">
                             <a href="{% url 'download_survey_template' %}" class="btn btn-outline-primary">
-                                <i class="fa fa-download"></i> Télécharger modèle Excel
+                                <i class="fa fa-download"></i> Download Excel Template
                             </a>
 
                             <a href="{% url 'export_to_excel' %}" class="btn btn-outline-info">
-                                <i class="fa fa-file-excel"></i> Exporter données Excel
+                                <i class="fa fa-file-excel"></i> Export Data to Excel
                             </a>
                             <button class="btn btn-outline-success" data-bs-toggle="collapse" data-bs-target="#importForm">
-                                <i class="fa fa-upload"></i> Importer données Excel
+                                <i class="fa fa-upload"></i> Import Excel Data
                             </button>
                         </div>
 
@@ -94,7 +94,7 @@
                                         </div>
                                         <div class="col-md-4 d-grid">
                                             <button type="submit" class="btn btn-success fw-bold">
-                                                <i class="fa fa-eye"></i> Prévisualiser
+                                                <i class="fa fa-eye"></i> Preview
                                             </button>
                                         </div>
                                     </div>
@@ -106,7 +106,7 @@
                         {% if preview_data %}
                         <div class="card mb-4">
                             <div class="card-header bg-light fw-bold">
-                                Prévisualisation des données importées
+                                Preview of Imported Data
                             </div>
                             <div class="card-body table-responsive">
                                 <table class="table table-sm table-bordered">
@@ -115,8 +115,8 @@
                                             <th>Survey Title</th>
                                             <th>Question Code</th>
                                             <th>Question</th>
-                                            <th>Réponse (Texte)</th>
-                                            <th>Réponse (Numérique)</th>
+                                            <th>Response (Text)</th>
+                                            <th>Response (Numeric)</th>
                                             <th>Zone 1</th>
                                             <th>Zone 2</th>
                                         </tr>
@@ -138,7 +138,7 @@
                                 <form method="POST" action="{% url 'confirm_import_survey' %}">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-primary">
-                                        <i class="fa fa-check"></i> Confirmer importation
+                                        <i class="fa fa-check"></i> Confirm Import
                                     </button>
                                 </form>
                             </div>
@@ -148,14 +148,14 @@
                         <!-- Rapport -->
                        {% if import_report %}
                         <div class="alert alert-secondary">
-                            <h5>Rapport d’importation</h5>
-                            <p>Total lignes traitées : {{ import_report.total }}</p>
-                            <p>Lignes insérées : {{ import_report.inserted }}</p>
-                            <p>Erreurs : {{ import_report.errors }}</p>
+                            <h5>Import Report</h5>
+                            <p>Total lines processed : {{ import_report.total }}</p>
+                            <p>Lines inserted : {{ import_report.inserted }}</p>
+                            <p>Errors : {{ import_report.errors }}</p>
 
-                            <!-- ✅ Bouton Export -->
+                            <!-- ✅ Button Export -->
                             <a href="{% url 'export_surveyimport_report' %}" class="btn btn-outline-primary mt-2">
-                                <i class="fa fa-file-excel"></i> Exporter le rapport en Excel
+                                <i class="fa fa-file-excel"></i> Export Report to Excel
                             </a>
                         </div>
                         {% endif %}
@@ -163,7 +163,7 @@
                         {% if report_data %}
 <div class="card mt-4">
     <div class="card-header bg-light fw-bold">
-        Détail du rapport d’importation
+        Detail of the import report
     </div>
     <div class="card-body table-responsive">
         <table class="table table-sm table-bordered table-hover">
@@ -174,8 +174,8 @@
                     <th>Survey Project</th>
                     <th>Code Question</th>
                     <th>Question</th>
-                    <th>Réponse (Texte)</th>
-                    <th>Réponse (Numérique)</th>
+                    <th>Response (Text)</th>
+                    <th>Response (Numeric)</th>
                     <th>Zone 1</th>
                     <th>Zone 2</th>
                 </tr>
@@ -200,10 +200,10 @@
         <!-- Boutons Export -->
         <div class="mt-3">
             <a href="{% url 'export_surveyimport_report' %}" class="btn btn-outline-primary">
-                <i class="fa fa-file-excel"></i> Exporter rapport en Excel
+                <i class="fa fa-file-excel"></i> Export Report to Excel
             </a>
             <a href="{% url 'export_import_report_pdf' %}" class="btn btn-outline-danger">
-                <i class="fa fa-file-pdf"></i> Exporter rapport en PDF
+                <i class="fa fa-file-pdf"></i> Export Report to PDF
             </a>
         </div>
     </div>
@@ -219,8 +219,8 @@
                             <th>Survey Title</th>
                             <th>Question Code</th>
                             <th>Question</th>
-                            <th>Réponse (Texte)</th>
-                            <th>Réponse (Numérique)</th>
+                            <th>Response (Text)</th>
+                            <th>Response (Numeric)</th>
                             <th>Zone 1</th>
                             <th>Zone 2</th>
                             <th>Actions</th>

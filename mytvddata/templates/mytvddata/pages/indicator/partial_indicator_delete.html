@@ -1,9 +1,26 @@
-
-
+{% load crispy_forms_tags %}
 
 <form method="post" class="js-indicator-delete-form" action="{% url 'delete_indicator' indicator.pk %}">
   {% csrf_token %}
-  <p>Are you sure you want to delete <strong>{{ indicator.indicator_name }}</strong>?</p>
-  <button type="submit" class="btn btn-danger">Yes, delete</button>
-  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+  <div class="modal-header bg-danger text-white">
+    <h5 class="modal-title">
+      <i class="fa fa-trash me-2"></i> Delete Indicator
+    </h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+
+  <div class="modal-body">
+    <p class="fs-5">
+      Are you sure you want to delete the indicator <strong>{{ indicator.indicator_name }}</strong>?
+    </p>
+  </div>
+
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+      <i class="fa fa-times"></i> Cancel
+    </button>
+    <button type="submit" class="btn btn-danger">
+      <i class="fa fa-trash"></i> Delete
+    </button>
+  </div>
 </form>

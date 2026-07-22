@@ -49,6 +49,7 @@ urlpatterns = [
     path('indicators/import/', views.import_indicator, name='import_indicator'),
     path('indicators/import/preview/', views.import_preview, name='import_preview'),
     path('indicators/import/confirm/', views.confirm_import, name='confirm_import'),
+    path("download_indicator_template/", views.download_indicator_template, name="download_indicator_template"),
 
 
 
@@ -156,7 +157,7 @@ urlpatterns = [
     # REPORT / DOCUMENTS
     # =========================
     path('report_upload/', views.report_upload, name='report_upload'),
-    path('views_report/', views.views_report, name='views_report'),
+    path('views_report', views.views_report, name='views_report'),
     path('index_report/', views.index_report, name='index_report'),
  
     path('edit_report/<int:pk>/', views.edit_report, name='edit_report'),
@@ -190,6 +191,9 @@ urlpatterns = [
 
 
      # Tableau de bord pays
+     # Liste des pays
+    path("country_list_dashboard/", views.country_list_dashboard, name="country_list_dashboard"),
+
     path("country/<int:pk>/dashboard/", views.country_dashboard, name="country_dashboard"),
 
     # Export PDF
@@ -202,6 +206,25 @@ urlpatterns = [
     ### SURVEY
     path("upload_datasurvey/", views.upload_datasurvey, name="upload_datasurvey"),
     path("surveys/", views.survey_datalist, name="survey_datalist"),
+
+    # ✅ COUNTRY LOCATION
+    path("geocountry_list/", views.geocountry_list, name="geocountry_list"),
+    path("geocountry_import_json/", views.geocountry_import_json, name="geocountry_import_json"),
+    path("geocountry_preview/", views.geocountry_preview, name="geocountry_preview"),
+    path("geocountry_sync_to_db/", views.geocountry_sync_to_db, name="geocountry_sync_to_db"),
+
+    # ✅ CRUD LOCATION COUNTRY
+    path("geocountries/create/", views.geocountry_create, name="geocountry_create"),
+    path("geocountries/<int:pk>/update/", views.geocountry_update, name="geocountry_update"),
+    path("geocountries/<int:pk>/delete/", views.geocountry_delete, name="geocountry_delete"),
+
+    # ✅ EXPORT
+    path("geocountries/export-json/", views.export_json_geocountry, name="export_json_geocountry"),
+    path("geocountries/export-csv/", views.export_csv_geocountry, name="export_csv_geocountry"),
+
+    path("geocountries/data/", views.geocountry_data, name="geocountry_data"),
+
+
 ]
 
  

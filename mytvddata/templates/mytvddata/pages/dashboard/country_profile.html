@@ -3,53 +3,76 @@
 {% load widget_tweaks %}
 {% load crispy_forms_tags %}
 {% load crispy_forms_field %}
+{% load custom_filters %}
+
+
+
+{% block style %}
+    
+    <link rel="stylesheet" href="{% static 'mytvddata/css/dashboard.css' %}">
+
+    <!-- CSS impression -->
+    <style>
+        .page-break { page-break-after: always; }
+        @media print {
+            .btn, .breadcrumb { display: none; }
+        }
+    </style>
+{% endblock style %}
 
 {% block content %}
 <div class="container-fluid my-4">
 
     <!-- Menu d’export -->
     <div class="d-flex justify-content-end mb-3">
-       
-        <a href="{% url 'mytvddata:country_dashboard_word' country.pk %}" class="btn btn-primary">
-            📝 Exporter en Word
+        <a href="{% url 'country_dashboard_word' country.pk %}" class="btn btn-primary">
+            📝 Export to Word
         </a>
     </div>
 
     <!-- PAGE 1 : Profil du pays -->
     <div class="page-break">
-        <h2 class="fw-bold text-primary">{{ country.name }} ({{ country.cca3 }})</h2>
+        <h2 class="fw-bold text-primary">{{ country.name }} ({{ country.cca3 }})
+            <span class="fi fi-{{ country.flag|lower }} mb-3" style="font-size:3rem;"></span>
+        </h2>
         <div class="row">
             <div class="col-md-4">
-                <img src="{{ country.flag }}" alt="Drapeau" class="img-fluid shadow-sm">
+                <!-- Carte Google Maps -->
+                {% if resolved_url %}
+                    {{ map_html|safe }}
+                {% else %}
+                    <p class="text-muted">Map not available</p>
+                {% endif %}
             </div>
+
             <div class="col-md-8">
                 <ul class="list-group">
-                    <li class="list-group-item"><strong>Nom officiel :</strong> {{ country.official }}</li>
-                    <li class="list-group-item"><strong>Capitale :</strong> {{ country.capital }}</li>
-                    <li class="list-group-item"><strong>Sous-région :</strong> {{ country.subregion }}</li>
-                    <li class="list-group-item"><strong>Superficie :</strong> {{ country.area }} km²</li>
+                    <li class="list-group-item"><strong>Official name :</strong> {{ country.official }}</li>
+                    <li class="list-group-item"><strong>Capital :</strong> {{ country.capital }}</li>
+                    <li class="list-group-item"><strong>Subregion :</strong> {{ country.subregion }}</li>
+                    <li class="list-group-item"><strong>Area / Surface :</strong> {{ country.area }} km²</li>
                     <li class="list-group-item"><strong>Population :</strong> {{ country.population|floatformat:0 }}</li>
-                    <li class="list-group-item"><strong>Langues :</strong> {{ country.languages }}</li>
-                    <li class="list-group-item"><strong>Classe :</strong> {{ country.country_class }}</li>
+                    <li class="list-group-item"><strong>Languages :</strong> {{ country.languages }}</li>
+                    <li class="list-group-item"><strong>Class :</strong> {{ country.country_class }}</li>
                 </ul>
-                <a href="{{ country.maps }}" target="_blank" class="btn btn-info mt-3">🌍 Voir la carte</a>
+                <a href="{{ country.maps }}" target="_blank" class="btn btn-info mt-3">🌍 View map</a>
             </div>
         </div>
     </div>
 
     <!-- PAGE 2 : Indicateurs -->
     <div class="page-break mt-5">
-        <h3 class="fw-bold text-secondary">📊 Résultats des indicateurs</h3>
+        <h3 class="fw-bold text-secondary">📊 Results of indicators</h3>
         <table class="table table-striped table-hover">
             <thead class="table-dark">
                 <tr>
-                    <th>Composant</th>
-                    <th>Sous-composant</th>
-                    <th>Indicateur</th>
-                    <th>Catégorie</th>
-                    <th>Performance</th>
-                    <th>Valeur</th>
-                    <th>Date</th>
+                    <th scope="col">Component</th>
+                    <th scope="col">Subcomponent</th>
+                    <th scope="col">Indicator</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Performance</th>
+                    <th scope="col">Value</th>
+                    <th scope="col">Date</th>
                 </tr>
             </thead>
             <tbody>
@@ -64,19 +87,80 @@
                     <td>{{ data.date }}</td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="7" class="text-center text-muted">Aucune donnée disponible</td></tr>
+                <tr><td colspan="7" class="text-center text-muted">No data available</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
-</div>
 
-<!-- CSS impression -->
-<style>
-.page-break { page-break-after: always; }
-@media print {
-    .btn, .breadcrumb { display: none; }
-}
-</style>
+</div>
+{% for section in dashboard_data %}
+  <h2>{{ section.subcomponent.subcomponent_name }}</h2>
+  <table class="table table-striped table-bordered">
+    <thead class="table-primary">
+      <tr>
+        <th>Indicator</th>
+        <th>Target</th>
+        {% for year in all_years %}
+          <th>{{ year }}</th>
+        {% endfor %}
+         <th>Variation (%)</th>
+         <th>Source</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ind in section.indicators %}
+        <tr>
+          <td>{{ ind.indicator.indicator_name }}</td>
+          <td>{{ ind.indicator.indicator_target }}</td>
+          {% for year in all_years %}
+            {% with res=ind.results|get_result_for_year:year %}
+              {% if res %}
+                <td>{{ res.numeric_value }}</td>
+              {% else %}
+                <td>-</td>
+              {% endif %}
+            {% endwith %}
+          {% endfor %}
+              <td>
+            {% if ind.variation is not None %}
+                {% if ind.performance == "low" and ind.category == "prevalence,Death,incidence" %}
+                <span class="badge bg-success">
+                    <i class="fas fa-arrow-up"></i>
+                    {{ ind.variation|floatformat:2 }} %
+                </span>
+                {% elif ind.variation > 0 %}
+                <span class="badge bg-danger">
+                    <i class="fas fa-arrow-up"></i>
+                
+                
+                    +{{ ind.variation|floatformat:2 }} %
+                </span>
+                {% elif ind.variation < 0 %}
+                <span class="badge bg-success">
+                     <i class="fas fa-arrow-down"></i>
+                    {{ ind.variation|floatformat:2 }} %
+                </span>
+                
+                {% else %}
+                <span class="badge bg-secondary">
+                    <i class="fas fa-minus"></i>
+                    {{ ind.variation|floatformat:2 }} %
+                </span>
+                {% endif %}
+            {% else %}
+                <span class="badge bg-light text-dark">-</span>
+            {% endif %}
+            </td>
+             <td><a href="{{ind.data_source}}" target="_blank" class="text-primary">Link</a></td>
+            
+
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endfor %}
+
 {% endblock %}
+

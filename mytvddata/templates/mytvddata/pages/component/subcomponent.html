@@ -71,7 +71,7 @@
                                                                 data-bs-target="#deleteModal"
                                                                 data-id="{{ subcomponent.id }}"
                                                                 data-name="{{ subcomponent.subcomponent_name }}">
-                                                            🗑️ Supprimer
+                                                            🗑️ Delete
                                                         </button>
                                                     
                                                  
@@ -88,21 +88,21 @@
                             <div class="modal-dialog modal-dialog-centered">
                                 <div class="modal-content">
                                 <div class="modal-header bg-danger text-white">
-                                    <h5 class="modal-title">⚠️ Confirmation de suppression</h5>
+                                    <h5 class="modal-title">⚠️ Delete Confirmation</h5>
                                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body">
-                                    <p>Êtes-vous sûr de vouloir supprimer <strong id="subcomponentName"></strong> ?</p>
-                                    <p class="text-muted">Cette action est irréversible.</p>
+                                    <p>Are you sure you want to delete? <strong id="subcomponentName"></strong> ?</p>
+                                    <p class="text-muted">This action is irreversible</p>
                                 </div>
                                 <div class="modal-footer">
                                     <!-- 🔧 Correction ici : utiliser subcomponent_add -->
                                     <form method="POST" action="{% url 'subcomponent_add' %}">
                                     {% csrf_token %}
                                     <input type="hidden" name="delete" id="subcomponentId">
-                                    <button type="submit" class="btn btn-danger">🗑️ Supprimer définitivement</button>
+                                    <button type="submit" class="btn btn-danger">🗑️ Permanently Delete</button>
                                     </form>
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                                 </div>
                                 </div>
                             </div>

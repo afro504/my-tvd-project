@@ -7,6 +7,6 @@
         {% csrf_token %}
         {{ form.as_p }}
         <button type="submit" class="btn btn-primary">{% if form.instance.pk %}Mettre à jour{% else %}Créer{% endif %}</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
     </form>
 </div>

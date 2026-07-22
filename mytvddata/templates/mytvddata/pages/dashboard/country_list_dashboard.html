@@ -1,0 +1,48 @@
+{% extends "mytvddata/cover/base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container my-4">
+    <h2 class="fw-bold text-primary">🌍 Select a country</h2>
+
+    <!-- Barre de recherche -->
+    <div class="mb-4">
+        <input type="text" id="searchInput" class="form-control" placeholder="🔎 Rechercher un pays...">
+    </div>
+
+    <div class="row" id="countryList">
+    {% for country in countries %}
+    <div class="col-md-3 mb-4 country-card">
+        <div class="card shadow-sm h-100 text-center">
+            <!-- Drapeau basé sur le code -->
+            <span class="fi fi-{{ country.flag|lower }} mb-3" style="font-size:3rem;"></span>
+            
+            <div class="card-body">
+                <h5 class="card-title">{{ country.name }}</h5>
+                <a href="{% url 'country_dashboard' country.pk %}" class="btn btn-outline-primary btn-sm">
+                    View profile
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p class="text-muted"> No country available</p>
+    {% endfor %}
+</div>
+
+</div>
+
+<!-- Script JS pour filtrer -->
+<script>
+document.getElementById("searchInput").addEventListener("keyup", function() {
+    let filter = this.value.toLowerCase();
+    let cards = document.querySelectorAll("#countryList .country-card");
+
+    cards.forEach(card => {
+        let title = card.querySelector(".card-title").textContent.toLowerCase();
+        card.style.display = title.includes(filter) ? "" : "none";
+    });
+});
+</script>
+{% endblock %}

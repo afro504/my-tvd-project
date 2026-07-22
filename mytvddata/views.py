@@ -60,11 +60,11 @@ from .forms import (
     DocSaveForm, ReportSaveForm, SurveyProjectForm,
     SelectUrlForm, SurveyDatasetForm, SelectSurveyForm,
     RepositoryIndicatorForm, WarehouseScriptForm,SelectUrlForms,
-    S_table_nameForm, RepositoryUploadForm,
-    SelectRepositoryForm, UploadExcelForm,
+    S_table_nameForm, RepositoryUploadForm,LocationCountryForm,
+    SelectRepositoryForm, UploadExcelForm,SurveyUploadForm,
     SelectAPIForm, StoreAPIForm,  ApiFieldSelectionForm,StaffMemberForm
 )
- 
+
 # =========================
 # EXTERNAL LIBRARIES
 # =========================
@@ -141,39 +141,84 @@ def coverPage(request):
     """
     Affiche une carte Folium avec les localisations depuis la base de données
     """
- 
-    # ✅ Création de la carte
+     # Création de la carte centrée sur l’Afrique
     m = folium.Map(
-        location=(-8.783195, 34.508523),
-        zoom_start=3,
+        location=[0.0, 20.0],
+        zoom_start=4,
         tiles="cartodb positron",
         scrollWheelZoom=True
     )
- 
+
     folium.LayerControl().add_to(m)
- 
-    # ✅ Récupération des données (optimisée)
-    locations = LocationCountry.objects.only('name', 'latitude', 'longitude')
- 
-    # ✅ Ajout des markers
+
+    # ✅ Récupération des localisations
+    locations = LocationCountry.objects.all()
+
+    # ✅ Ajout des markers avec redirection immédiate
     for location in locations:
         if location.latitude and location.longitude:
-            folium.Marker(
-                location=(location.latitude, location.longitude),
-                popup=f"<b>{location.name}</b><br>Lat: {location.latitude}, Lon: {location.longitude}",
-                tooltip=location.name
-            ).add_to(m)
- 
-    # ✅ Conversion en HTML (IMPORTANT : en dehors de la boucle)
+            try:
+                country = Country.objects.get(cca3=location.iso3)
+                url = request.build_absolute_uri(
+                    reverse('country_dashboard', args=[country.pk])
+                )
+
+                # Injection JS pour redirection au clic
+                js = f"""
+                    <script>
+                        var marker = L.marker([{location.latitude}, {location.longitude}]).addTo({m.get_name()});
+                        marker.bindTooltip("{location.name}");
+                        marker.on('click', function() {{
+                            window.location.href = '{url}';
+                        }});
+                    </script>
+                """
+                m.get_root().html.add_child(folium.Element(js))
+
+                # Optionnel : popup plus grand avec bouton
+                popup_html = f"""
+                    <div style="width:250px; height:100px;">
+                        <b>{location.name}</b><br>
+                        <a href='{url}' class='btn btn-outline-primary btn-sm'>View profile</a>
+                    </div>
+                """
+                folium.Marker(
+                    location=(location.latitude, location.longitude),
+                    popup=folium.Popup(popup_html, max_width=100),
+                    tooltip=location.name#,
+                   # icon=folium.Icon(color="blue", icon="globe", prefix="fa")
+                ).add_to(m)
+
+            except Country.DoesNotExist:
+                folium.Marker(
+                    location=(location.latitude, location.longitude),
+                    tooltip=location.name,
+                    icon=folium.Icon(color="gray", icon="globe", prefix="fa")
+                ).add_to(m)
+
+    # ✅ Conversion en HTML
     map_html = m._repr_html_()
+
+    # Distincts pour statistiques
+    all_countries = [c.name for c in Country.objects.all()]
+    distinct_countries = set(all_countries)
+
+    all_indicators = [i.indicator_code for i in Indicator.objects.all()]
+    distinct_indicators = set(all_indicators)
+
+    all_reportSave = [r.title_rep for r in ReportSave.objects.all()]
+    distinct_reportSave = set(all_reportSave)
  
     context = {
-        'm': map_html
+        'm': map_html,
+        'distinct_countries': len(distinct_countries),
+        'distinct_indicators': len(distinct_indicators),
+        'distinct_reportSave': len(distinct_reportSave)
     }
  
     return render(request, 'mytvddata/cover/index.html', context)
 
- 
+
 # =========================
 # SIGNUP VIEW
 # =========================
@@ -542,24 +587,44 @@ def create_indicator(request):
     return save_indicator_form(request, form, 'mytvddata/pages/indicator/partial_indicator_create.html')
 
 
+
+
 @login_required
 def update_indicator(request, pk):
 
     indicator = get_object_or_404(Indicator, pk=pk)
+    data = dict()
 
     if request.method == 'POST':
         form = IndicatorForm(request.POST, instance=indicator)
-
+        if form.is_valid():
+            form.save()
+            data['form_is_valid'] = True
+            indicators = Indicator.objects.select_related('subcomponent')
+            data['html_indicator_list'] = render_to_string(
+                'mytvddata/pages/indicator/partial_indicator_list.html',
+                {'indicators': indicators},
+                request=request
+            )
+        else:
+            data['form_is_valid'] = False
     else:
         form = IndicatorForm(instance=indicator)
-    return save_indicator_form(request, form, 'mytvddata/pages/indicator/partial_indicator_update.html')
+
+    context = {'form': form, 'indicator': indicator}
+    data['html_form'] = render_to_string(
+        'mytvddata/pages/indicator/partial_indicator_update.html',
+        context,
+        request=request
+    )
+    return JsonResponse(data)
 
 
 @login_required
 def delete_indicator(request, pk):
 
     indicator = get_object_or_404(Indicator, pk=pk)
-    data = {}
+    data = dict()
 
     if request.method == 'POST':
         indicator.delete()
@@ -581,7 +646,7 @@ def delete_indicator(request, pk):
             request=request
         )
 
-        return JsonResponse(data)
+    return JsonResponse(data)
 
 
 
@@ -820,6 +885,25 @@ def confirm_import(request):
         del request.session['import_content']
 
     return redirect('list_indicator')
+
+
+
+
+
+# Télécharger modèle Excel
+def download_indicator_template(request):
+    df = pd.DataFrame(columns=[
+        "ID", "Code", "Name", "Description",
+            "Target", "Metric", "Unit",
+            "Frequency", "Type", "Source",
+            "Subcomponent", "Category",
+            "Forecast", "Performance", "Ref Data"
+    ])
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response["Content-Disposition"] = 'attachment; filename="indicator_template.xlsx"'
+    df.to_excel(response, index=False)
+    return response
+
 
 
 # CREATE VIEWS FOR SCRIPTS TABLE------------------------------------
@@ -2844,10 +2928,7 @@ def docSave_upload(request):
 
 ## METHOD EXPORT THE FILTERING DATA UNIT IN EXCEL FORMAT
 def export_to_excel_API(request,by_indicator,end_day):
-    #startdate
-    """
-    Une vue Django qui prend l'objet request et trois autres paramètres.
-    """
+   
  #Q(subcomponent_indicator__indicator_repository__publish_date__gte=start_day)&
        
    # sub_component=StoreAPI.objects.get(indicator_code=by_indicator)
@@ -3558,24 +3639,155 @@ def staff_template_xlsx(request):
 
 ## DASHBOARD
 
+
+def country_list_dashboard(request):
+    countries = Country.objects.all().order_by('name')
+    return render(request, 'mytvddata/pages/dashboard/country_list_dashboard.html', {'countries': countries})
+
+
 def country_dashboard(request, pk):
     country = get_object_or_404(Country, pk=pk)
-    indicators = Indicator.objects.filter(subcomponent__subcomponent_indicator__country_code=country.cca3).select_related('subcomponent')
-    api_data = ApiExtract.objects.filter(country_code=country.cca3)
+   # indicators = Indicator.objects.filter(country_code=country.cca3).select_related('subcomponent')
+
+     # Résoudre le lien court goo.gl/maps
+    resolved_url = country.maps
+    if resolved_url and "goo.gl/maps" in resolved_url:
+        try:
+            response = requests.head(resolved_url, allow_redirects=True)
+            resolved_url = response.url   # URL finale Google Maps
+        except Exception:
+            resolved_url = country.maps   # fallback
+
+    indicators = StoreAPI.objects.filter(country_code=country.cca3).values_list('indicator_code', flat=True)
+    api_data = StoreAPI.objects.filter(country_code=country.cca3)
+   # api_data = ApiExtract.objects.filter(country_code=country.flag)
+
+       # ✅ Récupération des données (optimisée)
+ 
+    locations = LocationCountry.objects.filter(iso3=country.cca3).only('iso3','name','latitude','longitude')
+
+    # Coordonnées par défaut
+    center_lat, center_lon = 0.0, 20.0
+
+    if locations.exists():
+        latitudes = [loc.latitude for loc in locations if loc.latitude]
+        longitudes = [loc.longitude for loc in locations if loc.longitude]
+        if latitudes and longitudes:
+            center_lat = sum(latitudes) / len(latitudes)
+            center_lon = sum(longitudes) / len(longitudes)
+
+    m = folium.Map(
+        location=[center_lat, center_lon],
+        zoom_start=4,
+        tiles="cartodb positron",
+        scrollWheelZoom=True
+    )
+
+
+    folium.LayerControl().add_to(m)
+  
+    # ✅ Ajout des markers
+    for location in locations:
+        if location.latitude and location.longitude:
+            folium.Marker(
+                location=(location.latitude, location.longitude),
+                popup=f"<b>{location.name}</b><br>Lat: {location.latitude}, Lon: {location.longitude}",
+                tooltip=location.name,
+                icon=folium.Icon(color="blue", icon="globe", prefix="fa")  # icône globe
+            ).add_to(m)
+ 
+     # ✅ Conversion en HTML (IMPORTANT : en dehors de la boucle)
+    map_html = m._repr_html_()
+
+
+    ## Récupérer toutes les maladies (subcomponents) liées aux indicateurs du pays
+    # ... ton code pour la map ...
+
+    subcomponents = Subcomponent.objects.filter(
+        subcomponent_indicator__indicator_code__in=StoreAPI.objects.filter(
+            country_code=country.cca3
+        ).values_list("indicator_code", flat=True)
+    ).distinct()
+
+    dashboard_data = []
+    all_years = set()
+
+    for sub in subcomponents:
+        indicators = Indicator.objects.filter(subcomponent=sub)
+
+        indicator_results = []
+        for ind in indicators:
+            results = StoreAPI.objects.filter(
+                country_code=country.cca3,
+                indicator_code=ind.indicator_code
+            ).order_by("time_dim")
+
+            # ⚠️ Ne garder que les indicateurs avec au moins une valeur
+            if results.exists():
+                # Récupérer min et max year
+                min_year = results.first().time_dim
+                max_year = results.last().time_dim
+
+                min_val = results.first().numeric_value
+                max_val = results.last().numeric_value
+
+                variation = None
+                if min_val is not None and max_val is not None and min_val != 0:
+                    try:
+                        variation = ((max_val - min_val) / max_val) * 100
+                    except (ValueError, TypeError, ZeroDivisionError):
+                        variation = None
+
+                indicator_results.append({
+                    "indicator": ind,
+                    "results": results,
+                    "min_year": min_year,
+                    "max_year": max_year,
+                    "variation": variation,
+                    "target": ind.indicator_target,             # champ Target
+                    "performance": ind.performance_indicator,   # champ Performance
+                    "category": ind.category_indicator,         # champ Category
+                    "data_source": ind.indicator_source         # champ Data Source
+                })
+
+
+            # Collecter les années pour all_years
+            for res in results:
+                if res.time_dim is not None:
+                    try:
+                        all_years.add(int(res.time_dim))
+                    except (ValueError, TypeError):
+                        pass
+
+        dashboard_data.append({
+            "subcomponent": sub,
+            "indicators": indicator_results,
+        })
+
+    # Transformer en liste triée
+    all_years = sorted(all_years)
 
     context = {
-        'country': country,
-        'indicators': indicators,
-        'api_data': api_data,
+        "country": country,
+        "api_data": StoreAPI.objects.filter(country_code=country.cca3),
+        "resolved_url": resolved_url,
+        "map_html": map_html,
+        "dashboard_data": dashboard_data,
+        "all_years": all_years,
+        "api_data": api_data,
     }
+   
     return render(request, 'mytvddata/pages/dashboard/country_profile.html', context)
 
 
 
 def export_country_word(request, pk):
     country = get_object_or_404(Country, pk=pk)
-    indicators = Indicator.objects.filter(subcomponent__subcomponent_indicator__country_code=country.cca3)
-    api_data = ApiExtract.objects.filter(country_code=country.cca3)
+    indicators = StoreAPI.objects.filter(country_code=country.cca3).values_list('indicator_code', flat=True)
+    api_data = StoreAPI.objects.filter(country_code=country.cca3)
+
+  #  indicators = Indicator.objects.filter(subcomponent__subcomponent_indicator__country_code=country.cca3)
+  #  api_data = ApiExtract.objects.filter(country_code=country.cca3)
 
     doc = Document()
     doc.add_heading(f"Profil du pays : {country.name}", level=1)
@@ -3585,7 +3797,7 @@ def export_country_word(request, pk):
 
     doc.add_heading("Indicateurs", level=2)
     for data in api_data:
-        doc.add_paragraph(f"{data.indicator_name} ({data.indicator_code}) - {data.numeric_value} en {data.date}")
+        doc.add_paragraph(f"{data.time_dim} ({data.indicator_code}) - {data.numeric_value} en {data.publish_date}")
 
     response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
     response["Content-Disposition"] = f'attachment; filename="{country.name}_profile.docx"'
@@ -3653,7 +3865,7 @@ def import_json(request):
 
 ######NEW SURVEY PROJECT
 
-from .forms import SurveyUploadForm
+
 def upload_datasurvey(request):
     if request.method == "POST":
         form = SurveyUploadForm(request.POST, request.FILES)
@@ -3696,3 +3908,125 @@ def upload_datasurvey(request):
 def survey_datalist(request):
     projects = SurveyProject.objects.prefetch_related("project_surveyData").all()
     return render(request, "mytvddata/pages/survey/list_survey.html", {"projects": projects})
+
+
+# COUNTRY LOACTION: LATITUDE AND LONGITUDE
+
+
+
+
+
+
+# ✅ Liste des pays (CRUD - Read)
+def geocountry_list(request):
+    query = request.GET.get("q", "")
+    countries = LocationCountry.objects.all()
+    if query:
+        countries = countries.filter(name__icontains=query)
+
+    paginator = Paginator(countries, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    # Si Ajax → renvoyer juste le fragment
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return render(
+            request,
+            "mytvddata/pages/locationCountry/_country_table.html",
+            {"countries": page_obj, "query": query}
+        )
+
+    return render(
+        request,
+        "mytvddata/pages/locationCountry/locationCountry_list.html",
+        {"countries": page_obj, "query": query}
+    )
+
+
+# ✅ Importer les données JSON
+def geocountry_import_json(request):
+    if request.method == "POST" and request.FILES.get("json_file"):
+        try:
+            json_file = request.FILES["json_file"]
+            data = json.load(json_file)
+            request.session["json_preview"] = data
+            messages.success(request, "Prévisualisation des données chargée.")
+            return redirect("geocountry_preview")
+        except json.JSONDecodeError as e:
+            messages.error(request, f"Erreur JSON : {e}")
+            return redirect("geocountry_import_json")
+
+    return render(request, "mytvddata/pages/locationCountry/geoimport_json.html")
+
+# ✅ Prévisualiser les données importées
+def geocountry_preview(request):
+    data = request.session.get("json_preview", [])
+    return render(request, "mytvddata/pages/locationCountry/geocountry_preview.html", {"data": data})
+
+# ✅ Synchroniser avec la base SQL Server
+def geocountry_sync_to_db(request):
+    data = request.session.get("json_preview", [])
+    if not data:
+        messages.error(request, "Aucune donnée à synchroniser.")
+        return redirect("geocountry_import_json")
+
+    for item in data:
+        LocationCountry.objects.update_or_create(
+            iso3=item.get("CountryName")[:3].upper(),
+            defaults={
+                "name": item.get("CountryName"),
+                "latitude": item.get("CountryLat"),
+                "longitude": item.get("CountryLng"),
+            },
+        )
+    messages.success(request, "Les données ont été synchronisées avec la base SQL Server.")
+    return redirect("geocountry_list")
+
+# ✅ CRUD Ajax
+def geocountry_create(request):
+    if request.method == "POST":
+        form = LocationCountryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({"success": True})
+        return JsonResponse({"success": False, "errors": form.errors})
+
+def geocountry_update(request, pk):
+    country = get_object_or_404(LocationCountry, pk=pk)
+    if request.method == "POST":
+        form = LocationCountryForm(request.POST, instance=country)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({"success": True})
+        return JsonResponse({"success": False, "errors": form.errors})
+
+def geocountry_delete(request, pk):
+    country = get_object_or_404(LocationCountry, pk=pk)
+    if request.method == "POST":
+        country.delete()
+        return JsonResponse({"success": True})
+    return JsonResponse({"success": False})
+
+# ✅ Export JSON
+def export_json_geocountry(request):
+    countries = LocationCountry.objects.all().values("iso3", "name", "latitude", "longitude")
+    data = list(countries)
+    response = HttpResponse(json.dumps(data, indent=4), content_type="application/json")
+    response["Content-Disposition"] = 'attachment; filename="countries.json"'
+    return response
+
+# ✅ Export CSV
+def export_csv_geocountry(request):
+    countries = LocationCountry.objects.all().values("iso3", "name", "latitude", "longitude")
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="countries.csv"'
+    writer = csv.writer(response)
+    writer.writerow(["ISO3", "Name", "Latitude", "Longitude"])
+    for c in countries:
+        writer.writerow([c["iso3"], c["name"], c["latitude"], c["longitude"]])
+    return response
+
+
+def geocountry_data(request):
+    countries = LocationCountry.objects.all().values("id", "iso3", "name", "latitude", "longitude")
+    return JsonResponse({"data": list(countries)})

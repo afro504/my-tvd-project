@@ -2,8 +2,8 @@
 {% extends "mytvddata/cover/base.html" %}
 {% load static %}
 {% load widget_tweaks %}
-{% load crispy_forms_tags %}
 {% load crispy_forms_field %}
+{% load crispy_forms_tags %}
 
   
 
@@ -39,20 +39,21 @@
 {% block content %}
   <!-- HEADER -->
   <div class="row align-items-center mb-5">
-      <div class="col-lg-8">
+      <div class="col-lg-7">
           <h2 class="fw-bold text-primary display-6">
-              ➕ Manage <code>Indicators</code> in <b>Program</b>
+              ➕ Program Indicator Management
           </h2>
           <p class="text-muted fs-4">
               <i class="fa fa-star text-warning"></i> Total indicators: <b>{{ total_indicator }}</b>
           </p>
       </div>
-      <div class="col-lg-4 text-end">
+      <div class="col-lg-5 text-end">
           <nav aria-label="breadcrumb">
               <ol class="breadcrumb bg-light rounded px-4 py-3 shadow-sm fs-5">
                   <li class="breadcrumb-item"><a href="/"><i class="fa fa-reply"></i> Back</a></li>
                   <li class="breadcrumb-item"><a href="{% url 'json_indicator' %}"><i class="fa fa-cog"></i> API Data</a></li>
                   <li class="breadcrumb-item"><a href="{% url 'export_indicator' %}"><i class="fa fa-file-excel"></i> Export Excel</a></li>
+                  <li class="breadcrumb-item"><a href="{% url 'download_indicator_template' %}"><i class="fa fa-download"></i> Download Template</a></li>
               </ol>
           </nav>        
           <div class="mb-3">
@@ -69,8 +70,24 @@
       </div>
   </div>
 
+
+
+<!-- 🔍 Barre de recherche AJAX -->
+<div class="row mb-4">
+  <div class="col-md-6">
+    <input type="text" id="search-indicator" 
+           class="form-control" 
+           placeholder="Search indicator by name...">
+  </div>
+  <div class="col-md-6 text-end">
+    <button id="reset-search" class="btn btn-outline-secondary">
+      Reset
+    </button>
+  </div>
+</div>
+
 <!-- Bouton Create -->
-<button id="btn-create-indicator" class="btn btn-primary"
+<button id="btn-create-indicator" class="btn btn-success mb-3"
         data-url="{% url 'create_indicator' %}">
   Add Indicator
 </button>
@@ -101,6 +118,13 @@
     {% include 'mytvddata/pages/indicator/partial_indicator_list.html' %}
   </tbody>
 </table>
+
+
+
+<!-- 📄 Pagination -->
+<div id="indicator-pagination">
+  {% include 'mytvddata/pages/indicator/partial_indicator_pagination.html' %}
+</div>
 
 <!-- Modal -->
 <div class="modal fade" id="modal-indicator" tabindex="-1" role="dialog">
@@ -157,6 +181,40 @@
 
     $("#indicator-table").on("click", ".js-delete-indicator", loadForm);
     $("#modal-indicator").on("submit", ".js-indicator-delete-form", saveForm);
+
+    // Recherche en direct
+  $("#search-indicator").on("keyup", function () {
+    var query = $(this).val();
+    $.ajax({
+      url: "{% url 'list_indicator' %}",
+      data: {
+        indicator_name: query
+      },
+      success: function (data) {
+        $("#indicator-table tbody").html($(data).find("#indicator-table tbody").html());
+        $("#indicator-pagination").html($(data).find("#indicator-pagination").html());
+      }
+    });
   });
+
+  // Reset recherche
+  $("#reset-search").click(function () {
+    $("#search-indicator").val("");
+    $.ajax({
+      url: "{% url 'list_indicator' %}",
+      success: function (data) {
+        $("#indicator-table tbody").html($(data).find("#indicator-table tbody").html());
+        $("#indicator-pagination").html($(data).find("#indicator-pagination").html());
+      }
+    });
+  });
+
+
+  });
+
+
+
+
+
 </script>
 {% endblock %}

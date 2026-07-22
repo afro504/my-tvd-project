@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from .models import (
     Country, Component, Subcomponent, Indicator,
     RepositoryIndicator, SurveyProject, SurveyDataset,
-    DocSave, ReportSave, WarehouseScript, StoreAPI,ApiFieldConfig,StaffMember
+    DocSave, ReportSave, WarehouseScript, StoreAPI,ApiFieldConfig,StaffMember,LocationCountry
 )
 import requests
 from crispy_forms.helper import FormHelper
@@ -67,10 +67,10 @@ class CountryForm(forms.ModelForm):
             'subregion': forms.TextInput(attrs={'class': 'form-control'}),
             'area': forms.TextInput(attrs={'class': 'form-control'}),
             'population': forms.NumberInput(attrs={'class': 'form-control'}),
-            'languages': forms.Textarea(attrs={'class': 'form-control'}),
-            'maps': forms.Textarea(attrs={'class': 'form-control'}),
+            'languages': forms.Textarea(attrs={'rows': 2,'class': 'form-control'}),
+            'maps': forms.Textarea(attrs={'rows': 2,'class': 'form-control'}),
             'ref_data': forms.TextInput(attrs={'class': 'form-control'}),
-            'data_source': forms.Textarea(attrs={'class': 'form-control'}),
+            'data_source': forms.Textarea(attrs={'rows': 2,'class': 'form-control'}),
             'country_class': forms.TextInput(attrs={'class': 'form-control'}),
         }
  
@@ -78,6 +78,9 @@ class CountryForm(forms.ModelForm):
 # =========================
 # INDICATOR
 # =========================
+
+
+
 class IndicatorForm(forms.ModelForm):
  
     class Meta:
@@ -91,23 +94,47 @@ class IndicatorForm(forms.ModelForm):
         self.fields['subcomponent'].queryset = Subcomponent.objects.select_related('component')
  
         # ✅ Crispy Form
+     
+        # Activer crispy helper
         self.helper = FormHelper()
-        self.helper.form_method = 'post'
- 
+        self.helper.form_method = "post"
+        self.helper.form_class = "form-horizontal"
+        self.helper.label_class = "col-sm-3 col-form-label"
+        self.helper.field_class = "col-sm-9"
+
+        # Layout Bootstrap
         self.helper.layout = Layout(
-            Row(Column('subcomponent')),
-            Row(Column('indicator_name')),
-            Row(Column('indicator_description')),
-            Row(Column('indicator_code'), Column('indicator_target'), Column('category_indicator')),
-            Row(Column('indicator_unit'), Column('indicator_frequency'), Column('forecasting_indicator'), Column('ref_data')),
-            Row(Column('indicator_source'), Column('performance_indicator'), Column('type_indicator')),
-            FormActions(
-                Submit('save', 'Save'),
-                Submit('cancel', 'Cancel', css_class='btn-danger')
-            )
+            Row(
+                Column("indicator_code", css_class="col-md-6"),
+                Column("indicator_name", css_class="col-md-6"),
+            ),
+            Row(
+                Column("indicator_description", css_class="col-md-12"),
+            ),
+            Row(
+                Column("indicator_target", css_class="col-md-4"),
+                Column("indicator_metric", css_class="col-md-4"),
+                Column("indicator_unit", css_class="col-md-4"),
+            ),
+            Row(
+                Column("indicator_frequency", css_class="col-md-6"),
+                Column("indicator_source", css_class="col-md-6"),
+            ),
+            Row(
+                Column("subcomponent", css_class="col-md-6"),
+                Column("category_indicator", css_class="col-md-6"),
+            ),
+            Row(
+                Column("forecasting_indicator", css_class="col-md-6"),
+                Column("performance_indicator", css_class="col-md-6"),
+            ),
+            Row(
+                Column("type_indicator", css_class="col-md-6"),
+                Column("ref_data", css_class="col-md-6"),
+            ),
+           
+            Submit("submit", "Save", css_class="btn btn-success w-100 mt-3")
         )
- 
- 
  
  
 class IndicatorFilter(django_filters.FilterSet):
@@ -281,9 +308,6 @@ class ReportSaveForm(forms.ModelForm):
             raise forms.ValidationError("Seuls PDF, Word, PowerPoint et HTML sont autorisés.")
         return file
  
-
-
-
 
 # =========================
 # SURVEY PROJECT
@@ -753,3 +777,11 @@ class SurveyUploadForm(forms.Form):
     end_date = forms.DateField(required=False, widget=forms.DateInput(attrs={'type':'date'}))
     location_survey = forms.CharField(required=False, label="Lieu de l’enquête")
     file = forms.FileField(label="Fichier Excel (.xlsx)")
+
+
+
+
+class LocationCountryForm(forms.ModelForm):
+    class Meta:
+        model = LocationCountry
+        fields = ["iso3", "name", "latitude", "longitude"]

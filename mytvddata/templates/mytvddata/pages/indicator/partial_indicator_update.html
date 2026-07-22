@@ -1,9 +1,26 @@
 
+{% load crispy_forms_tags %}
 
 
 <form method="post" class="js-indicator-update-form" action="{% url 'update_indicator' indicator.pk %}">
   {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit" class="btn btn-primary">Update</button>
-  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+  <div class="modal-header bg-primary text-white">
+    <h5 class="modal-title">
+      <i class="fa fa-edit me-2"></i> Update Indicator
+    </h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+
+  <div class="modal-body">
+    {{ form|crispy }}
+  </div>
+
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+      <i class="fa fa-times"></i> Cancel
+    </button>
+    <button type="submit" class="btn btn-primary">
+      <i class="fa fa-save"></i> Save changes
+    </button>
+  </div>
 </form>

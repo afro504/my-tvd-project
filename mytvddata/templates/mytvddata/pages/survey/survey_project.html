@@ -23,26 +23,26 @@
                         <!-- Header -->
                         <div class="content-header mb-4">
                             <h3>
-                                Gestion des <b>Survey Projects</b>
+                                <b>Survey Project Management</b>
                                 <small class="text-muted">Dataset</small>
                             </h3>
                             <ol class="breadcrumb">
-                                <li class="breadcrumb-item"><a href="/"><i class="fa fa-reply"></i> Retour</a></li>
+                                <li class="breadcrumb-item"><a href="/"><i class="fa fa-reply"></i> Return</a></li>
                                 <li class="breadcrumb-item"><a href="/survey_report"><i class="fa fa-bars"></i> Survey views</a></li>
                                 <li class="breadcrumb-item"><a href="{% url 'export_project_survey' %}"><i class="fa fa-file-excel"></i> Export Excel</a></li>
                                 <li class="breadcrumb-item"><a href="{% url 'json_surveyproject' %}"><i class="fa fa-cog"></i> API</a></li>
-                                <li class="breadcrumb-item"><a href="/index_survey"><i class="fa fa-plus"></i> Ajouter dataset</a></li>
+                                <li class="breadcrumb-item"><a href="/index_survey"><i class="fa fa-plus"></i> Add Dataset</a></li>
                             </ol>
                         </div>
 
                         <!-- Search -->
                         <form method="GET" class="row g-2 mb-3">
                             <div class="col-md-6">
-                                <input class="form-control" name="title_surv" type="text" placeholder="Rechercher un titre">
+                                <input class="form-control" name="title_surv" type="text" placeholder="Search for a title">
                             </div>
                             <div class="col-md-2">
                                 <button type="submit" class="btn btn-success w-100">
-                                    <i class="fa fa-search"></i> Rechercher
+                                    <i class="fa fa-search"></i> Search
                                 </button>
                             </div>
                         </form>
@@ -55,12 +55,12 @@
                                     <table class="table table-striped table-hover table-bordered align-middle">
                                         <thead class="table-light">
                                             <tr>
-                                                <th>Responsable</th>
-                                                <th>Titre</th>
-                                                <th>Population cible</th>
-                                                <th>Date début</th>
-                                                <th>Date fin</th>
-                                                <th>Lieu</th>
+                                                <th>Responsible</th>
+                                                <th>Title</th>
+                                                <th>Target Population</th>
+                                                <th>Start Date</th>
+                                                <th>End Date</th>
+                                                <th>Location</th>
                                                 <th>Actions</th>
                                             </tr>
                                         </thead>
@@ -82,10 +82,10 @@
                                                         <td>{{ surveyProject.location_survey }}</td>
                                                         <td>
                                                             <button formnovalidate name="edit" value="{{ surveyProject.id }}" class="btn btn-primary btn-sm">
-                                                                <i class="fa fa-edit"></i> Modifier
+                                                                <i class="fa fa-edit"></i> Edit
                                                             </button>
                                                             <button formnovalidate name="delete" value="{{ surveyProject.id }}" class="btn btn-danger btn-sm">
-                                                                <i class="fa fa-trash"></i> Supprimer
+                                                                <i class="fa fa-trash"></i> Delete
                                                             </button>
                                                         </td>
                                                     {% endif %}
@@ -121,7 +121,7 @@
                     {% else %}
                         <section>
                             <p class="text-center">
-                                Page non trouvée. Veuillez <a href='/signin'>vous connecter</a> ou <a href='/'>retourner à l’accueil</a>.
+                                Page not found. Please <a href='/signin'>sign in</a> or <a href='/'>return to the homepage</a>.
                             </p>
                         </section>
                     {% endif %}

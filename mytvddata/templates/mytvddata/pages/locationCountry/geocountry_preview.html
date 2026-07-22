@@ -1,0 +1,25 @@
+{% extends "mytvddata/cover/base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Prévisualisation des données JSON</h2>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Pays</th>
+        <th>Latitude</th>
+        <th>Longitude</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in data %}
+      <tr>
+        <td>{{ item.CountryName }}</td>
+        <td>{{ item.CountryLat }}</td>
+        <td>{{ item.CountryLng }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <a href="{% url 'geocountry_sync_to_db' %}" class="btn btn-success">Synchroniser avec la base</a>
+</div>
+{% endblock %}

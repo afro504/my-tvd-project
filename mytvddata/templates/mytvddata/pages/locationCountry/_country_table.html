@@ -1,0 +1,76 @@
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>ISO3</th>
+      <th>Nom</th>
+      <th>Latitude</th>
+      <th>Longitude</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for country in countries %}
+    <tr>
+      <td>{{ country.iso3 }}</td>
+      <td>{{ country.name }}</td>
+      <td>{{ country.latitude }}</td>
+      <td>{{ country.longitude }}</td>
+      <td>
+        <!-- Bouton Update -->
+        <button class="btn btn-warning btn-sm edit-btn"
+                data-id="{{ country.pk }}"
+                data-iso3="{{ country.iso3 }}"
+                data-name="{{ country.name }}"
+                data-lat="{{ country.latitude }}"
+                data-lng="{{ country.longitude }}"
+                data-bs-toggle="modal"
+                data-bs-target="#updateModal">
+                ✏️ Edit
+        </button>
+
+
+        <!-- Bouton Delete -->
+        <button class="btn btn-danger btn-sm delete-btn"
+                data-id="{{ country.pk }}"
+                data-name="{{ country.name }}"
+                data-bs-toggle="modal"
+                data-bs-target="#deleteModal">
+          🗑️ Delete
+        </button>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" class="text-center text-muted">Aucun pays trouvé</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Pagination -->
+
+
+
+<!-- Pagination -->
+<nav aria-label="Pagination des pays">
+  <ul class="pagination justify-content-center">
+    {% if countries.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?q={{ query }}&page={{ countries.previous_page_number }}">
+          ⬅️ Précédent
+        </a>
+      </li>
+    {% endif %}
+
+    <li class="page-item active">
+      <span class="page-link">{{ countries.number }}</span>
+    </li>
+
+    {% if countries.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?q={{ query }}&page={{ countries.next_page_number }}">
+          Suivant ➡️
+        </a>
+      </li>
+    {% endif %}
+  </ul>
+</nav>
+

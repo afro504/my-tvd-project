@@ -113,13 +113,13 @@
       </div>
       <div class="col-md-4 text-end">
         <a href="{% url 'download_repository_template' %}" class="btn btn-outline-info fw-bold me-2">
-          📥 Modèle Excel
+          📥 Excel Template
         </a>
         <a href="{% url 'export_repository_to_excel' %}" class="btn btn-outline-success fw-bold me-2">
-          📤 Exporter
+          📤 Export
         </a>
           <a href="{% url 'import_excel_repository' %}" class="btn btn-outline-success fw-bold me-2">
-          📤 Importer
+          📤 Import
         </a>
  
       </div>
@@ -129,7 +129,7 @@
 <form method="get" class="row g-3 mb-3">
   <div class="col-md-3">
     <select name="country" class="form-select">
-      <option value="">-- Filtrer par pays --</option>
+      <option value="">-- Filter by Country --</option>
       {% for country in countries %}
         <option name="country" value="{{ country.id }}" {% if request.GET.country == country.id|stringformat:"s" %}selected{% endif %}>
           {{ country.name }}
@@ -140,7 +140,7 @@
 
   <div class="col-md-3">
     <select name="indicator" class="form-select">
-      <option value="">-- Filtrer par indicateur --</option>
+      <option value="">-- Filter by Indicator --</option>
       {% for indicator in indicators %}
         <option value="{{ indicator.id }}" {% if request.GET.indicator == indicator.id|stringformat:"s" %}selected{% endif %}>
           {{ indicator.indicator_name }}
@@ -152,7 +152,7 @@
 
  
   <div class="col-md-3">
-    <button type="submit" class="btn btn-primary w-100">🔎 Rechercher</button>
+    <button type="submit" class="btn btn-primary w-100">🔎 Search</button>
   </div>
 </form>
 

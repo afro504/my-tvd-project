@@ -70,7 +70,9 @@ INSTALLED_APPS = [
    # 'weasyprint',
    # 'xhtml2pdf',
     'widget_tweaks',
-   'import_export',
+    'import_export',
+   # 'leaflet',
+   # 'djgeojson',
 ]
 # Choisis le pack de templates
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"

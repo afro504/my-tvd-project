@@ -1,0 +1,34 @@
+<nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center">
+    {% if indicators.has_previous %}
+      <li class="page-item">
+        <a class="page-link js-page-link" 
+           href="?page={{ indicators.previous_page_number }}{% if request.GET.indicator_name %}&indicator_name={{ request.GET.indicator_name }}{% endif %}{% if by_subcomponent %}&by_subcomponent={{ by_subcomponent }}{% endif %}">
+          Previous
+        </a>
+      </li>
+    {% endif %}
+
+    {% for num in indicators.paginator.page_range %}
+      {% if indicators.number == num %}
+        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+      {% else %}
+        <li class="page-item">
+          <a class="page-link js-page-link" 
+             href="?page={{ num }}{% if request.GET.indicator_name %}&indicator_name={{ request.GET.indicator_name }}{% endif %}{% if by_subcomponent %}&by_subcomponent={{ by_subcomponent }}{% endif %}">
+            {{ num }}
+          </a>
+        </li>
+      {% endif %}
+    {% endfor %}
+
+    {% if indicators.has_next %}
+      <li class="page-item">
+        <a class="page-link js-page-link" 
+           href="?page={{ indicators.next_page_number }}{% if request.GET.indicator_name %}&indicator_name={{ request.GET.indicator_name }}{% endif %}{% if by_subcomponent %}&by_subcomponent={{ by_subcomponent }}{% endif %}">
+          Next
+        </a>
+      </li>
+    {% endif %}
+  </ul>
+</nav>
