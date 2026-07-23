@@ -1,0 +1,43 @@
+{% extends "mytvddata/cover/base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3">Map Excel Columns to Database Fields</h2>
+  <p class="text-muted">
+    Select the corresponding database field for each Excel column. Columns left as "Ignore" will not be imported.
+  </p>
+
+  <form method="post" class="card p-4 shadow-sm">
+    {% csrf_token %}
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">Excel Column</th>
+            <th scope="col">Database Field</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in headers %}
+          <tr>
+            <td class="fw-bold">{{ h }}</td>
+            <td>
+              <select name="{{ h }}" class="form-select">
+                <option value="">-- Ignore --</option>
+                {% for f in db_fields %}
+                  <option value="{{ f }}">{{ f }}</option>
+                {% endfor %}
+              </select>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="d-flex justify-content-start gap-2 mt-3">
+      <button type="submit" class="btn btn-success">Synchronize Data</button>
+      <a href="{% url 'staff_list' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -187,6 +187,10 @@ urlpatterns = [
     # Telecharger model XLSX
     path("staff/template/xlsx/", views.staff_template_xlsx, name="staff_template_xlsx"),
 
+# Import workflow
+    path("staff/import/upload/", views.staff_import_xlsx, name="staff_import_upload"),
+    path("staff/import/preview/", views.staff_import_xlsx, name="staff_import_preview"),  # même vue, étape preview
+    path("staff/import/mapping/", views.staff_import_mapping, name="staff_import_mapping"),
 
 
 
@@ -201,6 +205,8 @@ urlpatterns = [
 
     # Export Word
     path("country/<int:pk>/dashboard/word/", views.export_country_word, name="country_dashboard_word"),
+
+    path("country/<int:pk>/excel/", views.export_country_dashboard_excel, name="export_country_dashboard_excel"),
 
 
     ### SURVEY
@@ -227,6 +233,7 @@ urlpatterns = [
     path("factsheet/", views.regional_factsheet_select, name="regional_factsheet_select"),
     path("factsheet/<int:subcomponent_id>/", views.regional_factsheet_results, name="regional_factsheet_results"),
     path("factsheet/<int:subcomponent_id>/export_word/", views.export_regional_factsheet_word, name="export_regional_factsheet_word"),
+    path("factsheet/<int:subcomponent_id>/excel/", views.export_regional_factsheet_excel, name="export_regional_factsheet_excel"),
 
 
 ]

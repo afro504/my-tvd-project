@@ -20,6 +20,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
 from django.views.decorators.csrf import csrf_exempt
 from docx import Document
+from django.db import transaction
 
 
 
@@ -100,7 +101,8 @@ from django.http import HttpResponse
 from openpyxl.utils import get_column_letter
 import openpyxl
 from docx.shared import RGBColor
- 
+from openpyxl.chart import PieChart, BarChart, Reference
+
 # =========================
 # EMAIL / AUTH UTILITIES
 # =========================
@@ -456,7 +458,7 @@ def export_country(request):
     ws.append(headers)
  
     # ✅ STYLE HEADER
-    header_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+    header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
     header_font = Font(bold=True)
  
     for col_num, col_title in enumerate(headers, 1):
@@ -653,26 +655,39 @@ def delete_indicator(request, pk):
 
 
 
+
+
 @login_required
 def export_indicator(request):
-
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-    response['Content-Disposition'] = 'attachment; filename=Indicator.xlsx'
+    response['Content-Disposition'] = 'attachment; filename=Indicators.xlsx'
 
     wb = Workbook()
     ws = wb.active
     ws.title = "Indicators"
 
+    # American institutional style headers
     headers = [
-        "ID", "Code", "Name", "Description",
-        "Target", "Metric", "Unit",
-        "Frequency", "Type", "Source",
-        "Disease", "Category",
-        "Forecast", "Performance", "Ref Data"
+        "ID", "Indicator Code", "Indicator Name", "Description",
+        "Target Value", "Metric", "Unit of Measure",
+        "Reporting Frequency", "Indicator Type", "Data Source",
+        "Health Domain", "Category",
+        "Forecasting", "Performance", "Reference Data"
     ]
     ws.append(headers)
+
+    # Style headers: bold, centered, blue background, white text
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center")
+
+    for col_num, column_title in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
 
     indicators = Indicator.objects.select_related('subcomponent')
 
@@ -695,8 +710,23 @@ def export_indicator(request):
             i.ref_data
         ])
 
+    # Auto-fit column widths
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column  # Get column index
+        column_letter = get_column_letter(column)
+        for cell in col:
+            try:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        ws.column_dimensions[column_letter].width = adjusted_width
+
     wb.save(response)
     return response
+
 
 
 
@@ -1273,53 +1303,6 @@ def export_import_report_pdf(request):
 
     doc.build(elements)
     return response
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # Importation des données SurveyDataset depuis Excel
@@ -3449,8 +3432,9 @@ def load_api_other(request):
 ## FUnction for StaffMaping
 
 ### GOOD -------------------------# Liste principale avec formulaire vide pour le modal "create"
+
 def staff_list(request):
-    staff = StaffMember.objects.all().prefetch_related('diseases', 'country')
+    staff_qs = StaffMember.objects.all().prefetch_related('diseases', 'country')
 
     # Filtres GET
     country_filter = request.GET.get("country")
@@ -3458,14 +3442,18 @@ def staff_list(request):
     disease_filter = request.GET.get("disease")
 
     if country_filter:
-        staff = staff.filter(country__name__icontains=country_filter)
+        staff_qs = staff_qs.filter(country__name__icontains=country_filter)
 
     if language_filter:
-        staff = staff.filter(language__icontains=language_filter)  # JSONField ou TextField
+        staff_qs = staff_qs.filter(language__icontains=language_filter)  # JSONField ou TextField
 
     if disease_filter:
-        staff = staff.filter(diseases__subcomponent_name__icontains=disease_filter).distinct()
+        staff_qs = staff_qs.filter(diseases__subcomponent_name__icontains=disease_filter).distinct()
 
+    # Pagination
+    paginator = Paginator(staff_qs, 10)  # 10 éléments par page
+    page_number = request.GET.get("page")
+    staff_page = paginator.get_page(page_number)
 
     # Distincts pour statistiques
     all_countries = [c.name for s in StaffMember.objects.all() for c in s.country.all()]
@@ -3483,13 +3471,17 @@ def staff_list(request):
         request,
         "mytvddata/pages/staff/staff_list.html",
         {
-            "staff": staff,
+            "staff": staff_page,  # ⚠️ on passe l’objet paginé
             "form": form,
             "countries": distinct_countries,
             "languages": distinct_languages,
             "diseases": distinct_diseases,
+            "staff_qs":staff_qs
         }
     )
+
+
+
 
 def staff_create(request):
     if request.method == "POST":
@@ -3528,34 +3520,138 @@ def staff_delete(request, pk):
 
 
 
-
 def staff_export_xlsx(request):
-    staff = StaffMember.objects.all().prefetch_related("diseases", "country")
+    staff = StaffMember.objects.all().prefetch_related('diseases', 'country')
 
-    data = []
+    # ✅ Statistiques globales
+    all_countries = [c.name for s in staff for c in s.country.all()]
+    distinct_countries = set(all_countries)
+    all_diseases = [d.subcomponent_name for s in staff for d in s.diseases.all()]
+    distinct_diseases = set(all_diseases)
+
+    # ✅ Création du fichier Excel
+    wb = openpyxl.Workbook()
+
+    # --- Feuille 1 : Liste du staff ---
+    ws1 = wb.active
+    ws1.title = "Staff List"
+
+    header_fill = PatternFill(start_color="0033A0", end_color="0033A0", fill_type="solid")  # Bleu USA
+    alt_fill = PatternFill(start_color="F5F5F5", end_color="F5F5F5", fill_type="solid")    # Gris clair UE
+    bold_font = Font(bold=True, size=12, color="FFFFFF")
+
+    headers = [
+        "Name", "Email", "Countries", "Position", "Grade", "Telephone",
+        "Office Affiliation", "Responsibility", "Languages", "Diseases", "Level Geo"
+    ]
+    ws1.append(headers)
+
+    # Style header
+    for col in range(1, len(headers)+1):
+        cell = ws1.cell(row=1, column=col)
+        cell.fill = header_fill
+        cell.font = bold_font
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    # Remplir les données avec alternance gris clair
+    row_index = 2
     for s in staff:
-        data.append({
-            "Name": s.name,
-            "Email": s.email,
-            "Countries": ", ".join([c.name for c in s.country.all()]),
-            "Position": s.position,
-            "Grade": s.grade,
-            "Telephone": s.telephone,
-            "Office Affiliation": s.office_affiliation,
-            "Responsibility": s.responsibility,
-            "Languages": ", ".join(s.language if s.language else []),
-            "Diseases": ", ".join([d.subcomponent_name for d in s.diseases.all()]),
-            "Level Geo": s.level_geo,
-        })
+        countries = ", ".join([c.name for c in s.country.all()])
+        diseases = ", ".join([d.subcomponent_name for d in s.diseases.all()])
+        languages = ", ".join(s.language) if isinstance(s.language, list) else s.language
 
-    df = pd.DataFrame(data)
+        ws1.append([
+            s.name,
+            getattr(s, "email", ""),
+            countries,
+            getattr(s, "position", ""),
+            getattr(s, "grade", ""),
+            getattr(s, "telephone", ""),
+            getattr(s, "office_affiliation", ""),
+            getattr(s, "responsibility", ""),
+            languages,
+            diseases,
+            getattr(s, "level_geo", "")
+        ])
 
-    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    response["Content-Disposition"] = 'attachment; filename="staff.xlsx"'
+        if row_index % 2 == 0:
+            for col in range(1, len(headers)+1):
+                ws1.cell(row=row_index, column=col).fill = alt_fill
+        row_index += 1
 
-    with pd.ExcelWriter(response, engine="openpyxl") as writer:
-        df.to_excel(writer, index=False, sheet_name="Staff")
+    # --- Feuille 2 : Statistiques ---
+    ws2 = wb.create_sheet(title="Statistics")
+    ws2["A1"] = "Staff Statistics"
+    ws2["A1"].font = Font(bold=True, size=16, color="0033A0")
+    ws2.append([])
 
+    stats_data = [
+        ("Distinct countries", len(distinct_countries)),
+        ("Distinct diseases", len(distinct_diseases)),
+        ("Total staff members", staff.count()),
+    ]
+    for label, value in stats_data:
+        ws2.append([label, value])
+
+    # --- Feuille 3 : Graphiques ---
+    ws3 = wb.create_sheet(title="Charts")
+    ws3["A1"] = "Staff Distribution by Country"
+    ws3["A1"].font = Font(bold=True, size=14, color="0033A0")
+
+    # Données pays
+    country_counts = {}
+    for c in all_countries:
+        country_counts[c] = country_counts.get(c, 0) + 1
+
+    ws3.append(["Country", "Count"])
+    for country, count in country_counts.items():
+        ws3.append([country, count])
+
+    data = Reference(ws3, min_col=2, min_row=2, max_row=ws3.max_row)
+    labels = Reference(ws3, min_col=1, min_row=2, max_row=ws3.max_row)
+
+    # ✅ Graphique camembert
+    pie = PieChart()
+    pie.title = "Staff by Country"
+    pie.add_data(data, titles_from_data=False)
+    pie.set_categories(labels)
+    ws3.add_chart(pie, "E2")
+
+    # ✅ Graphique barres
+    bar = BarChart()
+    bar.title = "Staff by Country (Bar)"
+    bar.add_data(data, titles_from_data=False)
+    bar.set_categories(labels)
+    bar.y_axis.title = "Staff Count"
+    bar.x_axis.title = "Country"
+    ws3.add_chart(bar, "E20")
+
+    # ✅ Graphique par maladie
+    ws3["A20"] = "Staff Distribution by Disease"
+    ws3["A20"].font = Font(bold=True, size=14, color="0033A0")
+
+    ws3.append(["Disease", "Count"])
+    disease_counts = {}
+    for d in all_diseases:
+        disease_counts[d] = disease_counts.get(d, 0) + 1
+    for disease, count in disease_counts.items():
+        ws3.append([disease, count])
+
+    data_disease = Reference(ws3, min_col=2, min_row=ws3.max_row - len(disease_counts) + 1, max_row=ws3.max_row)
+    labels_disease = Reference(ws3, min_col=1, min_row=ws3.max_row - len(disease_counts) + 1, max_row=ws3.max_row)
+
+    pie_disease = PieChart()
+    pie_disease.title = "Staff by Disease"
+    pie_disease.add_data(data_disease, titles_from_data=False)
+    pie_disease.set_categories(labels_disease)
+    ws3.add_chart(pie_disease, "E40")
+
+    # ✅ Réponse HTTP avec fichier Excel
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="staff_dashboard.xlsx"'
+    wb.save(response)
     return response
 
 
@@ -3564,7 +3660,11 @@ def staff_export_xlsx(request):
 
 
 
-def staff_import_xlsx(request):
+
+
+
+
+def staffs_import_xlsx(request):
     if request.method == "POST" and request.FILES.get("file"):
         excel_file = request.FILES["file"]
         df = pd.read_excel(excel_file)
@@ -3574,6 +3674,7 @@ def staff_import_xlsx(request):
                 email=row["Email"],
                 defaults={
                     "name": row["Name"],
+                    "email": row.get("Email", ""),
                     "position": row.get("Position", ""),
                     "grade": row.get("Grade", ""),
                     "telephone": row.get("Telephone", ""),
@@ -3606,27 +3707,101 @@ def staff_import_xlsx(request):
 
 
 
+@login_required
+def staff_import_xlsx(request):
+    if request.method == "POST" and request.FILES.get("file"):
+        excel_file = request.FILES["file"]
+        df = pd.read_excel(excel_file)
+
+        # Step 1: Preview
+        headers = list(df.columns)
+        preview_data = df.head(20).to_dict(orient="records")
+
+        # Store temporarily in session
+        request.session["excel_headers"] = headers
+        request.session["excel_data"] = df.to_dict(orient="records")
+
+        return render(request, "mytvddata/pages/staff/staff_import_preview.html", {
+            "headers": headers,
+            "rows": preview_data,
+            "db_fields": [f.name for f in StaffMember._meta.get_fields() if f.concrete],
+        })
+
+    return render(request, "mytvddata/pages/staff/staff_import_upload.html")
+
+
+@login_required
+def staff_import_mapping(request):
+    if request.method == "POST":
+        mapping = request.POST.dict()  # Excel header → DB field mapping
+        excel_headers = request.session.get("excel_headers", [])
+        excel_data = request.session.get("excel_data", [])
+
+        mapped_records = []
+        for row in excel_data:
+            record = {}
+            for header in excel_headers:
+                db_field = mapping.get(header)
+                if db_field:
+                    record[db_field] = row.get(header)
+            mapped_records.append(record)
+
+        # Step 4: Synchronization
+        with transaction.atomic():
+            for rec in mapped_records:
+                staff, created = StaffMember.objects.update_or_create(
+                    email=rec.get("email"),
+                    defaults=rec
+                )
+
+                # Countries (ManyToMany)
+                if rec.get("country"):
+                    countries = [c.strip() for c in rec["country"].split(",")]
+                    staff.country.set(Country.objects.filter(name__in=countries))
+
+                # Languages (JSONField)
+                if rec.get("language"):
+                    staff.language = [l.strip() for l in rec["language"].split(",")]
+
+                # Diseases (ManyToMany)
+                if rec.get("diseases"):
+                    diseases = [d.strip() for d in rec["diseases"].split(",")]
+                    staff.diseases.set(Subcomponent.objects.filter(name__in=diseases))
+
+                staff.save()
+
+        messages.success(request, "Excel import completed successfully.")
+        return redirect("staff_list")
+
+    return render(request, "staff_import_mapping.html", {
+        "headers": request.session.get("excel_headers", []),
+        "db_fields": [f.name for f in StaffMember._meta.get_fields() if f.concrete],
+    })
+
+
+
+
+
+
 def staff_template_xlsx(request):
     # Exemple de colonnes attendues
     columns = [
-        "Name", "Email", "Countries", "Position", "Grade",
+        "Name", "Email", "Position", "Grade",
         "Telephone", "Office Affiliation", "Responsibility",
-        "Languages", "Diseases", "Level Geo"
+        "Level Geo", "Countries","Languages", "Diseases"
     ]
 
     # Exemple de lignes vides ou pré-remplies
     df = pd.DataFrame(columns=columns)
     df.loc[0] = [
-        "Jean Dupont", "jean.dupont@example.com", "France",
-        "Analyste", "A1", "+33 123456789", "OMS Paris",
-        "Responsable indicateurs", "Français, Anglais",
-        "Diabète, Malaria", "Europe"
+         "Jean Dupont", "jean.dupont@example.com", "MOH Staff", "Doctor",
+         "+33 123456789", "MOH", "Director",
+         "Country", "DRC","fr", "Leprosy" 
     ]
     df.loc[1] = [
-        "Maria Sanchez", "maria.sanchez@example.com", "Espagne",
-        "Coordinatrice", "B2", "+34 987654321", "OMS Madrid",
-        "Coordination projets", "Espagnol",
-        "Tuberculose", "Europe"
+         "Maria Sanchez", "maria.sanchez@example.com", "MOH Staff", "Doctor",
+         "+34 987654321", "OMS Madrid", "Coordinatrice",
+                 "Country", "Burundi","fr", "Yaws"
     ]
 
     # Réponse HTTP avec fichier Excel
@@ -3935,6 +4110,128 @@ def export_country_word(request, pk):
     response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
     response["Content-Disposition"] = f'attachment; filename="{country.name}_profile.docx"'
     doc.save(response)
+    return response
+
+
+
+
+
+def export_country_dashboard_excel(request, pk):
+    country = get_object_or_404(Country, pk=pk)
+
+    # Récupération des subcomponents et indicateurs comme dans country_dashboard
+    subcomponents = Subcomponent.objects.filter(
+        subcomponent_indicator__indicator_code__in=StoreAPI.objects.filter(
+            country_code=country.cca3
+        ).values_list("indicator_code", flat=True)
+    ).distinct()
+
+    dashboard_data = []
+    all_years = set()
+
+    for sub in subcomponents:
+        indicators = Indicator.objects.filter(subcomponent=sub)
+        indicator_results = []
+        for ind in indicators:
+            results = StoreAPI.objects.filter(
+                country_code=country.cca3,
+                indicator_code=ind.indicator_code
+            ).order_by("time_dim")
+
+            if results.exists():
+                min_year = results.first().time_dim
+                max_year = results.last().time_dim
+                variation = None
+                if ind.type_indicator == "Quanti_ind":
+                    min_val = results.first().numeric_value
+                    max_val = results.last().numeric_value
+                    if min_val and max_val and min_val != 0:
+                        variation = ((max_val - min_val) / min_val) * 100
+                indicator_results.append({
+                    "indicator": ind,
+                    "results": results,
+                    "variation": variation,
+                    "target": ind.indicator_target,
+                    "performance": ind.performance_indicator,
+                    "category": ind.category_indicator,
+                    "data_source": ind.indicator_source,
+                    "type_indicator": ind.type_indicator
+                })
+                for res in results:
+                    if res.time_dim:
+                        try:
+                            all_years.add(int(res.time_dim))
+                        except:
+                            pass
+        dashboard_data.append({"subcomponent": sub, "indicators": indicator_results})
+
+    all_years = sorted(all_years)
+
+    # ✅ Création du fichier Excel
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = f"{country.name} Dashboard"
+
+    # Styles USA + UE
+    header_fill = PatternFill(start_color="0033A0", end_color="0033A0", fill_type="solid")  # Bleu USA
+    eu_fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")      # Jaune UE
+    bold_font = Font(bold=True, size=12, color="FFFFFF")
+    normal_font = Font(size=11)
+
+    # ✅ Profil du pays
+    ws["A1"] = f"Country Dashboard: {country.name} ({country.cca3})"
+    ws["A1"].font = Font(bold=True, size=16, color="0033A0")
+    ws.append([])
+    profile_data = [
+        ("Official name", country.official),
+        ("Capital", country.capital),
+        ("Subregion", country.subregion),
+        ("Area (km²)", country.area),
+        ("Population", country.population),
+        ("Languages", country.languages),
+        ("Class", country.country_class),
+    ]
+    for label, value in profile_data:
+        ws.append([label, value])
+    ws.append([])
+
+    # ✅ Indicateurs par sous-composant
+    for section in dashboard_data:
+        ws.append([section["subcomponent"].subcomponent_name])
+        header = ["Indicator", "Target"] + [str(y) for y in all_years] + ["Variation (%)", "Source"]
+        ws.append(header)
+        # Style header
+        for col in range(1, len(header)+1):
+            cell = ws.cell(row=ws.max_row, column=col)
+            cell.fill = header_fill
+            cell.font = bold_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+
+        for ind in section["indicators"]:
+            row = [ind["indicator"].indicator_name, ind["target"]]
+            for year in all_years:
+                res = ind["results"].filter(time_dim=year).first()
+                if res:
+                    if ind["type_indicator"] == "Quanti_ind":
+                        row.append(res.numeric_value if res.numeric_value is not None else "-")
+                    else:
+                        row.append(res.alpha_value if res.alpha_value else "-")
+                else:
+                    row.append("-")
+            if ind["type_indicator"] == "Quanti_ind":
+                row.append(f"{ind['variation']:.2f}%" if ind["variation"] is not None else "–")
+            else:
+                row.append("–")
+            row.append(ind["data_source"])
+            ws.append(row)
+        ws.append([])
+
+    # ✅ Réponse HTTP avec fichier Excel
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = f'attachment; filename="country_dashboard_{country.cca3}.xlsx"'
+    wb.save(response)
     return response
 
 
@@ -4391,4 +4688,149 @@ def export_regional_factsheet_word(request, subcomponent_id):
     response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
     response["Content-Disposition"] = f'attachment; filename="factsheet_regional_{subcomponent.subcomponent_name}.docx"'
     doc.save(response)
+    return response
+
+
+
+# TO EXPORT COUNTRY PROFILE IN EXCEL FORMAT
+
+
+
+
+
+
+def export_regional_factsheet_excel(request, subcomponent_id):
+    subcomponent = get_object_or_404(Subcomponent, pk=subcomponent_id)
+    indicators = Indicator.objects.filter(subcomponent=subcomponent)
+    api_data = StoreAPI.objects.filter(indicator_code__in=indicators.values_list("indicator_code", flat=True))
+    all_years = sorted(StoreAPI.objects.values_list("time_dim", flat=True).distinct())
+
+    # Regrouper les indicateurs par catégorie
+    grouped_indicators = {}
+    for ind in indicators:
+        cat = ind.category_indicator or "Autres"
+        grouped_indicators.setdefault(cat, []).append(ind)
+
+    # Construire les données par pays
+    country_summary = []
+    for country in Country.objects.all().order_by("name"):
+        country_data = api_data.filter(country_code=country.cca3)
+        progress = []
+        for ind in indicators:
+            values = {v.time_dim: v for v in country_data.filter(indicator_code=ind.indicator_code)}
+            if not values:
+                continue
+            if ind.type_indicator == "Quanti_ind":
+                vals = [v.numeric_value for v in values.values() if v.numeric_value is not None]
+                if not vals:
+                    continue
+                variation = None
+                if len(vals) >= 2 and vals[0] != 0:
+                    variation = ((vals[-1] - vals[0]) / vals[0]) * 100
+                progress.append({
+                    "indicator": ind,
+                    "values": {year: (v.numeric_value if v else None) for year, v in values.items()},
+                    "variation": variation
+                })
+            elif ind.type_indicator == "Quali_ind":
+                vals = [v.alpha_value for v in values.values() if v.alpha_value]
+                if not vals:
+                    continue
+                progress.append({
+                    "indicator": ind,
+                    "values": {year: (v.alpha_value if v else None) for year, v in values.items()},
+                    "variation": None
+                })
+        if progress:
+            country_summary.append({
+                "country": country,
+                "progress": progress,
+                "score": sum([p["variation"] or 0 for p in progress if p["variation"] is not None])
+            })
+
+    # ✅ Statistiques globales
+    total_countries = len(country_summary)
+    quali_count = sum(
+        1 for c in country_summary for p in c["progress"]
+        if p["indicator"].type_indicator == "Quali_ind" and any(p["values"].values())
+    )
+    progress_count = sum(1 for c in country_summary if c["score"] < 0)
+    recul_count = sum(1 for c in country_summary if c["score"] > 0)
+    stable_count = sum(1 for c in country_summary if c["score"] == 0)
+
+    # ✅ Création du fichier Excel
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = f"Factsheet {subcomponent.subcomponent_name}"
+
+    # Style USA + UE
+    header_fill = PatternFill(start_color="0033A0", end_color="0033A0", fill_type="solid")  # Bleu USA
+    eu_fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")      # Jaune UE
+    bold_font = Font(bold=True, size=12, color="FFFFFF")
+    normal_font = Font(size=11)
+
+    # ✅ Titre
+    ws["A1"] = f"Regional Factsheet: {subcomponent.subcomponent_name}"
+    ws["A1"].font = Font(bold=True, size=16, color="0033A0")
+    ws.append([])
+
+    # ✅ Statistiques globales
+    stats_data = [
+        ("Total countries", total_countries),
+        ("Countries with qualitative indicators", f"{quali_count} ({(quali_count/total_countries*100 if total_countries else 0):.2f}%)"),
+        ("Countries in progress", f"{progress_count} ({(progress_count/total_countries*100 if total_countries else 0):.2f}%)"),
+        ("Countries in decline", f"{recul_count} ({(recul_count/total_countries*100 if total_countries else 0):.2f}%)"),
+        ("Stable countries", f"{stable_count} ({(stable_count/total_countries*100 if total_countries else 0):.2f}%)"),
+    ]
+    for label, value in stats_data:
+        ws.append([label, value])
+
+    ws.append([])
+
+    # ✅ Tableaux par catégorie
+    for category, inds in grouped_indicators.items():
+        ws.append([category])
+        header = ["Country", "Indicator"] + [str(y) for y in all_years] + ["Variation (%)"]
+        ws.append(header)
+        # Style header
+        for col in range(1, len(header)+1):
+            cell = ws.cell(row=ws.max_row, column=col)
+            cell.fill = header_fill
+            cell.font = bold_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+
+        for country in Country.objects.all().order_by("name"):
+            country_data = api_data.filter(country_code=country.cca3)
+            for ind in inds:
+                values = {v.time_dim: v for v in country_data.filter(indicator_code=ind.indicator_code)}
+                if not values:
+                    continue
+                row = [country.name, ind.indicator_name]
+                for year in all_years:
+                    val = values.get(year)
+                    if val:
+                        if ind.type_indicator == "Quanti_ind":
+                            row.append(val.numeric_value if val.numeric_value is not None else "-")
+                        else:
+                            row.append(val.alpha_value if val.alpha_value else "-")
+                    else:
+                        row.append("-")
+                if ind.type_indicator == "Quanti_ind":
+                    vals = [v.numeric_value for v in values.values() if v.numeric_value is not None]
+                    if len(vals) >= 2 and vals[0] != 0:
+                        variation = ((vals[-1] - vals[0]) / vals[0]) * 100
+                        row.append(f"{variation:.2f}%")
+                    else:
+                        row.append("–")
+                else:
+                    row.append("–")
+                ws.append(row)
+        ws.append([])
+
+    # ✅ Réponse HTTP avec fichier Excel
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = f'attachment; filename="factsheet_regional_{subcomponent.subcomponent_name}.xlsx"'
+    wb.save(response)
     return response

@@ -5,233 +5,199 @@
 {% load crispy_forms_field %}
 {% load custom_filters %}
 
-
-
 {% block style %}
-    
-    <link rel="stylesheet" href="{% static 'mytvddata/css/dashboard.css' %}">
-
-    <!-- CSS impression -->
-    <style>
-        .page-break { page-break-after: always; }
-        @media print {
-            .btn, .breadcrumb { display: none; }
-        }
-    </style>
+<link rel="stylesheet" href="{% static 'mytvddata/css/dashboard.css' %}">
+<style>
+    .page-break { page-break-after: always; }
+    @media print {
+        .btn, .breadcrumb { display: none; }
+    }
+</style>
 {% endblock style %}
 
 {% block content %}
 <div class="container-fluid my-4">
 
-    <!-- Menu d’export -->
+    <!-- Export Menu -->
     <div class="d-flex justify-content-end mb-3">
-        <a href="{% url 'country_dashboard_word' country.pk %}" class="btn btn-primary">
+        <a href="{% url 'country_dashboard_word' country.pk %}" class="btn btn-outline-primary">
             📝 Export to Word
         </a>
+        <a href="{% url 'export_country_dashboard_excel' country.pk %}" class="btn btn-outline-success">
+            📊 Export to Excel
+        </a>
+        <li class="breadcrumb-item">
+            <a href="{% url 'country_list_dashboard'%}" class="btn btn-outline-primary">
+                <i class="fa fa-reply"></i> Back
+            </a>
+        </li>
     </div>
 
-    <!-- PAGE 1 : Profil du pays -->
+    <!-- PAGE 1: Country Profile -->
     <div class="page-break">
-        <h2 class="fw-bold text-primary">{{ country.name }} ({{ country.cca3 }})
+        <h2 class="fw-bold text-primary">
+            {{ country.name }} ({{ country.cca3 }})
             <span class="fi fi-{{ country.flag|lower }} mb-3" style="font-size:3rem;"></span>
         </h2>
         <div class="row">
             <div class="col-md-4">
-                <!-- Carte Google Maps -->
+                <!-- Google Maps -->
                 {% if resolved_url %}
                     {{ map_html|safe }}
                 {% else %}
                     <p class="text-muted">Map not available</p>
                 {% endif %}
             </div>
-
             <div class="col-md-8">
                 <ul class="list-group">
-                    <li class="list-group-item"><strong>Official name :</strong> {{ country.official }}</li>
-                    <li class="list-group-item"><strong>Capital :</strong> {{ country.capital }}</li>
-                    <li class="list-group-item"><strong>Subregion :</strong> {{ country.subregion }}</li>
-                    <li class="list-group-item"><strong>Area / Surface :</strong> {{ country.area }} km²</li>
-                    <li class="list-group-item"><strong>Population :</strong> {{ country.population|floatformat:0 }}</li>
-                    <li class="list-group-item"><strong>Languages :</strong> {{ country.languages }}</li>
-                    <li class="list-group-item"><strong>Class :</strong> {{ country.country_class }}</li>
+                    <li class="list-group-item"><strong>Official Name:</strong> {{ country.official }}</li>
+                    <li class="list-group-item"><strong>Capital:</strong> {{ country.capital }}</li>
+                    <li class="list-group-item"><strong>Subregion:</strong> {{ country.subregion }}</li>
+                    <li class="list-group-item"><strong>Area:</strong> {{ country.area }} km²</li>
+                    <li class="list-group-item"><strong>Population:</strong> {{ country.population|floatformat:0 }}</li>
+                    <li class="list-group-item"><strong>Languages:</strong> {{ country.languages }}</li>
+                    <li class="list-group-item"><strong>Classification:</strong> {{ country.country_class }}</li>
                 </ul>
-                <a href="{{ country.maps }}" target="_blank" class="btn btn-info mt-3">🌍 View map</a>
+                <a href="{{ country.maps }}" target="_blank" class="btn btn-info mt-3">🌍 View Map</a>
             </div>
         </div>
     </div>
 
-    <!-- PAGE 2 : Indicateurs -->
+    <!-- PAGE 2: Indicators -->
     <div class="page-break mt-5">
-        <h3 class="fw-bold text-secondary">📊 Results of indicators</h3>
+        <h3 class="fw-bold text-secondary">📊 Indicator Results</h3>
      
-  
-{% for section in dashboard_data %}
-  
-  <h2 class="text-primary mb-3">
-    <i class="fas fa-virus me-2"></i> <!-- Icône thématique -->
-    {{ section.subcomponent.subcomponent_name }}
-   
-  </h2>
-   <!-- Tableau des indicateurs quantitatifs 
-  <h4>Cases</h4>-->
-  <table class="table table-striped table-hover table-bordered">
-    <thead class="table-primary">
-      <tr>
-        <th>Indicator</th>
-        <th>Target</th>
-        {% for year in all_years %}
-          <th>{{ year }}</th>
-        {% endfor %}
-         <th>Variation (%)</th>
-         <th>Source</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for ind in section.indicators %}
-        {% if ind.type_indicator == "Quanti_ind" %}
-            <tr>
-            <td>{{ ind.indicator.indicator_name }}</td>
-            <td>{{ ind.indicator.indicator_target }}</td>
-            {% for year in all_years %}
-                {% with res=ind.results|get_result_for_year:year %}
-                {% if res %}
-                    <td>{{ res.numeric_value }}</td>
-                {% else %}
-                    <td>-</td>
-                {% endif %}
-                {% endwith %}
-            {% endfor %}
-            <td>
-                {% if ind.variation is not None %}
-                    {% if ind.performance == "low" and ind.category == "prevalence,Death,incidence" %}
-                    <span class="badge bg-success">
-                        <i class="fas fa-arrow-up"></i>
-                        {{ ind.variation|floatformat:2 }} %
-                    </span>
-                    {% elif ind.variation > 0 %}
-                    <span class="badge bg-danger">
-                        <i class="fas fa-arrow-up"></i>
-                    
-                    
-                        +{{ ind.variation|floatformat:2 }} %
-                    </span>
-                    {% elif ind.variation < 0 %}
-                    <span class="badge bg-success">
-                        <i class="fas fa-arrow-down"></i>
-                        {{ ind.variation|floatformat:2 }} %
-                    </span>
-                    
-                    {% else %}
-                    <span class="badge bg-secondary">
-                        <i class="fas fa-minus"></i>
-                        {{ ind.variation|floatformat:2 }} %
-                    </span>
-                    {% endif %}
-                {% else %}
-                    <span class="badge bg-light text-dark">-</span>
-                {% endif %}
-                </td>
-                <td><a href="{{ind.data_source}}" target="_blank" class="text-primary">Link</a></td>
-                
+        {% for section in dashboard_data %}
+        <h2 class="text-primary mb-3">
+            <i class="fas fa-virus me-2"></i>
+            {{ section.subcomponent.subcomponent_name }}
+        </h2>
 
-            </tr>
-            {% endif %}
-      {% endfor %}
-    </tbody>
-  </table>
-
-  <!-- Tableau des indicateurs qualitatifs
-  <h4>Status of endemicity</h4> -->
-  {% with quali_indicators=section.indicators|dictsort:"indicator.indicator_name" %}
-  {% if quali_indicators %}
-    {% if quali_indicators|length > 0 %}
-      <table class="table table-striped table-hover">
-        <thead class="table-primary">
-          <tr>
-            <th></th>
-            <th>Target</th>
-            {% for year in all_years %}
-              <th>{{ year }}</th>
-            {% endfor %}
-            <th>Source</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for ind in quali_indicators %}
-            {% if ind.type_indicator == "Quali_ind" %}
-              <tr>
-                <td>{{ ind.indicator.indicator_name }}</td>
-                <td>{{ ind.indicator.indicator_target }}</td>
-                {% for year in all_years %}
-                  {% with res=ind.results|get_result_for_year:year %}
-                    {% if res %}
-                      <td>{{ res.alpha_value }}</td>
-                    {% else %}
-                      <td>-</td>
+        <!-- Quantitative Indicators -->
+        <table class="table table-striped table-hover table-bordered">
+            <thead class="table-primary">
+                <tr>
+                    <th>Indicator</th>
+                    <th>Target</th>
+                    {% for year in all_years %}
+                        <th>{{ year }}</th>
+                    {% endfor %}
+                    <th>Change (%)</th>
+                    <th>Source</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ind in section.indicators %}
+                    {% if ind.type_indicator == "Quanti_ind" %}
+                        <tr>
+                            <td>{{ ind.indicator.indicator_name }}</td>
+                            <td>{{ ind.indicator.indicator_target }}</td>
+                            {% for year in all_years %}
+                                {% with res=ind.results|get_result_for_year:year %}
+                                    <td>{{ res.numeric_value|default:"-" }}</td>
+                                {% endwith %}
+                            {% endfor %}
+                            <td>
+                                {% if ind.variation is not None %}
+                                    {% if ind.performance == "low" and ind.category == "prevalence,Death,incidence" %}
+                                        <span class="badge bg-success"><i class="fas fa-arrow-up"></i> {{ ind.variation|floatformat:2 }}%</span>
+                                    {% elif ind.variation > 0 %}
+                                        <span class="badge bg-danger"><i class="fas fa-arrow-up"></i> +{{ ind.variation|floatformat:2 }}%</span>
+                                    {% elif ind.variation < 0 %}
+                                        <span class="badge bg-success"><i class="fas fa-arrow-down"></i> {{ ind.variation|floatformat:2 }}%</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary"><i class="fas fa-minus"></i> {{ ind.variation|floatformat:2 }}%</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-light text-dark">-</span>
+                                {% endif %}
+                            </td>
+                            <td><a href="{{ ind.data_source }}" target="_blank" class="text-primary">Link</a></td>
+                        </tr>
                     {% endif %}
-                  {% endwith %}
                 {% endfor %}
-                <td>
-                  <a href="{{ ind.data_source }}" target="_blank" class="text-primary">Link</a>
-                </td>
-              </tr>
+            </tbody>
+        </table>
+
+        <!-- Qualitative Indicators -->
+        {% with quali_indicators=section.indicators|dictsort:"indicator.indicator_name" %}
+            {% if quali_indicators and quali_indicators|length > 0 %}
+                <table class="table table-striped table-hover">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>Indicator</th>
+                            <th>Target</th>
+                            {% for year in all_years %}
+                                <th>{{ year }}</th>
+                            {% endfor %}
+                            <th>Source</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ind in quali_indicators %}
+                            {% if ind.type_indicator == "Quali_ind" %}
+                                <tr>
+                                    <td>{{ ind.indicator.indicator_name }}</td>
+                                    <td>{{ ind.indicator.indicator_target }}</td>
+                                    {% for year in all_years %}
+                                        {% with res=ind.results|get_result_for_year:year %}
+                                            <td>{{ res.alpha_value|default:"-" }}</td>
+                                        {% endwith %}
+                                    {% endfor %}
+                                    <td><a href="{{ ind.data_source }}" target="_blank" class="text-primary">Link</a></td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
             {% endif %}
-          {% endfor %}
-        </tbody>
-      </table>
-    {% endif %}
-  {% endif %}
-{% endwith %}
-
-
-{% endfor %}
-  </div>
-
-
-</div>
-<div class="card mt-5 shadow-sm">
-  <div class="card-header bg-info text-white">
-    <h5 class="mb-0">Légende</h5>
-  </div>
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-sm mb-0">
-        <thead class="table-light">
-          <tr>
-            <th style="width: 120px;">Badge</th>
-            <th>Signification</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><span class="badge bg-success"><i class="fas fa-arrow-up"></i></span></td>
-            <td>Amélioration souhaitée (Performance = low + catégorie prevalence, Death ou incidence avec variation négative, ou Performance = hight + stratégie avec variation positive)</td>
-          </tr>
-          <tr>
-            <td><span class="badge bg-danger"><i class="fas fa-arrow-down"></i></span></td>
-            <td>Détérioration ou évolution non souhaitée (autres cas)</td>
-          </tr>
-          <tr>
-            <td><span class="badge bg-secondary"><i class="fas fa-minus"></i></span></td>
-            <td>Variation nulle</td>
-          </tr>
-          <tr>
-            <td><span class="badge bg-light text-dark">-</span></td>
-            <td>Données non disponibles</td>
-          </tr>
-          <tr>
-            <td><strong>Quanti_ind</strong></td>
-            <td>Valeurs numériques par année, variation calculée</td>
-          </tr>
-          <tr>
-            <td><strong>Quali_ind</strong></td>
-            <td>Valeurs alphabétiques (alpha_value), pas de variation calculée</td>
-          </tr>
-        </tbody>
-      </table>
+        {% endwith %}
+        {% endfor %}
     </div>
-  </div>
 </div>
 
+<!-- Legend -->
+<div class="card mt-5 shadow-sm">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">Legend</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 120px;">Badge</th>
+                        <th>Meaning</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge bg-success"><i class="fas fa-arrow-up"></i></span></td>
+                        <td>Expected Improvement (Performance = Low with Prevalence, Death, or Incidence showing a negative change; or Performance = High with Strategy showing a positive change)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge bg-danger"><i class="fas fa-arrow-down"></i></span></td>
+                        <td>Deterioration or Undesirable Change (all other cases)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge bg-secondary"><i class="fas fa-minus"></i></span></td>
+                        <td>No Change</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge bg-light text-dark">-</span></td>
+                        <td>Data Not Available</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Quanti_ind</strong></td>
+                        <td>Numeric Values by Year, Calculated Change</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Quali_ind</strong></td>
+                        <td>Alphabetic Values (alpha_value), No Change Calculated</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 {% endblock %}
-

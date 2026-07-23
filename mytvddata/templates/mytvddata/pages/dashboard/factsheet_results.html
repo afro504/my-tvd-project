@@ -2,28 +2,32 @@
 {% load custom_filters %}  <!-- ✅ Charger le filtre -->
 {% block content %}
 <div class="container my-4">
-  <h2 class="fw-bold text-primary">📊 Factsheet régional : {{ subcomponent.subcomponent_name }}</h2>
+  <h2 class="fw-bold text-primary">📊 Regional Factsheet: {{ subcomponent.subcomponent_name }}</h2>
 
     <!-- ✅ Statistiques globales -->
   <div class="alert alert-info mt-3">
     <h5 class="fw-bold">Statistiques globales</h5>
     <ul>
-      <li>Total des pays analysés : <strong>{{ stats.total_countries }}</strong></li>
-      <li>Pays avec indicateurs qualitatifs : <strong>{{ stats.quali_count }}</strong> 
+      <li>Total Countries Analyzed : <strong>{{ stats.total_countries }}</strong></li>
+      <li>Countries with Qualitative Indicators : <strong>{{ stats.quali_count }}</strong> 
           ({{ stats.quali_percent|floatformat:2 }}%)</li>
-      <li>Pays en <span class="text-success">Progrès</span> : <strong>{{ stats.progress_count }}</strong> 
+      <li>Countries Showing <span class="text-success">Progress</span> : <strong>{{ stats.progress_count }}</strong> 
           ({{ stats.progress_percent|floatformat:2 }}%)</li>
-      <li>Pays en <span class="text-danger">Recul</span> : <strong>{{ stats.recul_count }}</strong> 
+      <li>Countries in <span class="text-danger">Decline</span> : <strong>{{ stats.recul_count }}</strong> 
           ({{ stats.recul_percent|floatformat:2 }}%)</li>
-      <li>Pays <span class="text-secondary">Stables</span> : <strong>{{ stats.stable_count }}</strong> 
+      <li>Countries Remaining  <span class="text-secondary">Stable</span> : <strong>{{ stats.stable_count }}</strong> 
           ({{ stats.stable_percent|floatformat:2 }}%)</li>
     </ul>
   </div>
  <!-- Bouton Export -->
   <div class="d-flex justify-content-end mb-3">
     <a href="{% url 'export_regional_factsheet_word' subcomponent.id %}" class="btn btn-outline-primary">
-      📝 Exporter en Word
+      📝 Export to Word
     </a>
+     <a href="{% url 'export_regional_factsheet_excel' subcomponent.id %}" class="btn btn-outline-success">
+      📊 Export to Excel
+   </a>
+    <li class="breadcrumb-item"><a href="{% url 'regional_factsheet_select'%}" class="btn btn-outline-primary"><i class="fa fa-reply"></i> Back</a></li> 
   </div>
 
   <!-- Résumé par type d'indicateur -->
@@ -33,12 +37,12 @@
       <table class="table table-hover table-bordered align-middle">
         <thead class="table-primary">
           <tr>
-            <th>Pays</th>
-            <th>Indicateur</th>
+            <th>Country</th>
+            <th>Indicator</th>
             {% for year in all_years %}
               <th>{{ year }}</th>
             {% endfor %}
-            <th>Variation (%)</th>
+            <th>Change (%)</th>
           </tr>
         </thead>
         <tbody>
@@ -74,15 +78,15 @@
   {% endfor %}
 
   <!-- Classement global -->
-  <h3 class="mt-5 text-secondary border-bottom">Classement des pays</h3>
+  <h3 class="mt-5 text-secondary border-bottom">Country Rankings</h3>
   <div class="table-responsive">
     <table class="table table-striped table-bordered align-middle">
       <thead class="table-primary">
         <tr>
-          <th>Rang</th>
-          <th>Pays</th>
-          <th>Score global</th>
-          <th>Statut</th>
+          <th>Rank</th>
+          <th>Country</th>
+          <th>Overall Score</th>
+          <th>Status</th>
         </tr>
       </thead>
       <tbody>
@@ -93,9 +97,9 @@
             <td>{{ country.score|floatformat:2 }}</td>
             <td>
               {% if country.score < 0 %}
-                <span class="badge bg-success">Progrès</span>
+                <span class="badge bg-success">Progress</span>
               {% elif country.score > 0 %}
-                <span class="badge bg-danger">Recul</span>
+                <span class="badge bg-danger">Decline</span>
               {% else %}
                 <span class="badge bg-secondary">Stable</span>
               {% endif %}

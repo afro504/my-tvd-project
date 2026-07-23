@@ -4,11 +4,15 @@
 {% load crispy_forms_tags %}
 {% load crispy_forms_field %}
 
-{% load static %}
 {% block content %}
 
-
-    <h2>{% if form.instance.pk %}Modifier{% else %}Ajouter{% endif %} un Staff</h2>
+    <h2>
+        {% if form.instance.pk %}
+            Edit Staff Member
+        {% else %}
+            Add Staff Member
+        {% endif %}
+    </h2>
 
     <form method="post">
         {% csrf_token %}
@@ -16,11 +20,15 @@
             {{ form.as_p }}
         </div>
         <button type="submit" class="btn btn-primary">
-            {% if form.instance.pk %}Mettre à jour{% else %}Créer{% endif %}
+            {% if form.instance.pk %}
+                Save Changes
+            {% else %}
+                Submit
+            {% endif %}
         </button>
-        <a href="{% url 'staff_list' %}" class="btn btn-secondary">Annuler</a>
+        <a href="{% url 'staff_list' %}" class="btn btn-secondary">
+            Return to Staff List
+        </a>
     </form>
-
-</body>
 
 {% endblock %}

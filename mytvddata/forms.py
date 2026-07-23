@@ -713,36 +713,35 @@ class ApiFieldSelectionForm(forms.Form):
         return url
 
 
-
 class StaffMemberForm(forms.ModelForm):
     country = forms.ModelMultipleChoiceField(
         queryset=Country.objects.all(),
         widget=forms.SelectMultiple(attrs={
             'class': 'form-select select2',
-            'data-placeholder': 'Choisissez un ou plusieurs pays'
+            'data-placeholder': 'Select one or more countries'
         }),
         required=False,
-        label="🌍 Pays"
+        label="🌍 Countries"
     )
 
     diseases = forms.ModelMultipleChoiceField(
         queryset=Subcomponent.objects.all(),
         widget=forms.SelectMultiple(attrs={
             'class': 'form-select select2',
-            'data-placeholder': 'Sélectionnez les maladies associées'
+            'data-placeholder': 'Select associated health domains'
         }),
         required=False,
-        label="🦠 Maladies"
+        label="🦠 Health Domains"
     )
 
     language = forms.MultipleChoiceField(
         choices=LANGUAGE_CHOICES,
         widget=forms.SelectMultiple(attrs={
             'class': 'form-select select2',
-            'data-placeholder': 'Choisissez les langues parlées'
+            'data-placeholder': 'Select spoken languages'
         }),
         required=False,
-        label="🗣️ Langues"
+        label="🗣️ Languages"
     )
 
     class Meta:
@@ -753,17 +752,16 @@ class StaffMemberForm(forms.ModelForm):
             "responsibility", "level_geo"
         ]
         widgets = {
-            "name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Nom complet"}),
-            "email": forms.EmailInput(attrs={"class": "form-control", "placeholder": "Adresse email"}),
-            "position": forms.TextInput(attrs={"class": "form-control", "placeholder": "Poste"}),
+            "name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Full Name"}),
+            "email": forms.EmailInput(attrs={"class": "form-control", "placeholder": "Email Address"}),
+            "position": forms.TextInput(attrs={"class": "form-control", "placeholder": "Position"}),
             "grade": forms.TextInput(attrs={"class": "form-control", "placeholder": "Grade"}),
-            "telephone": forms.TextInput(attrs={"class": "form-control", "placeholder": "Téléphone"}),
-            "office_affiliation": forms.TextInput(attrs={"class": "form-control", "placeholder": "Affiliation"}),
-            "responsibility": forms.Textarea(attrs={"class": "form-control", "rows": 3, "placeholder": "Responsabilités"}),
-            "level_geo": forms.TextInput(attrs={"class": "form-control", "placeholder": "Niveau géographique"}),
+            "telephone": forms.TextInput(attrs={"class": "form-control", "placeholder": "Phone Number"}),
+            "office_affiliation": forms.TextInput(attrs={"class": "form-control", "placeholder": "Office Affiliation"}),
+            "responsibility": forms.Textarea(attrs={"class": "form-control", "rows": 3, "placeholder": "Responsibilities"}),
+            "level_geo": forms.TextInput(attrs={"class": "form-control", "placeholder": "Geographic Level"}),
             "country_code": forms.HiddenInput(),
         }
-
 
 
 
