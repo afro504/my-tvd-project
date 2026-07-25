@@ -179,14 +179,22 @@
             <th>Alpha value</th>
             <th>Numeric value</th>
             <th>Publish date</th>
-            <th colspan="2" class="text-center">Actions</th>
+            {% if user.is_authenticated %}
+               <th colspan="2" class="text-center">Actions</th>
+             {% else %}
+                        <!-- Rien n’est affiché si non connecté -->
+             {% endif %}
           </tr>
         </thead>
         <tbody>
           {% if not form.instance.id %}
-          <tr>
-            {% include 'mytvddata/pages/repository/repositrory_dataset_save.html' %}
-          </tr>
+             {% if user.is_authenticated %}
+                <tr>
+                  {% include 'mytvddata/pages/repository/repositrory_dataset_save.html' %}
+                </tr>
+             {% else %}
+                        <!-- Rien n’est affiché si non connecté -->
+             {% endif %}
           {% endif %}
 
           {% for repositoryIndicator in repositoryIndicators %}
@@ -208,8 +216,12 @@
               <td>{{repositoryIndicator.alpha_value}}</td>
               <td>{{repositoryIndicator.numeric_value}}</td>
               <td>{{repositoryIndicator.publish_date}}</td>
-              <td><button formnovalidate name="edit" value="{{repositoryIndicator.id}}" class="btn btn-primary btn-sm">✏️ Edit</button></td>
-              <td><button formnovalidate name="delete" value="{{repositoryIndicator.id}}" class="btn btn-danger btn-sm">❌ Delete</button></td>
+              {% if user.is_authenticated %}
+                <td><button formnovalidate name="edit" value="{{repositoryIndicator.id}}" class="btn btn-primary btn-sm">✏️ Edit</button></td>
+                <td><button formnovalidate name="delete" value="{{repositoryIndicator.id}}" class="btn btn-danger btn-sm">❌ Delete</button></td>
+              {% else %}
+                        <!-- Rien n’est affiché si non connecté -->
+              {% endif %}
             {% endif %}
           </tr>
           {% endfor %}

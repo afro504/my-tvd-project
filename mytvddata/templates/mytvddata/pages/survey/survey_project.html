@@ -11,7 +11,7 @@
             <div class="col-12">
                 <div class="page-wrapper">
 
-                    {% if user.is_authenticated %}
+                   
                         <!-- Messages -->
                         {% for message in messages %}
                             <div class="alert alert-info alert-dismissible fade show" role="alert">
@@ -118,13 +118,7 @@
                             </ul>
                         </nav>
 
-                    {% else %}
-                        <section>
-                            <p class="text-center">
-                                Page not found. Please <a href='/signin'>sign in</a> or <a href='/'>return to the homepage</a>.
-                            </p>
-                        </section>
-                    {% endif %}
+                    
                 </div>
             </div>
         </div>

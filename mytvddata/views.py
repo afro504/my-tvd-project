@@ -353,7 +353,7 @@ def countries(request):
 # =========================
 # CRUD COUNTRY (PRO VERSION)
 # =========================
-@login_required
+#@login_required
 def add_country(request):
  
     # ✅ Base queryset optimisé
@@ -384,6 +384,11 @@ def add_country(request):
  
         # ✅ SAVE / UPDATE
         if 'save' in request.POST:
+            #Condition security
+            if not request.user.is_authenticated:
+                messages.error(request, "⚠️ You must be logged in to edit or delete.")
+                return redirect("signin")  # ou une autre page
+                        
             pk = request.POST.get('save')
  
             if pk:  # update
@@ -399,6 +404,11 @@ def add_country(request):
  
         # ✅ DELETE
         elif 'delete' in request.POST:
+            #Condition security
+            if not request.user.is_authenticated:
+                messages.error(request, "⚠️ You must be logged in to edit or delete.")
+                return redirect("signin")  # ou une autre page
+                        
             if request.user.groups.filter(name='Manager and delete').exists():
  
                 pk = request.POST.get('delete')
@@ -413,6 +423,11 @@ def add_country(request):
  
         # ✅ EDIT (pré-remplir form)
         elif 'edit' in request.POST:
+            #Condition security
+            if not request.user.is_authenticated:
+                messages.error(request, "⚠️ You must be logged in to edit or delete.")
+                return redirect("signin")  # ou une autre page
+                        
             pk = request.POST.get('edit')
             country = get_object_or_404(Country, id=pk)
             form = CountryForm(instance=country)
@@ -524,7 +539,7 @@ def export_country(request):
 
 
 
-@login_required
+#@login_required
 def list_indicator(request):
 
     indicators_qs = Indicator.objects.select_related('subcomponent').order_by('indicator_name')
@@ -556,7 +571,7 @@ def list_indicator(request):
 
     return render(request, 'mytvddata/pages/indicator/indicator_list.html', context)
 
-
+@login_required
 def save_indicator_form(request, form, template_name):
 
     data = {}
@@ -657,7 +672,7 @@ def delete_indicator(request, pk):
 
 
 
-@login_required
+#@login_required
 def export_indicator(request):
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -1045,6 +1060,11 @@ def survey_add_project(request):
     # Actions POST
     if request.method == "POST":
         if "save" in request.POST:
+             #Condition security
+            if not request.user.is_authenticated:
+                messages.error(request, "⚠️ You must be logged in to edit or delete.")
+                return redirect("signin")  # ou une autre page
+                        
             pk = request.POST.get("save")
 
             if pk:
@@ -1069,6 +1089,11 @@ def survey_add_project(request):
                 return redirect('project_survey')
 
         elif "delete" in request.POST:
+            #Condition security
+            if not request.user.is_authenticated:
+                messages.error(request, "⚠️ You must be logged in to edit or delete.")
+                return redirect("signin")  # ou une autre page
+                        
             pk = request.POST.get('delete')
             surveyProject = get_object_or_404(SurveyProject, id=pk)
             surveyProject.delete()
@@ -1076,6 +1101,11 @@ def survey_add_project(request):
             return redirect('project_survey')
 
         elif "edit" in request.POST:
+             #Condition security
+            if not request.user.is_authenticated:
+                messages.error(request, "⚠️ You must be logged in to edit or delete.")
+                return redirect("signin")  # ou une autre page
+                        
             pk = request.POST.get('edit')
             surveyProject = get_object_or_404(SurveyProject, id=pk)
             form = SurveyProjectForm(instance=surveyProject)
@@ -1369,6 +1399,11 @@ def survey_add_data(request):
     # ⚡ Gestion des actions POST
     if request.method == 'POST':
         if 'save' in request.POST:
+            #Condition security
+            if not request.user.is_authenticated:
+                messages.error(request, "⚠️ You must be logged in to edit or delete.")
+                return redirect("signin")  # ou une autre page
+                        
             pk = request.POST.get('save')
             if pk:
                 surveyDataset = get_object_or_404(SurveyDataset, id=pk)
@@ -1382,6 +1417,11 @@ def survey_add_data(request):
                 return redirect('index_survey')
 
         elif 'delete' in request.POST:
+                 #Condition security
+            if not request.user.is_authenticated:
+                messages.error(request, "⚠️ You must be logged in to edit or delete.")
+                return redirect("signin")  # ou une autre page
+                            
           #  if request.user.groups.filter(name='Manager and delete').exists():
                 pk = request.POST.get('delete')
                 surveyDataset = get_object_or_404(SurveyDataset, id=pk)
@@ -1392,6 +1432,11 @@ def survey_add_data(request):
           #      return render(request, 'mytvddata/cover/403.html')
 
         elif 'edit' in request.POST:
+              #Condition security
+            if not request.user.is_authenticated:
+                messages.error(request, "⚠️ You must be logged in to edit or delete.")
+                return redirect("signin")  # ou une autre page
+                        
             pk = request.POST.get('edit')
             surveyDataset = get_object_or_404(SurveyDataset, id=pk)
             form = SurveyDatasetForm(instance=surveyDataset)
@@ -1957,6 +2002,11 @@ def repository_add_data(request):
     # Actions POST
     if request.method == "POST":
         if "save" in request.POST:
+             #Condition security
+            if not request.user.is_authenticated:
+                messages.error(request, "⚠️ You must be logged in to edit or delete.")
+                return redirect("signin")  # ou une autre page
+                        
             pk = request.POST.get("save")
             if pk:
                 instance = get_object_or_404(RepositoryIndicator, id=pk)
@@ -1970,6 +2020,11 @@ def repository_add_data(request):
                 return redirect("datasets_repository")
 
         elif "delete" in request.POST:
+             #Condition security
+            if not request.user.is_authenticated:
+                messages.error(request, "⚠️ You must be logged in to edit or delete.")
+                return redirect("signin")  # ou une autre page
+                        
             pk = request.POST.get("delete")
             instance = get_object_or_404(RepositoryIndicator, id=pk)
             instance.delete()
@@ -1977,6 +2032,11 @@ def repository_add_data(request):
             return redirect("datasets_repository")
 
         elif "edit" in request.POST:
+             #Condition security
+            if not request.user.is_authenticated:
+                messages.error(request, "⚠️ You must be logged in to edit or delete.")
+                return redirect("signin")  # ou une autre page
+            
             pk = request.POST.get("edit")
             instance = get_object_or_404(RepositoryIndicator, id=pk)
             form = RepositoryIndicatorForm(instance=instance)
@@ -3052,6 +3112,12 @@ def component_add(request):
 
     if request.method == 'POST':
         if 'save' in request.POST:
+
+            #Condition security
+            if not request.user.is_authenticated:
+                messages.error(request, "⚠️ You must be logged in to edit or delete.")
+                return redirect("signin")  # ou une autre page
+            
             pk = request.POST.get('save')
             if not pk:
                 form = ComponentsForm(request.POST)
@@ -3064,6 +3130,11 @@ def component_add(request):
             return redirect('component_add')  # 🔑 redirection après POST
 
         elif 'delete' in request.POST:
+             #Condition security
+            if not request.user.is_authenticated:
+                messages.error(request, "⚠️ You must be logged in to edit or delete.")
+                return redirect("signin")  # ou une autre page
+            
             pk = request.POST.get('delete')
             component = Component.objects.get(id=pk)
             component.delete()
@@ -3135,8 +3206,14 @@ def subcomponent_add(request):
   
     context['paginator']=paginator
     context['title'] ='home'
-    if request.method == 'POST':
+    if request.method == 'POST':       
         if 'save' in request.POST:
+
+              #Condition security
+            if not request.user.is_authenticated:
+                messages.error(request, "⚠️ You must be logged in to edit or delete.")
+                return redirect("signin")  # ou une autre page
+                    
             pk = request.POST.get('save')
             if not pk:
                 form=SubcomponentsForm(request.POST)
@@ -3149,6 +3226,11 @@ def subcomponent_add(request):
             return redirect('subcomponent_add')  # 🔑 redirection après POST
 
         elif 'delete' in request.POST:
+                 #Condition security
+            if not request.user.is_authenticated:
+                messages.error(request, "⚠️ You must be logged in to edit or delete.")
+                return redirect("signin")  # ou une autre page
+            
          #   if request.user.groups.filter(name='Manager and delete').exists(): ## Condition security
                 pk = request.POST.get('delete')
                 subcomponent = Subcomponent.objects.get(id = pk)
@@ -3159,6 +3241,11 @@ def subcomponent_add(request):
         #        return render(request, 'pages/examples/403.html')
     
         elif 'edit' in request.POST:
+             #Condition security
+            if not request.user.is_authenticated:
+                messages.error(request, "⚠️ You must be logged in to edit or delete.")
+                return redirect("signin")  # ou une autre page
+
             pk = request.POST.get('edit')
             subcomponent = Subcomponent.objects.get(id = pk)
             form = SubcomponentsForm(instance = subcomponent)
@@ -3653,55 +3740,6 @@ def staff_export_xlsx(request):
     response["Content-Disposition"] = 'attachment; filename="staff_dashboard.xlsx"'
     wb.save(response)
     return response
-
-
-
-
-
-
-
-
-
-
-
-def staffs_import_xlsx(request):
-    if request.method == "POST" and request.FILES.get("file"):
-        excel_file = request.FILES["file"]
-        df = pd.read_excel(excel_file)
-
-        for _, row in df.iterrows():
-            staff, created = StaffMember.objects.update_or_create(
-                email=row["Email"],
-                defaults={
-                    "name": row["Name"],
-                    "email": row.get("Email", ""),
-                    "position": row.get("Position", ""),
-                    "grade": row.get("Grade", ""),
-                    "telephone": row.get("Telephone", ""),
-                    "office_affiliation": row.get("Office Affiliation", ""),
-                    "responsibility": row.get("Responsibility", ""),
-                    "level_geo": row.get("Level Geo", ""),
-                }
-            )
-
-            # Pays (ManyToMany)
-            if "Countries" in row and pd.notna(row["Countries"]):
-                countries = [c.strip() for c in row["Countries"].split(",")]
-                staff.country.set(Country.objects.filter(name__in=countries))
-
-            # Langues (JSONField)
-            if "Languages" in row and pd.notna(row["Languages"]):
-                staff.language = [l.strip() for l in row["Languages"].split(",")]
-
-            # Maladies (ManyToMany)
-            if "Diseases" in row and pd.notna(row["Diseases"]):
-                diseases = [d.strip() for d in row["Diseases"].split(",")]
-                staff.diseases.set(Subcomponent.objects.filter(name__in=diseases))
-
-            staff.save()
-
-        messages.success(request, "Importation XLSX réussie.")
-    return redirect("staff_list")
 
 
 
@@ -4236,7 +4274,7 @@ def export_country_dashboard_excel(request, pk):
 
 
 
-
+@login_required
 def preview_json(request):
     """
     Vue pour prévisualiser le fichier JSON uploadé et proposer l'import en base.
@@ -4254,7 +4292,7 @@ def preview_json(request):
 
     return render(request, "mytvddata/pages/country/preview_json.html", {"preview_data": preview_data})
 
-
+@login_required
 def import_json(request):
     """
     Vue pour importer en base le JSON prévisualisé.
@@ -4414,6 +4452,12 @@ def geocountry_sync_to_db(request):
 # ✅ CRUD Ajax
 def geocountry_create(request):
     if request.method == "POST":
+
+             #Condition security
+        if not request.user.is_authenticated:
+            messages.error(request, "⚠️ You must be logged in to edit or delete.")
+            return redirect("signin")  # ou une autre page
+                    
         form = LocationCountryForm(request.POST)
         if form.is_valid():
             form.save()
@@ -4423,6 +4467,11 @@ def geocountry_create(request):
 def geocountry_update(request, pk):
     country = get_object_or_404(LocationCountry, pk=pk)
     if request.method == "POST":
+
+        if not request.user.is_authenticated:
+                    messages.error(request, "⚠️ You must be logged in to edit or delete.")
+                    return redirect("signin")  # ou une autre page
+        
         form = LocationCountryForm(request.POST, instance=country)
         if form.is_valid():
             form.save()
@@ -4432,6 +4481,13 @@ def geocountry_update(request, pk):
 def geocountry_delete(request, pk):
     country = get_object_or_404(LocationCountry, pk=pk)
     if request.method == "POST":
+
+             #Condition security
+
+        if not request.user.is_authenticated:
+            messages.error(request, "⚠️ You must be logged in to edit or delete.")
+            return redirect("signin")  # ou une autre page
+                
         country.delete()
         return JsonResponse({"success": True})
     return JsonResponse({"success": False})
@@ -4627,15 +4683,15 @@ def export_regional_factsheet_word(request, subcomponent_id):
     stable_count = sum(1 for c in country_summary if c["score"] == 0)
 
     doc = Document()
-    doc.add_heading(f"Factsheet régional : {subcomponent.subcomponent_name}", level=1)
+    doc.add_heading(f"Regional Factsheet : {subcomponent.subcomponent_name}", level=1)
 
     # ✅ Ajouter les statistiques globales en introduction
-    doc.add_heading("Statistiques globales", level=2)
-    doc.add_paragraph(f"Total des pays analysés : {total_countries}")
-    doc.add_paragraph(f"Pays avec indicateurs qualitatifs : {quali_count} ({(quali_count/total_countries*100 if total_countries else 0):.2f}%)")
-    doc.add_paragraph(f"Pays en progrès : {progress_count} ({(progress_count/total_countries*100 if total_countries else 0):.2f}%)")
-    doc.add_paragraph(f"Pays en recul : {recul_count} ({(recul_count/total_countries*100 if total_countries else 0):.2f}%)")
-    doc.add_paragraph(f"Pays stables : {stable_count} ({(stable_count/total_countries*100 if total_countries else 0):.2f}%)")
+    doc.add_heading("Overall statistic", level=2)
+    doc.add_paragraph(f"Total Countries Analyzed : {total_countries}")
+    doc.add_paragraph(f"Countries with Status of endemicity : {quali_count} ({(quali_count/total_countries*100 if total_countries else 0):.2f}%)")
+    doc.add_paragraph(f"Countries Showing Progress : {progress_count} ({(progress_count/total_countries*100 if total_countries else 0):.2f}%)")
+    doc.add_paragraph(f"Countries in Decline : {recul_count} ({(recul_count/total_countries*100 if total_countries else 0):.2f}%)")
+    doc.add_paragraph(f"Countries Remaining Stable : {stable_count} ({(stable_count/total_countries*100 if total_countries else 0):.2f}%)")
 
     # ✅ Boucle par catégorie avec tableau pivoté
     for category, inds in grouped_indicators.items():
@@ -4643,11 +4699,11 @@ def export_regional_factsheet_word(request, subcomponent_id):
         table = doc.add_table(rows=1, cols=2 + len(all_years) + 1)
         table.style = "Light List Accent 1"
         hdr = table.rows[0].cells
-        hdr[0].text = "Pays"
-        hdr[1].text = "Indicateur"
+        hdr[0].text = "Country"
+        hdr[1].text = "Indicator"
         for i, year in enumerate(all_years):
             hdr[2+i].text = str(year)
-        hdr[-1].text = "Variation (%)"
+        hdr[-1].text = "Change (%)"
 
         for country in Country.objects.all().order_by("name"):
             country_data = api_data.filter(country_code=country.cca3)
@@ -4777,7 +4833,7 @@ def export_regional_factsheet_excel(request, subcomponent_id):
     # ✅ Statistiques globales
     stats_data = [
         ("Total countries", total_countries),
-        ("Countries with qualitative indicators", f"{quali_count} ({(quali_count/total_countries*100 if total_countries else 0):.2f}%)"),
+        ("Countries with Status of endemicity", f"{quali_count} ({(quali_count/total_countries*100 if total_countries else 0):.2f}%)"),
         ("Countries in progress", f"{progress_count} ({(progress_count/total_countries*100 if total_countries else 0):.2f}%)"),
         ("Countries in decline", f"{recul_count} ({(recul_count/total_countries*100 if total_countries else 0):.2f}%)"),
         ("Stable countries", f"{stable_count} ({(stable_count/total_countries*100 if total_countries else 0):.2f}%)"),

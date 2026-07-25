@@ -111,7 +111,11 @@
         <th>Reference Data</th>
         <th>Subcomponent</th>
         <th>Component</th>
+          {% if user.is_authenticated %} 
         <th colspan="2" class="text-center">Actions</th>
+          {% else %}
+        <!-- Rien n’est affiché si non connecté -->
+        {% endif %}
       </tr>
     </thead>
     <tbody>

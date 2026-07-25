@@ -37,7 +37,7 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="page-wrapper">
-                            {% if user.is_authenticated %}
+                            
                                 <section class="content-header mb-4">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
@@ -111,11 +111,12 @@
                     <div class="page-wrapper shadow-lg p-4 bg-white rounded">
 
                         <!-- Table -->
-                        <div class="table-responsive">
+                        <div class="table-responsive" style="max-height:500px; overflow-y:auto;">
                             <table class="table table-responsive table-striped table-bordered table-hover w-100" id="apiDatasetTable" class="table table-striped table-hover table-bordered align-middle" style="width:100%">
                         <form method="POST" action="{% url 'display_api_data' %}">
                             {% csrf_token %}
-                                <tr>
+                             <thead class="table-primary text-center sticky-top">
+                                 <tr>
                                     <th>api id</th>
                                     <th>Country code</th>
                                     <th>Indicator code</th>                                              
@@ -130,19 +131,24 @@
                                     <th>Numeric value</th>
                                     <th>Publish date</th>
                                 </tr>
+
+                             </thead>
+                               
                                 {% if not form.instance.id %}
-                            {% comment %}  {% if user.is_authenticated %}{% endcomment %}
+                            {% if user.is_authenticated %}
                                 <tr>
                                     {% include 'mytvddata/epidata/api_dataset_save.html' %}
                                 </tr>
-                                {% comment %}  {% endif %}{% endcomment %}
+                                {% else %}
+                                   <!-- Rien n’est affiché si non connecté -->
+                                {% endif %}
                                 {% endif %}
                             {% for storeAPI in storeAPIs %}
                                 <tr>
                                     {% if form.instance.id == storeAPI.id %}
-                                {% comment %} {% if user.is_authenticated %}{% endcomment %}
-                                    {% include 'mytvddata/epidata/api_dataset_save.html' %}
-                                {% comment %}   {% endif %}{% endcomment %}
+                                        
+                                            {% include 'mytvddata/epidata/api_dataset_save.html' %}
+                                        
                                     {% else %}
                                     <td>{{storeAPI.api_id}}</td>
                                     <td>{{storeAPI.country_code}}</td>
@@ -158,24 +164,19 @@
                                     <td>{{storeAPI.numeric_value}}</td>
                                     <td>{{storeAPI.publish_date}}</td>
                                 
-                                {% comment %}  {% if user.is_authenticated %}{% endcomment %}
+                                {% if user.is_authenticated %}
                                     <td><button formnovalidate name="edit" value="{{storeAPI.id}}" class="btn btn-primary btn-sm">Edit</button></td>
                                     <td><button formnovalidate name="delete" value="{{storeAPI.id}}" class="btn btn-warning btn-sm">delete</button></td>
-                                    {% comment %} {% endif %}{% endcomment %}
+                                {% else %}
+                                            <!-- Rien n’est affiché si non connecté -->
+                                {% endif %}
                                     {% endif %}
                                 </tr>
                             {% endfor %}
                         </form>
                     </table>
                         </div>
-                            {% else %}
-                        <section class="text-center py-5">
-                            <p>
-                                We could not find the page you were looking for.  
-                                Meanwhile, you may <a href='/signin'>login with your account</a> or <a href='/'>return to home page</a>.
-                            </p>
-                        </section>
-                    {% endif %} 
+                          
 
                         <!-- Pagination -->
                         <nav aria-label="Country pagination">

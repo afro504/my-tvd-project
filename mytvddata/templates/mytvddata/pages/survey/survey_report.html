@@ -30,7 +30,7 @@
 {% block content %}
 <div class="container" style="max-width: 95rem;">
     <div class="page-wrapper">
-        {% if user.is_authenticated %}
+        
         <!-- Header -->
         <div class="page-title lb single-wrapper mb-4">
             <div class="row align-items-center">
@@ -97,14 +97,7 @@
             </table>
         </div>
 
-        {% else %}
-        <section class="alert alert-warning mt-4">
-            <p>
-                ⚠️ We could not find the page you were looking for.  
-                Meanwhile, you may <a href='/signin'>login with your account</a> or <a href='/'>return to home page</a>.
-            </p>
-        </section>
-        {% endif %}
+     
     </div>
 </div>
 

@@ -167,11 +167,15 @@
             </button>
         </div>
         <div class="d-flex gap-2">
+          {% if user.is_authenticated %}
             <form method="post" enctype="multipart/form-data" action="{% url 'staff_import_xlsx' %}">
                 {% csrf_token %}
                 <input type="file" name="file" class="form-control d-inline-block" style="width:220px;">
                 <button type="submit" class="btn btn-success">📥 Import XLSX</button>
             </form>
+          {% else %}
+              <!-- Rien n’est affiché si non connecté -->
+          {% endif %}
             <a href="{% url 'staff_export_xlsx' %}" class="btn btn-info">📤 Export XLSX</a>
             <a href="{% url 'staff_template_xlsx' %}" class="btn btn-danger">🗂 Download XLSX Template</a>
         </div>
@@ -271,7 +275,12 @@
                         <th>Languages</th>
                         <th>Diseases</th>
                         <th>Position</th>
-                        <th>Actions</th>
+                          {% if user.is_authenticated %}
+                             <th>Actions</th>
+                          {% else %}
+                                  <!-- Rien n’est affiché si non connecté -->
+                          {% endif %}
+                        </td>
                     </tr>
                 </thead>
                 <tbody>
@@ -284,8 +293,12 @@
                         <td>{% for d in s.diseases.all %}{{ d.subcomponent_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
                         <td>{{ s.position }}</td>
                         <td>
+                          {% if user.is_authenticated %}
                             <button class="btn btn-sm btn-warning js-update-staff" data-url="{% url 'staff_update' s.id %}">✏️</button>
                             <button class="btn btn-sm btn-danger js-delete-staff" data-id="{{ s.id }}" data-name="{{ s.name }}" data-url="{% url 'staff_delete' s.id %}">🗑️</button>
+                          {% else %}
+                                <!-- Rien n’est affiché si non connecté -->
+                          {% endif %}
                         </td>
                     </tr>
                     {% endfor %}

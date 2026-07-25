@@ -51,7 +51,7 @@
             <div class="col-12">
                 <div class="page-wrapper">
 
-                    {% if user.is_authenticated %}
+                  
                         <!-- Messages -->
                         {% for message in messages %}
                             <div class="alert alert-info alert-dismissible fade show" role="alert">
@@ -135,12 +135,15 @@
                                         {% endfor %}
                                     </tbody>
                                 </table>
+                                  {% if user.is_authenticated %}
                                 <form method="POST" action="{% url 'confirm_import_survey' %}">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fa fa-check"></i> Confirm Import
                                     </button>
                                 </form>
+                                 {% else %}
+                                 {% endif %}
                             </div>
                         </div>
                         {% endif %}
@@ -223,12 +226,21 @@
                             <th>Response (Numeric)</th>
                             <th>Zone 1</th>
                             <th>Zone 2</th>
-                            <th>Actions</th>
+                            {% if user.is_authenticated %}
+                                    <th>Actions</th>
+                            {% else %}
+                                            <!-- Rien n’est affiché si non connecté -->
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody>
                         {% if not form.instance.id %}
-                            <tr>{% include 'mytvddata/pages/survey/survey_dataset_save.html' %}</tr>
+                            {% if user.is_authenticated %}
+                                <tr>{% include 'mytvddata/pages/survey/survey_dataset_save.html' %}</tr>
+                            {% else %}
+                                            <!-- Rien n’est affiché si non connecté -->
+                            {% endif %}
+
                         {% endif %}
                         {% for surveyDataset in surveyDatasets %}
                             <tr>
@@ -242,6 +254,7 @@
                                     <td>{{ surveyDataset.response_num }}</td>
                                     <td>{{ surveyDataset.level_1 }}</td>
                                     <td>{{ surveyDataset.level_2 }}</td>
+                                     {% if user.is_authenticated %}
                                     <td>
                                         <button formnovalidate name="edit" value="{{ surveyDataset.id }}" class="btn btn-primary btn-sm">
                                             <i class="fa fa-edit"></i> Modifier
@@ -250,6 +263,9 @@
                                             <i class="fa fa-trash"></i> Supprimer
                                         </button>
                                     </td>
+                                    {% else %}
+                                            <!-- Rien n’est affiché si non connecté -->
+                                    {% endif %}
                                 {% endif %}
                             </tr>
                         {% endfor %}
@@ -257,14 +273,7 @@
                 </table>
             </form>
         </div>
-    {% else %}
-        <section class="text-center">
-            <p>
-                Page non trouvée.  
-                Veuillez <a href='/signin'>vous connecter</a> ou <a href='/'>retourner à l’accueil</a>.
-            </p>
-        </section>
-    {% endif %}
+   
     </div>
 </div>
 </div>

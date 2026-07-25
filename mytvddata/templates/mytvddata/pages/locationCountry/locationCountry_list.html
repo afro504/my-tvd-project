@@ -18,7 +18,11 @@
   <div class="mb-3">
     <a href="{% url 'export_json_geocountry' %}" class="btn btn-success"><i class="fa-solid fa-download"></i> Export JSON</a>
     <a href="{% url 'export_csv_geocountry' %}" class="btn btn-info"><i class="fa-solid fa-file-csv"></i> Export CSV</a>
-    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createModal"><i class="fa-solid fa-plus"></i> Add Country</button>
+    {% if user.is_authenticated %}
+      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createModal"><i class="fa-solid fa-plus"></i> Add Country</button>
+     {% else %}
+          <!-- Rien n’est affiché si non connecté -->
+     {% endif %}
   </div>
 
   <!-- Conteneur Ajax -->

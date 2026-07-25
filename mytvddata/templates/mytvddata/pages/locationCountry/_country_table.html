@@ -5,7 +5,11 @@
       <th>Nom</th>
       <th>Latitude</th>
       <th>Longitude</th>
+       {% if user.is_authenticated %}
       <th>Actions</th>
+       {% else %}
+          <!-- Rien n’est affiché si non connecté -->
+     {% endif %}
     </tr>
   </thead>
   <tbody>
@@ -15,6 +19,8 @@
       <td>{{ country.name }}</td>
       <td>{{ country.latitude }}</td>
       <td>{{ country.longitude }}</td>
+
+      {% if user.is_authenticated %}
       <td>
         <!-- Bouton Update -->
         <button class="btn btn-warning btn-sm edit-btn"
@@ -38,7 +44,10 @@
           🗑️ Delete
         </button>
       </td>
-    </tr>
+        {% else %}
+          <!-- Rien n’est affiché si non connecté -->
+     {% endif %}
+</tr>
     {% empty %}
     <tr><td colspan="5" class="text-center text-muted">Aucun pays trouvé</td></tr>
     {% endfor %}

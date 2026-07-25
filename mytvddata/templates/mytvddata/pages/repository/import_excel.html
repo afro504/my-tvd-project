@@ -137,9 +137,13 @@
     </div>
     <form method="post" action="{% url 'save_excel_repository' %}">
         {% csrf_token %}
-       <button type="submit" class="btn btn-success fw-bold mt-3">
-          ✅ ESave to SQL Server Database
-        </button>
+          {% if user.is_authenticated %}
+              <button type="submit" class="btn btn-success fw-bold mt-3">
+                ✅ Save to SQL Server Database
+              </button>
+          {% else %}
+            <!-- Rien n’est affiché si non connecté -->
+          {% endif %}
     </form>
     </div>
     {% endif %}

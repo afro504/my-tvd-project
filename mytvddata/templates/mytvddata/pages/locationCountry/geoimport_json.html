@@ -5,7 +5,11 @@
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <input type="file" name="json_file" accept=".json" class="form-control mb-3">
+     {% if user.is_authenticated %}
     <button type="submit" class="btn btn-primary">Importer</button>
+     {% else %}
+          <!-- Rien n’est affiché si non connecté -->
+     {% endif %}
   </form>
 </div>
 {% endblock %}

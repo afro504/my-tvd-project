@@ -20,6 +20,10 @@
       {% endfor %}
     </tbody>
   </table>
-  <a href="{% url 'geocountry_sync_to_db' %}" class="btn btn-success">Synchroniser avec la base</a>
+   {% if user.is_authenticated %}
+      <a href="{% url 'geocountry_sync_to_db' %}" class="btn btn-success">Synchroniser avec la base</a>
+   {% else %}
+          <!-- Rien n’est affiché si non connecté -->
+     {% endif %}
 </div>
 {% endblock %}

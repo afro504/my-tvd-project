@@ -22,6 +22,7 @@
     <td>{{ indicator.subcomponent.component.component_name }}</td>
     
   <td>
+     {% if user.is_authenticated %} 
     <button class="btn btn-sm btn-info js-update-indicator"
             data-url="{% url 'update_indicator' indicator.pk %}">
       Edit
@@ -30,6 +31,9 @@
             data-url="{% url 'delete_indicator' indicator.pk %}">
       Delete
     </button>
+     {% else %}
+        <!-- Rien n’est affiché si non connecté -->
+    {% endif %}
   </td>
 </tr>
 
