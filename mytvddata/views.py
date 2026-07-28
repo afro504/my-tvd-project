@@ -3575,8 +3575,8 @@ def staff_create(request):
         form = StaffMemberForm(request.POST)
         if form.is_valid():
             staff = form.save()
-            send_mail("Nouveau Staff ajouté", f"{staff.name} a été ajouté.", "admin@server.com", [staff.email], fail_silently=True)
-            messages.success(request, "Staff ajouté avec succès.")
+            send_mail("New Focal Point onboarded", f"{staff.name} has been added..", "ondonwil@outlook.com", [staff.email], fail_silently=True)
+            messages.success(request, "Focal Point added successfully.")
             return HttpResponse("OK")
         return render(request, "mytvddata/pages/staff/partial_staff_form.html", {"form": form})
     else:
@@ -3589,8 +3589,8 @@ def staff_update(request, pk):
         form = StaffMemberForm(request.POST, instance=staff)
         if form.is_valid():
             staff = form.save()
-            send_mail("Mise à jour Staff", f"{staff.name} a été mis à jour.", "admin@server.com", [staff.email], fail_silently=True)
-            messages.success(request, "Staff mis à jour avec succès.")
+            send_mail("Focal point successfully revised", f"{staff.name} has been added.", "ondonwil@outlook.com", [staff.email], fail_silently=True)
+            messages.success(request, "Staff updated successfully.")
             return HttpResponse("OK")
         return render(request, "mytvddata/pages/staff/partial_staff_form.html", {"form": form, "staff": staff})
     else:
@@ -3601,7 +3601,7 @@ def staff_delete(request, pk):
     staff = get_object_or_404(StaffMember, pk=pk)
     if request.method == "POST":
         staff.delete()
-        messages.success(request, "Staff supprimé.")
+        messages.success(request, "Focal Point record deleted successfully.")
     return redirect("staff_list")
 
 
@@ -3737,7 +3737,7 @@ def staff_export_xlsx(request):
     response = HttpResponse(
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-    response["Content-Disposition"] = 'attachment; filename="staff_dashboard.xlsx"'
+    response["Content-Disposition"] = 'attachment; filename="Focal_Point_dashboard.xlsx"'
     wb.save(response)
     return response
 
@@ -3834,7 +3834,7 @@ def staff_template_xlsx(request):
     df.loc[0] = [
          "Jean Dupont", "jean.dupont@example.com", "MOH Staff", "Doctor",
          "+33 123456789", "MOH", "Director",
-         "Country", "DRC","fr", "Leprosy" 
+         "Country", "Algeria","fr", "Leprosy" 
     ]
     df.loc[1] = [
          "Maria Sanchez", "maria.sanchez@example.com", "MOH Staff", "Doctor",
@@ -4493,8 +4493,25 @@ def geocountry_delete(request, pk):
     return JsonResponse({"success": False})
 
 # ✅ Export JSON
+#def export_json_geocountry(request):
+#    countries = LocationCountry.objects.all().values("iso3", "name", "latitude", "longitude")
+ #   data = list(countries)
+ #   response = HttpResponse(json.dumps(data, indent=4), content_type="application/json")
+ #   response["Content-Disposition"] = 'attachment; filename="countries.json"'
+#    return response
+
+
+
 def export_json_geocountry(request):
-    countries = LocationCountry.objects.all().values("iso3", "name", "latitude", "longitude")
+    countries = (
+        LocationCountry.objects
+        .annotate(
+            CountryName=F("name"),
+            CountryLat=F("latitude"),
+            CountryLng=F("longitude")
+        )
+        .values("iso3", "CountryName", "CountryLat", "CountryLng")
+    )
     data = list(countries)
     response = HttpResponse(json.dumps(data, indent=4), content_type="application/json")
     response["Content-Disposition"] = 'attachment; filename="countries.json"'

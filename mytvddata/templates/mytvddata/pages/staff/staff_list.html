@@ -263,7 +263,7 @@
     <!-- TABLEAU -->
     <div class="card shadow-lg">
         <div class="card-header bg-light">
-            <h4 class="fw-bold mb-0">List of Staff</h4>
+            <h4 class="fw-bold mb-0">List of Focal point</h4>
         </div>
         <div class="card-body">
             <table class="table table-hover align-middle">
@@ -407,7 +407,7 @@
             $(".js-delete-staff").click(function () {
                 var staffName = $(this).data("name");
                 var url = $(this).data("url");
-                $("#delete-message").text("Voulez-vous vraiment supprimer " + staffName + " ?");
+                $("#delete-message").text("Do you really want to delete " + staffName + " ?");
                 $("#delete-form").attr("action", url);
                 $("#deleteModal").modal("show");
             });
