@@ -80,7 +80,7 @@
                     <th>Indicator</th>
                     <th>Target</th>
                     {% for year in all_years %}
-                        <th>{{ year }}</th>
+                        <th>{{ year|floatformat:0  }}</th>
                     {% endfor %}
                     <th>Change (%)</th>
                     <th>Source</th>
@@ -94,7 +94,7 @@
                             <td>{{ ind.indicator.indicator_target }}</td>
                             {% for year in all_years %}
                                 {% with res=ind.results|get_result_for_year:year %}
-                                    <td>{{ res.numeric_value|default:"-" }}</td>
+                                    <td>{{ res.numeric_value|default:"-"|floatformat:0  }}</td>
                                 {% endwith %}
                             {% endfor %}
                             <td>
@@ -128,7 +128,7 @@
                             <th>Indicator</th>
                             <th>Target</th>
                             {% for year in all_years %}
-                                <th>{{ year }}</th>
+                                <th>{{ year|floatformat:0  }}</th>
                             {% endfor %}
                             <th>Source</th>
                         </tr>

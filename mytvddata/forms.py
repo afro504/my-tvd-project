@@ -11,6 +11,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Row, Column
 from crispy_forms.bootstrap import FormActions
 import django_filters
+from django.forms import DateInput
  
 
 LANGUAGE_CHOICES = [
@@ -73,6 +74,16 @@ class CountryForm(forms.ModelForm):
             'data_source': forms.Textarea(attrs={'rows': 2,'class': 'form-control'}),
             'country_class': forms.TextInput(attrs={'class': 'form-control'}),
         }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # ✅ Afficher uniquement le nom du pays dans la dropdown
+        self.fields["name"].label_from_instance = lambda obj: obj.name
+
+        # ✅ Optionnel : Crispy Forms pour un rendu propre
+        self.helper = FormHelper()
+        self.helper.form_method = "post"
+        self.helper.add_input(Submit("submit", "Save"))
  
  
 # =========================
@@ -441,6 +452,12 @@ class SurveyUploadForm(forms.Form):
 # REPOSITORY INDICATOR
 # =========================
 class RepositoryIndicatorForm(forms.ModelForm):
+    indicator = forms.ModelChoiceField(
+        queryset=Indicator.objects.all(),
+        widget=forms.Select,
+        label="Indicator name"
+    )
+
     class Meta:
         model = RepositoryIndicator
         fields = [
@@ -460,18 +477,26 @@ class RepositoryIndicatorForm(forms.ModelForm):
             "publish_date",     # Publish date
         ]
         widgets = {
-            "publish_date": DateInput(format='%Y-%m-%d')
+            "publish_date": DateInput(format='%Y-%m-%d', attrs={"type": "date"}),
+            'indicator': forms.Select(attrs={
+                                    'class': 'form-control'
+                                }),
+            'indicator_code': forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Please enter the indicator code'
+        })
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # ✅ Optimisation de la queryset pour le champ indicator
-        self.fields["indicator"].queryset = Indicator.objects.select_related("subcomponent")
+        # ✅ Afficher uniquement le nom de l’indicateur dans la dropdown
+        self.fields["indicator"].label_from_instance = lambda obj: obj.indicator_name
 
         # ✅ Optionnel : utiliser Crispy Forms pour un rendu propre
         self.helper = FormHelper()
         self.helper.form_method = "post"
+        self.helper.add_input(Submit("submit", "Save"))
 
  
 class SelectRepositoryForm(forms.Form):

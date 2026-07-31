@@ -33,6 +33,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 #BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# Add custom locale directory
+LOCALE_PATHS = [
+    os.path.join(BASE_DIR, 'locale'),  # or BASE_DIR / 'locale'
+]
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -88,7 +93,7 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",  # <--- important pour Docker
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
-    "django.middleware.common.CommonMiddleware",
+    "django.middleware.common.CommonMiddleware",  # <--- Activer le middleware de traduction
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -120,6 +125,7 @@ TEMPLATES = [
         },
     },
 ]
+
 
 WSGI_APPLICATION = 'TVDdata.wsgi.application'
 
@@ -180,6 +186,8 @@ else:
         }
     }
 
+   
+
 
 
  
@@ -221,16 +229,15 @@ USE_I18N = True
 USE_L10N = True
 
 #LANGUAGE_CODE = 'en'   # langue par défaut
+from django.utils.translation import gettext_lazy as _
 
 LANGUAGES = [
-    ('en', 'English'),
-    ('fr', 'Français'),
-    ('pt', 'Português'),
+    ('en', _('English')),
+    ('fr', _('Français')),
+    ('pt', _('Português')),
 ]
 
-LOCALE_PATHS = [
-    BASE_DIR / 'locale',
-]
+USE_I18N=True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/

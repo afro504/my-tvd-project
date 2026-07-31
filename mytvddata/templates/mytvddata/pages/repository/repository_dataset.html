@@ -74,6 +74,14 @@
   display: none;             /* ✅ supprime les cases vides */
 }
 
+/* Cellule pour Indicator name */
+.indicator-cell {
+  max-width: 220px;       /* largeur maximale */
+  white-space: normal;    /* autorise les retours à la ligne */
+  word-wrap: break-word;  /* coupe les mots trop longs */
+  line-height: 1.4;       /* améliore la lisibilité */
+}
+
 
 </style>
 {% endblock style %}
@@ -167,8 +175,9 @@
           <tr>
             <th>Country</th>
             <th>ISO</th>
-            <th>Indicator name</th>
             <th>Indicator code</th>
+             <th style="width: 200px;">Indicator name</th>
+            
             <th>Dim1 type</th>
             <th>Dim1</th>
             <th>Dim2 type</th>
@@ -204,17 +213,21 @@
             {% else %}
               <td>{{repositoryIndicator.country.name}}</td>
               <td>{{repositoryIndicator.spatial_dim}}</td>
-              <td>{{repositoryIndicator.indicator.indicator_name}}</td>
               <td>{{repositoryIndicator.indicator_code}}</td>
+              <td class="indicator-cell">
+                {{ repositoryIndicator.indicator.indicator_name }}
+              </td>
+
+              
               <td>{{repositoryIndicator.dim1_type}}</td>
               <td>{{repositoryIndicator.dim1}}</td>
               <td>{{repositoryIndicator.dim2_type}}</td>
               <td>{{repositoryIndicator.dim2}}</td>
               <td>{{repositoryIndicator.dim3_type}}</td>
               <td>{{repositoryIndicator.dim3}}</td>
-              <td>{{repositoryIndicator.time_dim}}</td>
+              <td>{{repositoryIndicator.time_dim|floatformat:0 }}</td>
               <td>{{repositoryIndicator.alpha_value}}</td>
-              <td>{{repositoryIndicator.numeric_value}}</td>
+              <td>{{repositoryIndicator.numeric_value|floatformat:0 }}</td>
               <td>{{repositoryIndicator.publish_date}}</td>
               {% if user.is_authenticated %}
                 <td><button formnovalidate name="edit" value="{{repositoryIndicator.id}}" class="btn btn-primary btn-sm">✏️ Edit</button></td>

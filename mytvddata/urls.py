@@ -200,6 +200,8 @@ urlpatterns = [
 
     path("country/<int:pk>/dashboard/", views.country_dashboard, name="country_dashboard"),
 
+    path("country/<int:pk>/factsheet/", views.country_factsheet, name="country_factsheet"),
+
     # Export PDF
     #path("country/<int:pk>/dashboard/pdf/", views.export_country_pdf, name="country_dashboard_pdf"),
 
@@ -207,6 +209,7 @@ urlpatterns = [
     path("country/<int:pk>/dashboard/word/", views.export_country_word, name="country_dashboard_word"),
 
     path("country/<int:pk>/excel/", views.export_country_dashboard_excel, name="export_country_dashboard_excel"),
+
 
 
     ### SURVEY

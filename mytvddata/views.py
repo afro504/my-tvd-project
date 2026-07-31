@@ -21,8 +21,10 @@ from django.contrib.auth.decorators import login_required, permission_required, 
 from django.views.decorators.csrf import csrf_exempt
 from docx import Document
 from django.db import transaction
-
-
+import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.colors as pc
+from django.utils.translation import gettext as _
 
 # =========================
 # DJANGO GENERIC VIEWS
@@ -238,7 +240,7 @@ def signup(request):
  
         # ✅ Vérifier si username existe
         if User.objects.filter(username=username).exists():
-            messages.error(request, "Username already exists")
+            messages.error(request, _("Username already exists"))
             return render(request, 'mytvddata/cover/signup.html')
  
         # ✅ Vérifier email existe déjà
@@ -2016,7 +2018,7 @@ def repository_add_data(request):
 
             if form.is_valid():
                 form.save()
-                messages.success(request, "✅ Donnée enregistrée ou mise à jour")
+                messages.success(request, "✅ Data saved or updated")
                 return redirect("datasets_repository")
 
         elif "delete" in request.POST:
@@ -2028,7 +2030,7 @@ def repository_add_data(request):
             pk = request.POST.get("delete")
             instance = get_object_or_404(RepositoryIndicator, id=pk)
             instance.delete()
-            messages.success(request, "❌ Donnée supprimée")
+            messages.success(request, "❌ Data deleted")
             return redirect("datasets_repository")
 
         elif "edit" in request.POST:
@@ -4005,18 +4007,68 @@ def country_dashboard(request, pk):
 
 
 
+def bind_rows_data():
+    store_data = StoreAPI.objects.all()
+    repo_data = RepositoryIndicator.objects.all()
+
+    unified_data = []
+
+    # Normaliser StoreAPI
+    for s in store_data:
+        unified_data.append({
+            "indicator_code": s.indicator_code,
+            "country_code": s.country_code,
+            "dim1_type": s.dim1_type,
+            "dim1": s.dim1,
+            "dim2_type": s.dim2_type,
+            "dim2": s.dim2,
+            "dim3_type": s.dim3_type,
+            "dim3": s.dim3,
+            "time_dim": s.time_dim,
+            "alpha_value": s.alpha_value,
+            "numeric_value": s.numeric_value,
+            "publish_date": s.publish_date,
+            "indicator_name": None,
+        })
+
+    # Normaliser RepositoryIndicator
+    for r in repo_data:
+        unified_data.append({
+            "indicator_code": r.indicator_code,
+            "country_code": r.spatial_dim,
+            "dim1_type": r.dim1_type,
+            "dim1": r.dim1,
+            "dim2_type": r.dim2_type,
+            "dim2": r.dim2,
+            "dim3_type": r.dim3_type,
+            "dim3": r.dim3,
+            "time_dim": r.time_dim,
+            "alpha_value": r.alpha_value,
+            "numeric_value": float(r.numeric_value) if r.numeric_value else None,
+            "publish_date": r.publish_date,
+            "indicator_name": r.indicator.indicator_name if r.indicator else None,
+        })
+
+    return unified_data
+
 
 
 
 def export_country_word(request, pk):
     country = get_object_or_404(Country, pk=pk)
 
-    api_data = StoreAPI.objects.filter(country_code=country.cca3)
+    # 🔹 Récupération des données fusionnées
+    all_data = bind_rows_data()
+    country_data = [d for d in all_data if d["country_code"] == country.cca3]
 
-    indicators = Indicator.objects.filter(indicator_code__in=api_data.values_list("indicator_code", flat=True))
+    # 🔹 Récupération des indicateurs liés
+    indicator_codes = {d["indicator_code"] for d in country_data}
+    indicators = Indicator.objects.filter(indicator_code__in=indicator_codes)
     indicator_map = {ind.indicator_code: ind for ind in indicators}
 
+    # 🔹 Création du document Word
     doc = Document()
+    doc.add_heading(f"Country Overview - {country.name} ({country.cca3})", level=1)
     doc.add_heading(f"Profil du pays : {country.name}", level=1)
     doc.add_paragraph(f"Capitale : {country.capital}")
     doc.add_paragraph(f"Subregion : {country.subregion}")
@@ -4031,7 +4083,7 @@ def export_country_word(request, pk):
         para = doc.add_paragraph()
         run = para.add_run("Indicateurs quantitatifs (Quanti_ind)")
         run.bold = True
-        run.font.color.rgb = RGBColor(0, 128, 0)  # Vert
+        run.font.color.rgb = RGBColor(0, 128, 0)
 
         table = doc.add_table(rows=1, cols=7)
         table.style = "Light List Accent 1"
@@ -4045,46 +4097,29 @@ def export_country_word(request, pk):
         hdr_cells[6].text = "Variation (%)"
 
         for code in quanti_codes:
-            results = api_data.filter(indicator_code=code).order_by("time_dim")
-            if results.exists():
+            results = [d for d in country_data if d["indicator_code"] == code and d["numeric_value"] is not None]
+            results = sorted(results, key=lambda x: x["time_dim"])
+            if results:
                 ind = indicator_map[code]
-                min_val = results.first().numeric_value
-                max_val = results.last().numeric_value
-                min_year = results.first().time_dim
-                max_year = results.last().time_dim
+                min_val = results[0]["numeric_value"]
+                max_val = results[-1]["numeric_value"]
+                min_year = results[0]["time_dim"]
+                max_year = results[-1]["time_dim"]
 
                 variation = None
                 if min_val and max_val and min_val != 0:
-                    try:
-                        variation = ((max_val - min_val) / min_val) * 100
-                    except Exception:
-                        variation = None
+                    variation = ((max_val - min_val) / min_val) * 100
 
                 row_cells = table.add_row().cells
-                # Maladie en bleu
                 run = row_cells[0].paragraphs[0].add_run(ind.subcomponent.subcomponent_name if ind.subcomponent else "-")
                 run.font.color.rgb = RGBColor(0, 0, 255)
-                # Indicateur en gras
                 run = row_cells[1].paragraphs[0].add_run(ind.indicator_name)
                 run.bold = True
                 row_cells[2].text = str(min_year)
                 row_cells[3].text = str(max_year)
                 row_cells[4].text = str(min_val) if min_val is not None else "-"
                 row_cells[5].text = str(max_val) if max_val is not None else "-"
-
-                if variation is not None:
-                    para = row_cells[6].paragraphs[0]
-                    if ind.performance_indicator == "Low" and ind.category_indicator in ["prevalence","Death","incidence"] and variation < 0:
-                        run = para.add_run(f"↓ {variation:.2f} %")
-                        run.font.color.rgb = RGBColor(0, 128, 0)
-                    elif ind.performance_indicator == "Hight" and ind.category_indicator == "strategy" and variation > 0:
-                        run = para.add_run(f"↑ {variation:.2f} %")
-                        run.font.color.rgb = RGBColor(0, 128, 0)
-                    else:
-                        run = para.add_run(f"↓ {variation:.2f} %")
-                        run.font.color.rgb = RGBColor(255, 0, 0)
-                else:
-                    row_cells[6].text = "–"
+                row_cells[6].text = f"{variation:.2f} %" if variation is not None else "–"
 
     # --- Indicateurs qualitatifs ---
     quali_codes = [code for code, ind in indicator_map.items() if ind.type_indicator == "Quali_ind"]
@@ -4092,7 +4127,7 @@ def export_country_word(request, pk):
         para = doc.add_paragraph()
         run = para.add_run("Indicateurs qualitatifs (Quali_ind)")
         run.bold = True
-        run.font.color.rgb = RGBColor(255, 140, 0)  # Orange
+        run.font.color.rgb = RGBColor(255, 140, 0)
 
         table = doc.add_table(rows=1, cols=5)
         table.style = "Light List Accent 2"
@@ -4104,46 +4139,18 @@ def export_country_word(request, pk):
         hdr_cells[4].text = "Source"
 
         for code in quali_codes:
-            results = api_data.filter(indicator_code=code).order_by("time_dim")
+            results = [d for d in country_data if d["indicator_code"] == code]
+            results = sorted(results, key=lambda x: x["time_dim"])
             ind = indicator_map[code]
             for data in results:
                 row_cells = table.add_row().cells
                 run = row_cells[0].paragraphs[0].add_run(ind.subcomponent.subcomponent_name if ind.subcomponent else "-")
-                run.font.color.rgb = RGBColor(0, 0, 255)  # Bleu
+                run.font.color.rgb = RGBColor(0, 0, 255)
                 run = row_cells[1].paragraphs[0].add_run(ind.indicator_name)
                 run.bold = True
-                row_cells[2].text = str(data.time_dim)
-                row_cells[3].text = str(data.alpha_value) if data.alpha_value else "-"
+                row_cells[2].text = str(data["time_dim"])
+                row_cells[3].text = str(data["alpha_value"]) if data["alpha_value"] else "-"
                 row_cells[4].text = ind.indicator_source or "-"
-
-    # --- Légende ---
-    doc.add_page_break()
-    doc.add_heading("Légende", level=2)
-    legend_table = doc.add_table(rows=1, cols=2)
-    legend_table.style = "Light List Accent 3"
-    hdr = legend_table.rows[0].cells
-    hdr[0].text = "Symbole / Couleur"
-    hdr[1].text = "Signification"
-
-    rows = [
-        ("↑ Vert", "Amélioration souhaitée"),
-        ("↓ Rouge", "Détérioration"),
-        ("– Gris", "Variation nulle"),
-        ("–", "Données non disponibles"),
-        ("Quanti_ind", "Valeurs numériques par année, variation calculée"),
-        ("Quali_ind", "Valeurs alphabétiques (alpha_value), pas de variation calculée"),
-    ]
-
-    for symbol, meaning in rows:
-        row = legend_table.add_row().cells
-        run = row[0].paragraphs[0].add_run(symbol)
-        if "Vert" in symbol:
-            run.font.color.rgb = RGBColor(0, 128, 0)
-        elif "Rouge" in symbol:
-            run.font.color.rgb = RGBColor(255, 0, 0)
-        elif "Gris" in symbol:
-            run.font.color.rgb = RGBColor(128, 128, 128)
-        row[1].text = meaning
 
     response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
     response["Content-Disposition"] = f'attachment; filename="{country.name}_profile.docx"'
@@ -4151,17 +4158,17 @@ def export_country_word(request, pk):
     return response
 
 
-
-
-
 def export_country_dashboard_excel(request, pk):
     country = get_object_or_404(Country, pk=pk)
 
-    # Récupération des subcomponents et indicateurs comme dans country_dashboard
+    # 🔹 Récupération des données fusionnées
+    all_data = bind_rows_data()
+    country_data = [d for d in all_data if d["country_code"] == country.cca3]
+
+    # 🔹 Récupération des subcomponents liés aux indicateurs du pays
+    indicator_codes = {d["indicator_code"] for d in country_data}
     subcomponents = Subcomponent.objects.filter(
-        subcomponent_indicator__indicator_code__in=StoreAPI.objects.filter(
-            country_code=country.cca3
-        ).values_list("indicator_code", flat=True)
+        subcomponent_indicator__indicator_code__in=indicator_codes
     ).distinct()
 
     dashboard_data = []
@@ -4171,20 +4178,19 @@ def export_country_dashboard_excel(request, pk):
         indicators = Indicator.objects.filter(subcomponent=sub)
         indicator_results = []
         for ind in indicators:
-            results = StoreAPI.objects.filter(
-                country_code=country.cca3,
-                indicator_code=ind.indicator_code
-            ).order_by("time_dim")
+            results = [d for d in country_data if d["indicator_code"] == ind.indicator_code]
+            results = sorted(results, key=lambda x: x["time_dim"])
 
-            if results.exists():
-                min_year = results.first().time_dim
-                max_year = results.last().time_dim
+            if results:
+                min_year = results[0]["time_dim"]
+                max_year = results[-1]["time_dim"]
                 variation = None
                 if ind.type_indicator == "Quanti_ind":
-                    min_val = results.first().numeric_value
-                    max_val = results.last().numeric_value
+                    min_val = results[0]["numeric_value"]
+                    max_val = results[-1]["numeric_value"]
                     if min_val and max_val and min_val != 0:
                         variation = ((max_val - min_val) / min_val) * 100
+
                 indicator_results.append({
                     "indicator": ind,
                     "results": results,
@@ -4195,12 +4201,14 @@ def export_country_dashboard_excel(request, pk):
                     "data_source": ind.indicator_source,
                     "type_indicator": ind.type_indicator
                 })
+
                 for res in results:
-                    if res.time_dim:
+                    if res["time_dim"]:
                         try:
-                            all_years.add(int(res.time_dim))
+                            all_years.add(int(res["time_dim"]))
                         except:
                             pass
+
         dashboard_data.append({"subcomponent": sub, "indicators": indicator_results})
 
     all_years = sorted(all_years)
@@ -4212,7 +4220,6 @@ def export_country_dashboard_excel(request, pk):
 
     # Styles USA + UE
     header_fill = PatternFill(start_color="0033A0", end_color="0033A0", fill_type="solid")  # Bleu USA
-    eu_fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")      # Jaune UE
     bold_font = Font(bold=True, size=12, color="FFFFFF")
     normal_font = Font(size=11)
 
@@ -4248,20 +4255,38 @@ def export_country_dashboard_excel(request, pk):
         for ind in section["indicators"]:
             row = [ind["indicator"].indicator_name, ind["target"]]
             for year in all_years:
-                res = ind["results"].filter(time_dim=year).first()
+                res = next((r for r in ind["results"] if r["time_dim"] == year), None)
                 if res:
                     if ind["type_indicator"] == "Quanti_ind":
-                        row.append(res.numeric_value if res.numeric_value is not None else "-")
+                        row.append(res["numeric_value"] if res["numeric_value"] is not None else "-")
                     else:
-                        row.append(res.alpha_value if res.alpha_value else "-")
+                        row.append(res["alpha_value"] if res["alpha_value"] else "-")
                 else:
                     row.append("-")
+
+            # Variation avec mise en forme conditionnelle
             if ind["type_indicator"] == "Quanti_ind":
-                row.append(f"{ind['variation']:.2f}%" if ind["variation"] is not None else "–")
+                if ind["variation"] is not None:
+                    var_text = f"{ind['variation']:.2f}%"
+                    row.append(var_text)
+                else:
+                    row.append("–")
             else:
                 row.append("–")
+
             row.append(ind["data_source"])
             ws.append(row)
+
+            # ✅ Appliquer couleur selon variation
+            var_cell = ws.cell(row=ws.max_row, column=len(header)-1)
+            if ind["variation"] is not None:
+                if ind["variation"] > 0:
+                    var_cell.font = Font(color="FF0000")  # Rouge
+                elif ind["variation"] < 0:
+                    var_cell.font = Font(color="008000")  # Vert
+                else:
+                    var_cell.font = Font(color="808080")  # Gris
+
         ws.append([])
 
     # ✅ Réponse HTTP avec fichier Excel
@@ -4271,7 +4296,6 @@ def export_country_dashboard_excel(request, pk):
     response["Content-Disposition"] = f'attachment; filename="country_dashboard_{country.cca3}.xlsx"'
     wb.save(response)
     return response
-
 
 
 @login_required
@@ -4549,7 +4573,13 @@ def regional_factsheet_results(request, subcomponent_id):
     subcomponent = get_object_or_404(Subcomponent, pk=subcomponent_id)
     indicators = Indicator.objects.filter(subcomponent=subcomponent)
 
-    all_years = sorted(StoreAPI.objects.values_list("time_dim", flat=True).distinct())
+      # ✅ Fusion des données
+    all_data = bind_rows_data()
+
+    all_years = sorted({d["time_dim"] for d in all_data if d["time_dim"]})
+
+
+   # all_years = sorted(StoreAPI.objects.values_list("time_dim", flat=True).distinct())
 
     grouped_indicators = {}
     for ind in indicators:
@@ -4558,45 +4588,47 @@ def regional_factsheet_results(request, subcomponent_id):
 
     country_summary = []
     for country in Country.objects.all().order_by("name"):
-        country_data = StoreAPI.objects.filter(
-            country_code=country.cca3,
-            indicator_code__in=indicators.values_list("indicator_code", flat=True)
-        )
-        progress = []
-        for ind in indicators:
-            values = {v.time_dim: v for v in country_data.filter(indicator_code=ind.indicator_code)}
-            if not values:
-                continue
+            country_data = [
+                d for d in all_data
+                if d["country_code"] == country.cca3
+                and d["indicator_code"] in indicators.values_list("indicator_code", flat=True)
+            ]
 
-            if ind.type_indicator == "Quanti_ind":
-                vals = [v.numeric_value for v in values.values() if v.numeric_value is not None]
-                if not vals:
+            progress = []
+            for ind in indicators:
+                values = {v["time_dim"]: v for v in country_data if v["indicator_code"] == ind.indicator_code}
+                if not values:
                     continue
-                variation = None
-                if len(vals) >= 2 and vals[0] != 0:
-                    variation = ((vals[-1] - vals[0]) / vals[0]) * 100
-                progress.append({
-                    "indicator": ind,
-                    "values": {year: (v.numeric_value if v else None) for year, v in values.items()},
-                    "variation": variation
-                })
 
-            elif ind.type_indicator == "Quali_ind":
-                vals = [v.alpha_value for v in values.values() if v.alpha_value]
-                if not vals:
-                    continue
-                progress.append({
-                    "indicator": ind,
-                    "values": {year: (v.alpha_value if v else None) for year, v in values.items()},
-                    "variation": None
-                })
+                if ind.type_indicator == "Quanti_ind":
+                    vals = [v["numeric_value"] for v in values.values() if v["numeric_value"] is not None]
+                    if not vals:
+                        continue
+                    variation = None
+                    if len(vals) >= 2 and vals[0] != 0:
+                        variation = ((vals[-1] - vals[0]) / vals[0]) * 100
+                    progress.append({
+                        "indicator": ind,
+                        "values": {year: (v["numeric_value"] if v else None) for year, v in values.items()},
+                        "variation": variation
+                    })
 
-        if progress:
-            country_summary.append({
-                "country": country,
-                "progress": progress,
-                "score": sum([p["variation"] or 0 for p in progress if p["variation"] is not None])
-            })
+                elif ind.type_indicator == "Quali_ind":
+                    vals = [v["alpha_value"] for v in values.values() if v["alpha_value"]]
+                    if not vals:
+                        continue
+                    progress.append({
+                        "indicator": ind,
+                        "values": {year: (v["alpha_value"] if v else None) for year, v in values.items()},
+                        "variation": None
+                    })
+
+            if progress:
+                country_summary.append({
+                    "country": country,
+                    "progress": progress,
+                    "score": sum([p["variation"] or 0 for p in progress if p["variation"] is not None])
+                })
 
     ranked_countries = sorted(country_summary, key=lambda c: c["score"], reverse=False)
 
@@ -4626,40 +4658,106 @@ def regional_factsheet_results(request, subcomponent_id):
         "stable_percent": (stable_count / total_countries * 100) if total_countries else 0,
     }
 
+
+    # ✅ Génération des graphiques par catégorie
+        
+        # ✅ Génération des graphiques évolutifs par catégorie (moyenne régionale)
+    charts_by_category = {}
+    for category, inds in grouped_indicators.items():
+        data_for_plot = []
+
+        for ind in inds:
+            if ind.type_indicator == "Quanti_ind":
+                # Moyenne régionale par année
+                years = sorted({d["time_dim"] for d in all_data if d["indicator_code"] == ind.indicator_code})
+                for year in years:
+                    year_values = [
+                        d["numeric_value"] for d in all_data
+                        if d["indicator_code"] == ind.indicator_code and d["time_dim"] == year and d["numeric_value"] is not None
+                    ]
+                    if year_values:
+                        avg_value = sum(year_values) / len(year_values)
+                        data_for_plot.append({
+                            "Année": year,
+                            "Valeur": avg_value,
+                            "Indicateur": ind.indicator_name
+                        })
+
+        if data_for_plot:
+            fig = px.line(
+                data_for_plot,
+                x="Année",
+                y="Valeur",
+                color="Indicateur",
+                markers=True,
+                title=f"Regional Average Trends - {category}",
+                color_discrete_sequence=pc.qualitative.Set2
+            )
+            fig.update_traces(
+                line=dict(width=4),
+                marker=dict(size=8),
+                text=[f"{d['Valeur']:.2f}" for d in data_for_plot],
+                textposition="top center",
+                mode="lines+markers+text"
+            )
+            fig.update_layout(
+                template="plotly_white",
+                height=550,
+                margin=dict(l=40, r=40, t=60, b=40),
+                xaxis_title="Year",
+                yaxis_title="Regional Average Value",
+                legend=dict(
+                    title="Indicators",
+                    orientation="h",
+                    yanchor="bottom",
+                    y=-0.3,
+                    xanchor="center",
+                    x=0.5
+                )
+            )
+            charts_by_category[category] = fig.to_html(full_html=False)
+
+    
+
+       
+
     return render(request, "mytvddata/pages/dashboard/factsheet_results.html", {
         "subcomponent": subcomponent,
         "grouped_indicators": grouped_indicators,
         "all_years": all_years,
         "country_summary": country_summary,
         "ranked_countries": ranked_countries,
-        "stats": stats
+        "stats": stats,
+        "charts_by_category": charts_by_category
     })
 
 def export_regional_factsheet_word(request, subcomponent_id):
-    """Export Word du factsheet régional avec tableau pivoté par années et statistiques globales."""
+    """Export Word du factsheet régional avec tableau pivoté par années, statistiques globales, classement des pays et status."""
     subcomponent = get_object_or_404(Subcomponent, pk=subcomponent_id)
     indicators = Indicator.objects.filter(subcomponent=subcomponent)
-    api_data = StoreAPI.objects.filter(indicator_code__in=indicators.values_list("indicator_code", flat=True))
 
-    all_years = sorted(StoreAPI.objects.values_list("time_dim", flat=True).distinct())
+    # 🔹 Données fusionnées
+    all_data = bind_rows_data()
+    all_years = sorted({d["time_dim"] for d in all_data if d["time_dim"]})
 
+    # 🔹 Regrouper les indicateurs par catégorie
     grouped_indicators = {}
     for ind in indicators:
         cat = ind.category_indicator or "Autres"
         grouped_indicators.setdefault(cat, []).append(ind)
 
-    # Construire les données par pays
+    # 🔹 Construire les données par pays
     country_summary = []
     for country in Country.objects.all().order_by("name"):
-        country_data = api_data.filter(country_code=country.cca3)
+        country_data = [d for d in all_data if d["country_code"] == country.cca3 and d["indicator_code"] in indicators.values_list("indicator_code", flat=True)]
         progress = []
         for ind in indicators:
-            values = {v.time_dim: v for v in country_data.filter(indicator_code=ind.indicator_code)}
+            values = {v["time_dim"]: v for v in country_data if v["indicator_code"] == ind.indicator_code}
             if not values:
                 continue
 
             if ind.type_indicator == "Quanti_ind":
-                vals = [v.numeric_value for v in values.values() if v.numeric_value is not None]
+                vals = [v["numeric_value"] for v in values.values() if v["numeric_value"] is not None]
                 if not vals:
                     continue
                 variation = None
@@ -4667,24 +4765,31 @@ def export_regional_factsheet_word(request, subcomponent_id):
                     variation = ((vals[-1] - vals[0]) / vals[0]) * 100
                 progress.append({
                     "indicator": ind,
-                    "values": {year: (v.numeric_value if v else None) for year, v in values.items()},
+                    "values": {year: (v["numeric_value"] if v else None) for year, v in values.items()},
                     "variation": variation
                 })
             elif ind.type_indicator == "Quali_ind":
-                vals = [v.alpha_value for v in values.values() if v.alpha_value]
+                vals = [v["alpha_value"] for v in values.values() if v["alpha_value"]]
                 if not vals:
                     continue
                 progress.append({
                     "indicator": ind,
-                    "values": {year: (v.alpha_value if v else None) for year, v in values.items()},
+                    "values": {year: (v["alpha_value"] if v else None) for year, v in values.items()},
                     "variation": None
                 })
 
         if progress:
+            score = sum([p["variation"] or 0 for p in progress if p["variation"] is not None])
+            status = "Stable"
+            if score < 0:
+                status = "Progress"
+            elif score > 0:
+                status = "Decline"
             country_summary.append({
                 "country": country,
                 "progress": progress,
-                "score": sum([p["variation"] or 0 for p in progress if p["variation"] is not None])
+                "score": score,
+                "status": status
             })
 
     ranked_countries = sorted(country_summary, key=lambda c: c["score"], reverse=False)
@@ -4695,20 +4800,44 @@ def export_regional_factsheet_word(request, subcomponent_id):
         1 for c in country_summary for p in c["progress"]
         if p["indicator"].type_indicator == "Quali_ind" and any(p["values"].values())
     )
-    progress_count = sum(1 for c in country_summary if c["score"] < 0)
-    recul_count = sum(1 for c in country_summary if c["score"] > 0)
-    stable_count = sum(1 for c in country_summary if c["score"] == 0)
+    progress_count = sum(1 for c in country_summary if c["status"] == "Progress")
+    recul_count = sum(1 for c in country_summary if c["status"] == "Decline")
+    stable_count = sum(1 for c in country_summary if c["status"] == "Stable")
 
+    # ✅ Création du document Word
     doc = Document()
     doc.add_heading(f"Regional Factsheet : {subcomponent.subcomponent_name}", level=1)
 
-    # ✅ Ajouter les statistiques globales en introduction
-    doc.add_heading("Overall statistic", level=2)
+    # ✅ Statistiques globales
+    doc.add_heading("Overall statistics", level=2)
     doc.add_paragraph(f"Total Countries Analyzed : {total_countries}")
     doc.add_paragraph(f"Countries with Status of endemicity : {quali_count} ({(quali_count/total_countries*100 if total_countries else 0):.2f}%)")
     doc.add_paragraph(f"Countries Showing Progress : {progress_count} ({(progress_count/total_countries*100 if total_countries else 0):.2f}%)")
     doc.add_paragraph(f"Countries in Decline : {recul_count} ({(recul_count/total_countries*100 if total_countries else 0):.2f}%)")
     doc.add_paragraph(f"Countries Remaining Stable : {stable_count} ({(stable_count/total_countries*100 if total_countries else 0):.2f}%)")
+
+    # ✅ Classement des pays avec Status
+    doc.add_heading("Country Rankings", level=2)
+    table_rank = doc.add_table(rows=1, cols=4)
+    table_rank.style = "Light List Accent 2"
+    hdr = table_rank.rows[0].cells
+    hdr[0].text = "Rank"
+    hdr[1].text = "Country"
+    hdr[2].text = "Score"
+    hdr[3].text = "Status"
+
+    for idx, c in enumerate(ranked_countries, start=1):
+        row = table_rank.add_row().cells
+        row[0].text = str(idx)
+        row[1].text = c["country"].name
+        row[2].text = f"{c['score']:.2f}"
+        run = row[3].paragraphs[0].add_run(c["status"])
+        if c["status"] == "Progress":
+            run.font.color.rgb = RGBColor(0, 128, 0)  # Vert
+        elif c["status"] == "Decline":
+            run.font.color.rgb = RGBColor(255, 0, 0)  # Rouge
+        else:
+            run.font.color.rgb = RGBColor(128, 128, 128)  # Gris
 
     # ✅ Boucle par catégorie avec tableau pivoté
     for category, inds in grouped_indicators.items():
@@ -4723,9 +4852,9 @@ def export_regional_factsheet_word(request, subcomponent_id):
         hdr[-1].text = "Change (%)"
 
         for country in Country.objects.all().order_by("name"):
-            country_data = api_data.filter(country_code=country.cca3)
+            country_data = [d for d in all_data if d["country_code"] == country.cca3]
             for ind in inds:
-                values = {v.time_dim: v for v in country_data.filter(indicator_code=ind.indicator_code)}
+                values = {v["time_dim"]: v for v in country_data if v["indicator_code"] == ind.indicator_code}
                 if not values:
                     continue
 
@@ -4737,24 +4866,24 @@ def export_regional_factsheet_word(request, subcomponent_id):
                     val = values.get(year)
                     if val:
                         if ind.type_indicator == "Quanti_ind":
-                            row[2+i].text = str(val.numeric_value) if val.numeric_value is not None else "-"
+                            row[2+i].text = str(val["numeric_value"]) if val["numeric_value"] is not None else "-"
                         else:
-                            row[2+i].text = str(val.alpha_value) if val.alpha_value else "-"
+                            row[2+i].text = str(val["alpha_value"]) if val["alpha_value"] else "-"
                     else:
                         row[2+i].text = "-"
 
                 variation = None
                 if ind.type_indicator == "Quanti_ind":
-                    vals = [v.numeric_value for v in values.values() if v.numeric_value is not None]
+                    vals = [v["numeric_value"] for v in values.values() if v["numeric_value"] is not None]
                     if len(vals) >= 2 and vals[0] != 0:
                         variation = ((vals[-1] - vals[0]) / vals[0]) * 100
 
                 if variation is not None:
                     run = row[-1].paragraphs[0].add_run(f"{variation:.2f} %")
                     if variation < 0:
-                        run.font.color.rgb = RGBColor(0, 128, 0)
+                        run.font.color.rgb = RGBColor(0, 128, 0)  # Vert
                     else:
-                        run.font.color.rgb = RGBColor(255, 0, 0)
+                        run.font.color.rgb = RGBColor(255, 0, 0)  # Rouge
                 else:
                     row[-1].text = "–"
 
@@ -4764,37 +4893,34 @@ def export_regional_factsheet_word(request, subcomponent_id):
     return response
 
 
-
 # TO EXPORT COUNTRY PROFILE IN EXCEL FORMAT
-
-
-
-
 
 
 def export_regional_factsheet_excel(request, subcomponent_id):
     subcomponent = get_object_or_404(Subcomponent, pk=subcomponent_id)
     indicators = Indicator.objects.filter(subcomponent=subcomponent)
-    api_data = StoreAPI.objects.filter(indicator_code__in=indicators.values_list("indicator_code", flat=True))
-    all_years = sorted(StoreAPI.objects.values_list("time_dim", flat=True).distinct())
 
-    # Regrouper les indicateurs par catégorie
+    # 🔹 Données fusionnées
+    all_data = bind_rows_data()
+    all_years = sorted({d["time_dim"] for d in all_data if d["time_dim"]})
+
+    # 🔹 Regrouper les indicateurs par catégorie
     grouped_indicators = {}
     for ind in indicators:
         cat = ind.category_indicator or "Autres"
         grouped_indicators.setdefault(cat, []).append(ind)
 
-    # Construire les données par pays
+    # 🔹 Construire les données par pays
     country_summary = []
     for country in Country.objects.all().order_by("name"):
-        country_data = api_data.filter(country_code=country.cca3)
+        country_data = [d for d in all_data if d["country_code"] == country.cca3 and d["indicator_code"] in indicators.values_list("indicator_code", flat=True)]
         progress = []
         for ind in indicators:
-            values = {v.time_dim: v for v in country_data.filter(indicator_code=ind.indicator_code)}
+            values = {v["time_dim"]: v for v in country_data if v["indicator_code"] == ind.indicator_code}
             if not values:
                 continue
             if ind.type_indicator == "Quanti_ind":
-                vals = [v.numeric_value for v in values.values() if v.numeric_value is not None]
+                vals = [v["numeric_value"] for v in values.values() if v["numeric_value"] is not None]
                 if not vals:
                     continue
                 variation = None
@@ -4802,24 +4928,33 @@ def export_regional_factsheet_excel(request, subcomponent_id):
                     variation = ((vals[-1] - vals[0]) / vals[0]) * 100
                 progress.append({
                     "indicator": ind,
-                    "values": {year: (v.numeric_value if v else None) for year, v in values.items()},
+                    "values": {year: (v["numeric_value"] if v else None) for year, v in values.items()},
                     "variation": variation
                 })
             elif ind.type_indicator == "Quali_ind":
-                vals = [v.alpha_value for v in values.values() if v.alpha_value]
+                vals = [v["alpha_value"] for v in values.values() if v["alpha_value"]]
                 if not vals:
                     continue
                 progress.append({
                     "indicator": ind,
-                    "values": {year: (v.alpha_value if v else None) for year, v in values.items()},
+                    "values": {year: (v["alpha_value"] if v else None) for year, v in values.items()},
                     "variation": None
                 })
         if progress:
+            score = sum([p["variation"] or 0 for p in progress if p["variation"] is not None])
+            status = "Stable"
+            if score < 0:
+                status = "Progress"
+            elif score > 0:
+                status = "Decline"
             country_summary.append({
                 "country": country,
                 "progress": progress,
-                "score": sum([p["variation"] or 0 for p in progress if p["variation"] is not None])
+                "score": score,
+                "status": status
             })
+
+    ranked_countries = sorted(country_summary, key=lambda c: c["score"], reverse=False)
 
     # ✅ Statistiques globales
     total_countries = len(country_summary)
@@ -4838,9 +4973,7 @@ def export_regional_factsheet_excel(request, subcomponent_id):
 
     # Style USA + UE
     header_fill = PatternFill(start_color="0033A0", end_color="0033A0", fill_type="solid")  # Bleu USA
-    eu_fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")      # Jaune UE
     bold_font = Font(bold=True, size=12, color="FFFFFF")
-    normal_font = Font(size=11)
 
     # ✅ Titre
     ws["A1"] = f"Regional Factsheet: {subcomponent.subcomponent_name}"
@@ -4860,12 +4993,33 @@ def export_regional_factsheet_excel(request, subcomponent_id):
 
     ws.append([])
 
+    # ✅ Country Rankings
+    ws.append(["Country Rankings"])
+    header_rank = ["Rank", "Country", "Score", "Status"]
+    ws.append(header_rank)
+    for col in range(1, len(header_rank)+1):
+        cell = ws.cell(row=ws.max_row, column=col)
+        cell.fill = header_fill
+        cell.font = bold_font
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    for idx, c in enumerate(ranked_countries, start=1):
+        ws.append([idx, c["country"].name, f"{c['score']:.2f}", c["status"]])
+        # ✅ Mise en forme conditionnelle du Status
+        status_cell = ws.cell(row=ws.max_row, column=4)
+        if c["status"] == "Progress":
+            status_cell.font = Font(color="008000")  # Vert
+        elif c["status"] == "Decline":
+            status_cell.font = Font(color="FF0000")  # Rouge
+        else:
+            status_cell.font = Font(color="808080")  # Gris
+    ws.append([])
+
     # ✅ Tableaux par catégorie
     for category, inds in grouped_indicators.items():
         ws.append([category])
         header = ["Country", "Indicator"] + [str(y) for y in all_years] + ["Variation (%)"]
         ws.append(header)
-        # Style header
         for col in range(1, len(header)+1):
             cell = ws.cell(row=ws.max_row, column=col)
             cell.fill = header_fill
@@ -4873,9 +5027,9 @@ def export_regional_factsheet_excel(request, subcomponent_id):
             cell.alignment = Alignment(horizontal="center", vertical="center")
 
         for country in Country.objects.all().order_by("name"):
-            country_data = api_data.filter(country_code=country.cca3)
+            country_data = [d for d in all_data if d["country_code"] == country.cca3]
             for ind in inds:
-                values = {v.time_dim: v for v in country_data.filter(indicator_code=ind.indicator_code)}
+                values = {v["time_dim"]: v for v in country_data if v["indicator_code"] == ind.indicator_code}
                 if not values:
                     continue
                 row = [country.name, ind.indicator_name]
@@ -4883,13 +5037,13 @@ def export_regional_factsheet_excel(request, subcomponent_id):
                     val = values.get(year)
                     if val:
                         if ind.type_indicator == "Quanti_ind":
-                            row.append(val.numeric_value if val.numeric_value is not None else "-")
+                            row.append(val["numeric_value"] if val["numeric_value"] is not None else "-")
                         else:
-                            row.append(val.alpha_value if val.alpha_value else "-")
+                            row.append(val["alpha_value"] if val["alpha_value"] else "-")
                     else:
                         row.append("-")
                 if ind.type_indicator == "Quanti_ind":
-                    vals = [v.numeric_value for v in values.values() if v.numeric_value is not None]
+                    vals = [v["numeric_value"] for v in values.values() if v["numeric_value"] is not None]
                     if len(vals) >= 2 and vals[0] != 0:
                         variation = ((vals[-1] - vals[0]) / vals[0]) * 100
                         row.append(f"{variation:.2f}%")
@@ -4907,3 +5061,210 @@ def export_regional_factsheet_excel(request, subcomponent_id):
     response["Content-Disposition"] = f'attachment; filename="factsheet_regional_{subcomponent.subcomponent_name}.xlsx"'
     wb.save(response)
     return response
+
+
+
+## NEW PRESENTATION OF COUNTRY PROFIL
+
+
+
+def country_factsheet(request, pk):
+    country = get_object_or_404(Country, pk=pk)
+
+    # Fusion bind_rows
+    merged_data = bind_rows_data()
+
+    # Filtrer par pays
+    api_data = [d for d in merged_data if d["country_code"] == country.cca3]
+    indicators = [d["indicator_code"] for d in api_data]
+
+
+     # Exemple : générer un graphique pour chaque indicateur quantitatif
+
+      
+
+
+    charts = {}
+    subcomponents = Subcomponent.objects.filter(
+        subcomponent_indicator__indicator_code__in=indicators
+    ).distinct()
+
+    for sub in subcomponents:
+        indicators_qs = Indicator.objects.filter(subcomponent=sub)
+        data_for_plot = []
+
+        for ind in indicators_qs:
+            if ind.type_indicator == "Quanti_ind":
+                results = sorted(
+                    [d for d in api_data if d["indicator_code"] == ind.indicator_code],
+                    key=lambda x: x["time_dim"] if x["time_dim"] else 0
+                )
+                years = [r["time_dim"] for r in results if r["time_dim"]]
+                values = [r["numeric_value"] for r in results if r["numeric_value"]]
+
+                for y, v in zip(years, values):
+                    data_for_plot.append({
+                        "Année": y,
+                        "Valeur": v,
+                        "Indicateur": ind.indicator_name
+                    })
+
+        if data_for_plot:
+            # ✅ Palette automatique (ici Set2)
+            palette = pc.qualitative.Set2  
+
+            fig = px.line(
+                data_for_plot,
+                x="Année",
+                y="Valeur",
+                color="Indicateur",
+                markers=True,
+                title=f" Indicator Trends - {sub.subcomponent_name}",
+                color_discrete_sequence=palette
+            )
+
+            # ✅ Mise en forme des courbes
+            fig.update_traces(
+                line=dict(width=5),                # épaisseur des traits
+                marker=dict(size=8),               # taille des points
+                text=[f"{d['Valeur']:.0f}" for d in data_for_plot],
+                textposition="top center",         # position des labels
+                mode="lines+markers+text"          # afficher lignes + points + texte
+            )
+
+            fig.update_layout(
+                template="plotly_white",
+                height=500,
+                margin=dict(l=20, r=20, t=40, b=20),
+                legend=dict(title="Indicators (click to toggle on/off)")
+            )
+
+            charts[sub.subcomponent_name] = fig.to_html(full_html=False)
+
+
+
+    
+
+
+   
+
+    
+
+
+
+
+    # Résoudre le lien court Google Maps
+    resolved_url = country.maps
+    if resolved_url and "goo.gl/maps" in resolved_url:
+        try:
+            response = requests.head(resolved_url, allow_redirects=True)
+            resolved_url = response.url
+        except Exception:
+            resolved_url = country.maps
+
+    # Localisation
+    locations = LocationCountry.objects.filter(iso3=country.cca3).only("iso3", "name", "latitude", "longitude")
+
+    center_lat, center_lon = 0.0, 20.0
+    if locations.exists():
+        latitudes = [loc.latitude for loc in locations if loc.latitude]
+        longitudes = [loc.longitude for loc in locations if loc.longitude]
+        if latitudes and longitudes:
+            center_lat = sum(latitudes) / len(latitudes)
+            center_lon = sum(longitudes) / len(longitudes)
+
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=4, tiles="cartodb positron", scrollWheelZoom=True)
+    folium.LayerControl().add_to(m)
+
+    for location in locations:
+        if location.latitude and location.longitude:
+            folium.Marker(
+                location=(location.latitude, location.longitude),
+                popup=f"<b>{location.name}</b><br>Lat: {location.latitude}, Lon: {location.longitude}",
+                tooltip=location.name,
+                icon=folium.Icon(color="blue", icon="globe", prefix="fa")
+            ).add_to(m)
+
+    map_html = m._repr_html_()
+
+    # Subcomponents liés aux indicateurs du pays
+    subcomponents = Subcomponent.objects.filter(
+        subcomponent_indicator__indicator_code__in=indicators
+    ).distinct()
+
+    dashboard_data = []
+    all_years = set()
+
+    for sub in subcomponents:
+        indicators_qs = Indicator.objects.filter(subcomponent=sub)
+        indicator_results = []
+
+        for ind in indicators_qs:
+            # ✅ Correction : filtrer et trier une liste Python
+            results = sorted(
+                [d for d in api_data if d["indicator_code"] == ind.indicator_code],
+                key=lambda x: x["time_dim"] if x["time_dim"] is not None else 0
+            )
+
+            if results:
+                min_year = results[0]["time_dim"]
+                max_year = results[-1]["time_dim"]
+                variation = None
+
+                if ind.type_indicator == "Quanti_ind":
+                    min_val = results[0]["numeric_value"]
+                    max_val = results[-1]["numeric_value"]
+                    if min_val is not None and max_val is not None and min_val != 0:
+                        try:
+                            variation = ((max_val - min_val) / min_val) * 100
+                        except (ValueError, TypeError, ZeroDivisionError):
+                            variation = None
+                elif ind.type_indicator == "Quali_ind":
+                #   min_val = results.first().alpha_value
+                #    max_val = results.last().alpha_value
+                    variation = None
+
+                indicator_results.append({
+                    "indicator": ind,
+                    "results": results,
+                    "min_year": min_year,
+                    "max_year": max_year,
+                    "variation": variation,
+                    "target": ind.indicator_target,
+                    "performance": ind.performance_indicator,
+                    "category": ind.category_indicator,
+                    "data_source": ind.indicator_source,
+                    "type_indicator": ind.type_indicator,
+                })
+
+                for res in results:
+                    if res["time_dim"] is not None:
+                        try:
+                            all_years.add(int(res["time_dim"]))
+                        except (ValueError, TypeError):
+                            pass
+
+        dashboard_data.append({
+            "subcomponent": sub,
+            "indicators": indicator_results,
+        })
+
+    all_years = sorted(all_years)
+
+    context = {
+        "country": country,
+        "resolved_url": resolved_url,
+        "map_html": map_html,
+        "dashboard_data": dashboard_data,
+        "all_years": all_years,
+        "api_data": api_data,
+        "indicators": indicators,
+        "charts": charts,  # ✅ dictionnaire {indicator_code: image_base64}
+    }
+
+    return render(request, "mytvddata/pages/dashboard/country_factsheet.html", context)
+
+
+
+## EXPORT TO WORD AND EXCEL THE COUNTRY FACT SHEET
+

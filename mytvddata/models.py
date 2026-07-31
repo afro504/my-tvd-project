@@ -132,7 +132,7 @@ class Indicator(models.Model):
         ('Quali_ind', 'Qualitatif')
     )
 
-    indicator_code = models.CharField('Indicator code', max_length=30)  # Code de l’indicateur
+    indicator_code = models.CharField('Indicator code', max_length=250)  # Code de l’indicateur
     indicator_name = models.CharField('Indicator name', max_length=250) # Nom de l’indicateur
     indicator_description = models.CharField('Indicator description', max_length=250, null=True)  # Description
     indicator_target = models.CharField('Target', max_length=250, null=True)                      # Objectif
@@ -179,7 +179,11 @@ class RepositoryIndicator(models.Model):
         db_table = 'data_loader_repository'
 
     def __str__(self):
-        return f"{self.indicator_code} {self.spatial_dim}"
+       return self.indicator_name
+
+
+    #def __str__(self):
+    #    return f"{self.indicator_code} {self.spatial_dim}"
     
 
     # ============================

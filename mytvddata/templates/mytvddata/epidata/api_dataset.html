@@ -159,9 +159,9 @@
                                     <td>{{storeAPI.dim2}}</td>
                                     <td>{{storeAPI.dim3_type}}</td>
                                     <td>{{storeAPI.dim3}}</td>
-                                    <td>{{storeAPI.time_dim}}</td>
+                                    <td>{{storeAPI.time_dim|floatformat:0 }}</td>
                                     <td>{{storeAPI.alpha_value}}</td>
-                                    <td>{{storeAPI.numeric_value}}</td>
+                                    <td>{{storeAPI.numeric_value|floatformat:0 }}</td>
                                     <td>{{storeAPI.publish_date}}</td>
                                 
                                 {% if user.is_authenticated %}
