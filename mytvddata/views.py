@@ -12,6 +12,7 @@ from django.db.models import (
     Count, Avg, Min, Max, Sum,
     CharField, Value, Q, Case, When, F, OuterRef, BooleanField
 )
+import pdfkit
 from decimal import Decimal, ROUND_DOWN
 from django.utils import timezone
 from django.db.models import Prefetch
@@ -89,6 +90,7 @@ from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 
 
+
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import cm
@@ -116,7 +118,7 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
 from django.contrib import messages
- 
+
 # Compatibilité ancienne version Django
 try:
     from django.utils.encoding import force_text
@@ -412,7 +414,7 @@ def add_country(request):
                 messages.error(request, "⚠️ You must be logged in to edit or delete.")
                 return redirect("signin")  # ou une autre page
                         
-            if request.user.groups.filter(name='Manager and delete').exists():
+          #  if request.user.groups.filter(name='Manager and delete').exists():
  
                 pk = request.POST.get('delete')
                 country = get_object_or_404(Country, id=pk)
@@ -421,8 +423,8 @@ def add_country(request):
                 messages.success(request, "Country deleted successfully")
                 return redirect('add_country')
  
-            else:
-                return render(request, 'pages/examples/403.html')
+          #  else:
+          #      return render(request, 'pages/examples/403.html')
  
         # ✅ EDIT (pré-remplir form)
         elif 'edit' in request.POST:
@@ -4725,6 +4727,55 @@ def regional_factsheet_results(request, subcomponent_id):
         cat = ind.category_indicator or "Autres"
         grouped_indicators.setdefault(cat, []).append(ind)
 
+     # ✅ Calcul des moyennes régionales et comptages par catégorie
+    regional_summary = {}
+    for category, inds in grouped_indicators.items():
+        summary_rows = []
+        for ind in inds:
+            years = sorted({d["time_dim"] for d in all_data if d["indicator_code"] == ind.indicator_code})
+            values_by_year = {}
+            for year in years:
+                if ind.type_indicator == "Quanti_ind":
+                    # ✅ Somme régionale par année
+                    year_values = [
+                        d["numeric_value"] for d in all_data
+                        if d["indicator_code"] == ind.indicator_code
+                        and d["time_dim"] == year
+                        and d["numeric_value"] is not None
+                    ]
+                    if year_values:
+                        sum_val = sum(year_values)
+                        values_by_year[year] = round(sum_val, 0)  # arrondi à 0
+                elif ind.type_indicator == "Quali_ind":
+                    # ✅ Nombre de pays endémiques par année
+                    endemic_countries = {
+                        d["country_code"] for d in all_data
+                        if d["indicator_code"] == ind.indicator_code
+                        and d["time_dim"] == year
+                        and d.get("alpha_value") == "Yes, country is endemic (report required)"
+                    }
+                    values_by_year[year] = round(len(endemic_countries), 0)
+
+            # ✅ Variation (%)
+            variation = None
+            vals = list(values_by_year.values())
+            if len(vals) >= 2 and vals[0] != 0:
+                variation = ((vals[-1] - vals[0]) / vals[0]) * 100
+
+            if values_by_year:
+                summary_rows.append({
+                    "indicator": ind,
+                    "values": values_by_year,
+                    "variation": variation
+                })
+
+        if summary_rows:
+            regional_summary[category] = summary_rows
+
+
+
+     # ✅ Calculs pays + stats (inchangés)
+
     country_summary = []
     for country in Country.objects.all().order_by("name"):
             country_data = [
@@ -4835,8 +4886,9 @@ def regional_factsheet_results(request, subcomponent_id):
             fig.update_traces(
                 line=dict(width=4),
                 marker=dict(size=8),
-                text=[f"{d['Valeur']:.2f}" for d in data_for_plot],
+                text=[f"{d['Valeur']:.0f}" for d in data_for_plot],
                 textposition="top center",
+                textfont=dict(size=18, color="black"),  # <-- police plus grande
                 mode="lines+markers+text"
             )
             fig.update_layout(
@@ -4867,7 +4919,8 @@ def regional_factsheet_results(request, subcomponent_id):
         "country_summary": country_summary,
         "ranked_countries": ranked_countries,
         "stats": stats,
-        "charts_by_category": charts_by_category
+        "charts_by_category": charts_by_category,
+        "regional_summary": regional_summary  # ✅ ajout pour le template
     })
 
 def export_regional_factsheet_word(request, subcomponent_id):
@@ -5470,3 +5523,6 @@ def export_erreurs_csv(request):
         ])
 
     return response
+
+
+#xporter en PDF

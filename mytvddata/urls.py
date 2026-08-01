@@ -105,9 +105,6 @@ urlpatterns = [
     path("export-erreurs-csv/", views.export_erreurs_csv, name="export_erreurs_csv"),
    
 
-
-
-
       # ✅ Nouvelle route pour le mapping
     #path('map_fields/', views.map_fields, name='map_fields'),
  
