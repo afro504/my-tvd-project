@@ -413,18 +413,15 @@ def add_country(request):
             if not request.user.is_authenticated:
                 messages.error(request, "⚠️ You must be logged in to edit or delete.")
                 return redirect("signin")  # ou une autre page
-                        
-          #  if request.user.groups.filter(name='Manager and delete').exists():
  
-                pk = request.POST.get('delete')
-                country = get_object_or_404(Country, id=pk)
-                country.delete()
+            pk = request.POST.get('delete')
+            country = get_object_or_404(Country, id=pk)
+            country.delete()
+
+            messages.success(request, "Country deleted successfully")
+            return redirect('add_country')
  
-                messages.success(request, "Country deleted successfully")
-                return redirect('add_country')
- 
-          #  else:
-          #      return render(request, 'pages/examples/403.html')
+       
  
         # ✅ EDIT (pré-remplir form)
         elif 'edit' in request.POST:
