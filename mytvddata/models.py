@@ -172,7 +172,7 @@ class RepositoryIndicator(models.Model):
     dim3 = models.CharField('Dim3', max_length=250, null=True, blank=True)
     time_dim = models.FloatField('Time', null=True, blank=True)  # Dimension temporelle
     alpha_value = models.CharField('Alpha-numeric value', max_length=1000, null=True, blank=True)
-    numeric_value = models.DecimalField('Numerical value', max_digits=12, decimal_places=6, null=True, blank=True)
+    numeric_value = models.DecimalField('Numerical value', max_digits=18, decimal_places=1, null=True, blank=True)
     publish_date = models.DateField('Date of publication', blank=True)
 
     class Meta:

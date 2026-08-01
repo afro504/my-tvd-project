@@ -12,6 +12,7 @@ from django.db.models import (
     Count, Avg, Min, Max, Sum,
     CharField, Value, Q, Case, When, F, OuterRef, BooleanField
 )
+from decimal import Decimal, ROUND_DOWN
 from django.utils import timezone
 from django.db.models import Prefetch
 from django.contrib import messages
@@ -25,7 +26,7 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.colors as pc
 from django.utils.translation import gettext as _
-
+from django.db import connection
 # =========================
 # DJANGO GENERIC VIEWS
 # =========================
@@ -74,7 +75,7 @@ from .forms import (
 # EXTERNAL LIBRARIES
 # =========================
 import pandas as pd
-from datetime import datetime
+from datetime import date, datetime
 import json
 import requests
 import folium
@@ -1033,6 +1034,14 @@ def edit_t_scripts(request, pk):
 
 
 
+#Tu peux arrondir ou tronquer les valeurs trop grandes :
+def safe_numeric(val, max_digits=18, decimal_places=4):
+    if val is None:
+        return None
+    d = Decimal(str(val))
+    # Arrondi forcé
+    return d.quantize(Decimal(10) ** -decimal_places, rounding=ROUND_DOWN)
+
 # Method for import and export Table SurveyDataset
 
 
@@ -1816,7 +1825,7 @@ def import_excel_repository(request):
 
 
 @csrf_exempt
-def save_excel_repository(request):
+def save_excel_repository_delete(request):
     preview_data_repository = request.session.get("excel_data")
     report_data = []
 
@@ -1941,6 +1950,136 @@ def save_excel_repository(request):
 })
 
 
+
+@csrf_exempt
+def save_excel_repository(request):
+    preview_data_repository = request.session.get("excel_data")
+    report_data = []
+    created_count = 0
+    updated_count = 0
+    skipped_count = 0
+    erreurs = []
+
+    if preview_data_repository:
+        try:
+            for c in preview_data_repository:
+                try:
+                    # FK Country et Indicator
+                    country_obj, _ = Country.objects.get_or_create(
+                        name=c.get("country"),
+                        defaults={"population": c.get("population") or 0}
+                    )
+                    
+                    indicator_obj = Indicator.objects.filter(indicator_name=c.get("indicator_name")).first()
+                    if not indicator_obj:
+                        indicator_obj = Indicator.objects.create(indicator_name=c.get("indicator_name"))
+
+                    # Conversion types
+                    time_dim_val = None
+                    if c.get("time_dim"):
+                        try:
+                            time_dim_val = float(c.get("time_dim"))
+                        except Exception as e:
+                            erreurs.append({**c, "valeur": c.get("time_dim"), "erreur": str(e)})
+                            time_dim_val = None
+
+                    publish_date_val = None
+                    if c.get("publish_date"):
+                        try:
+                            #publish_date_val = datetime.datetime.strptime(c.get("publish_date"), "%Y-%m-%d").date()
+                            publish_date_val = datetime.strptime(c.get("publish_date"), "%Y-%m-%d").date()
+                            publish_date_val = date.today()
+
+                            
+                        except Exception as e:
+                            erreurs.append({**c, "valeur": c.get("publish_date"), "erreur": str(e)})
+                            publish_date_val = None
+
+                    if publish_date_val is None:
+                        publish_date_val = datetime.date.today()
+
+                    # Vérification doublon
+                    existing = RepositoryIndicator.objects.filter(
+                        country=country_obj,
+                        spatial_dim=c.get("spatial_dim"),
+                        indicator_code=c.get("indicator_code"),
+                        time_dim=time_dim_val
+                    ).first()
+
+                    if existing:
+                        changed = False
+                        for field in ["spatial_dim","dim1_type","dim1","dim2_type","dim2","dim3_type","dim3","alpha_value","numeric_value"]:
+                            new_val = c.get(field)
+                            if getattr(existing, field) != new_val:
+                                setattr(existing, field, new_val)
+                                changed = True
+                        if changed:
+                            existing.save()
+                            updated_count += 1
+                            report_data.append({"status": "Mis à jour", "raison": "Valeurs différentes", **c})
+                        else:
+                            skipped_count += 1
+                            report_data.append({"status": "Ignoré", "raison": "Valeurs identiques", **c})
+                    else:
+                        RepositoryIndicator.objects.create(
+                            country=country_obj,
+                            indicator=indicator_obj,
+                            indicator_code=c.get("indicator_code"),
+                            spatial_dim=c.get("spatial_dim"),
+                            dim1_type=c.get("dim1_type"),
+                            dim1=c.get("dim1"),
+                            dim2_type=c.get("dim2_type"),
+                            dim2=c.get("dim2"),
+                            dim3_type=c.get("dim3_type"),
+                            dim3=c.get("dim3"),
+                            time_dim=time_dim_val,
+                            alpha_value=c.get("alpha_value"),
+                            numeric_value=safe_numeric(c.get("numeric_value")),
+                            publish_date=publish_date_val,
+                        )
+                        created_count += 1
+                        report_data.append({"status": "Créé", "raison": "Nouvelle ligne", **c})
+
+                except Exception as e:
+                    # ✅ Ajout de toute la ligne + message d’erreur
+                    erreurs.append({**c, "valeur": c.get("numeric_value"), "erreur": str(e)})
+
+            # ✅ Si erreurs → afficher directement le rapport
+            if erreurs:
+                request.session["erreurs"] = erreurs  # ✅ stocker en session
+                return render(request, "mytvddata/pages/repository/rapport_erreurs.html", {
+                    "erreurs": erreurs,
+                    "total": len(preview_data_repository),
+                    "ok": len(preview_data_repository) - len(erreurs),
+                    "ko": len(erreurs),
+                })
+
+            else:
+                messages.success(request, f"✅ Import terminé : {created_count} créés, {updated_count} mis à jour, {skipped_count} doublons ignorés")
+
+        except Exception as e:
+            erreurs.append({"valeur": None, "erreur": str(e)})
+            return render(request, "mytvddata/pages/repository/rapport_erreurs.html", {
+                "erreurs": erreurs,
+                "total": len(preview_data_repository),
+                "ok": len(preview_data_repository) - len(erreurs),
+                "ko": len(erreurs),
+            })
+    else:
+        messages.error(request, "Aucune donnée Excel à importer.")
+
+    # ✅ Rapport normal si pas d’erreurs
+    excel_data = request.session.get("excel_data")
+    preview_data_repository = excel_data[:20] if excel_data else None
+    
+    return render(request, "mytvddata/pages/repository/import_excel.html", {
+        "form": UploadExcelForm(),
+        "preview_data_repository": preview_data_repository,
+        "created_count": created_count,
+        "updated_count": updated_count,
+        "skipped_count": skipped_count,
+        "errors": erreurs,
+    })
 
 
 def export_import_report(request):
@@ -5266,5 +5405,68 @@ def country_factsheet(request, pk):
 
 
 
-## EXPORT TO WORD AND EXCEL THE COUNTRY FACT SHEET
+##  erreurs détectées lors de l'iportation des données gnarf 
 
+
+
+def import_data_view(request):
+    data = [
+        {"valeur": 12345.67},
+        {"valeur": 999.99},
+        {"valeur": 1000000.12},
+    ]
+
+    erreurs = []
+    for row in data:
+        valeur = row["valeur"]
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO MaTable (col_numeric)
+                    VALUES (%s)
+                """, [valeur])
+        except Exception as e:
+            erreurs.append({
+                "valeur": valeur,
+                "erreur": str(e)
+            })
+
+    context = {
+        "erreurs": erreurs,
+        "total": len(data),
+        "ok": len(data) - len(erreurs),
+        "ko": len(erreurs),
+    }
+    return render(request, "mytvddata/pages/repository/rapport_erreurs.html", context)
+
+
+
+def export_erreurs_csv(request):
+    erreurs = request.session.get("erreurs", [])
+    
+    # Réponse HTTP avec en-tête CSV
+    response = HttpResponse(content_type="text/csv")
+    response['Content-Disposition'] = 'attachment; filename="erreurs_import.csv"'
+
+    writer = csv.writer(response)
+    # En-tête du CSV
+    writer.writerow([
+        "Pays", "Indicateur", "Code", "Spatial Dim", "Time Dim",
+        "Alpha Value", "Numeric Value", "Date de publication", "Erreur"
+    ])
+
+    # Lignes
+    for err in erreurs:
+        writer.writerow([
+            err.get("country"),
+            err.get("indicator_name"),
+            err.get("indicator_code"),
+            err.get("spatial_dim"),
+            err.get("time_dim"),
+            err.get("alpha_value"),
+            err.get("numeric_value"),
+            err.get("publish_date"),
+            err.get("erreur"),
+        ])
+
+    return response

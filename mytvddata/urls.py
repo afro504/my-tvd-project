@@ -100,6 +100,12 @@ urlpatterns = [
     path("import_excel_repository/", views.import_excel_repository, name="import_excel_repository"),
     path("save_excel_repository/", views.save_excel_repository, name="save_excel_repository"),
     path("export_import_report/", views.export_import_report, name="export_import_report"),
+     # Si tu veux séparer le rapport d’erreurs dans une autre vue
+    path("rapport-erreurs/", views.import_data_view, name="rapport_erreurs"),
+    path("export-erreurs-csv/", views.export_erreurs_csv, name="export_erreurs_csv"),
+   
+
+
 
 
       # ✅ Nouvelle route pour le mapping
