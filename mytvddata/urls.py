@@ -240,6 +240,9 @@ urlpatterns = [
     path("factsheet/<int:subcomponent_id>/", views.regional_factsheet_results, name="regional_factsheet_results"),
     path("factsheet/<int:subcomponent_id>/export_word/", views.export_regional_factsheet_word, name="export_regional_factsheet_word"),
     path("factsheet/<int:subcomponent_id>/excel/", views.export_regional_factsheet_excel, name="export_regional_factsheet_excel"),
+    path('country/<int:pk>/factsheet/pdf/', views.country_factsheet_pdf, name='country_factsheet_pdf'),
+    path('regional/<int:pk>/factsheet/pdf/', views.regional_factsheet_pdf, name='regional_factsheet_pdf')
+
 
 
 ]

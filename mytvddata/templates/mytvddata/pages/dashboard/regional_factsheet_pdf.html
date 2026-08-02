@@ -1,0 +1,281 @@
+{% load custom_filters %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Regional Factsheet Report - {{ subcomponent.subcomponent_name }}</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 14px;
+            color: #000;
+            background: #fff;
+            line-height: 1.4;
+            margin: 2rem;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            text-align: center;
+            text-transform: uppercase;
+            border-bottom: 2px solid #003366;
+            padding-bottom: 0.5rem;
+            margin-top: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        h2 {
+            font-size: 1.3rem;
+            color: #003366;
+            margin: 0;
+            padding: 0;
+            line-height: 1.2;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 14px;
+        }
+
+        th {
+            background: #9ecaf5;
+            color: #1c1c1c;
+            font-weight: bold;
+            text-align: center;
+            padding: 0.4rem;
+            border: 1px solid #000;
+        }
+
+        td {
+            border: 1px solid #000;
+            padding: 0.4rem;
+            vertical-align: middle;
+        }
+
+        td.indicator-name {
+            text-align: left;
+            font-weight: bold;
+        }
+        td.numeric-value {
+            text-align: center;
+        }
+        td.source-cell {
+            white-space: pre-line;
+            font-size: 13px;
+            color: #003366;
+            text-align: left;
+        }
+
+        /* Executive Summary */
+        .summary {
+            border-left: 4px solid #003366;
+            padding: 1rem;
+            margin: 2rem 0;
+            background: #f9f9f9;
+        }
+        .summary h2 {
+            text-transform: uppercase;
+            color: #003366;
+            text-align: center;
+        }
+        .summary p {
+            text-align: justify;
+        }
+
+        /* Key Findings */
+        .findings {
+            margin: 1.5rem 0;
+        }
+        .findings h2 {
+            text-transform: uppercase;
+            color: #003366;
+        }
+        .findings ul {
+            margin: 0;
+            padding-left: 1.2rem;
+            list-style-type: square;
+        }
+        .findings li {
+            margin: 0;
+            padding: 0;
+            line-height: 1.1;
+            font-size: 14px;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 0.8rem;
+            margin-top: 3rem;
+            border-top: 1px solid #000;
+            padding-top: 0.5rem;
+            color: #555;
+        }
+
+             /* Recommendations */
+        .recommendations {
+            margin: 1.5rem 0;
+        }
+        .recommendations h2 {
+            text-transform: uppercase;
+            color: #003366;
+        }
+        .recommendations ul {
+            margin: 0;
+            padding-left: 1.2rem;
+            list-style-type: disc;
+        }
+        .recommendations li {
+            margin: 0;
+            padding: 0;
+            line-height: 1.1;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PAGE DE GARDE -->
+    <div class="cover-page">
+        <h1>Regional Factsheet Report</h1>
+        <h2>{{ subcomponent.subcomponent_name }}</h2>
+        <div class="meta">
+            Prepared by TVD Data<br>
+            Date: {{ today|date:"F j, Y" }}
+        </div>
+    </div>
+
+    <!-- EXECUTIVE SUMMARY -->
+    <div class="summary">
+        <h2>Executive Summary</h2>
+        <p>
+            This regional factsheet provides an overview of aggregated indicators across countries 
+            within the {{ subcomponent.subcomponent_name }} domain. It highlights key trends, 
+            regional averages, and country-level performance. The analysis supports evidence-based 
+            decision-making and regional policy development.
+        </p>
+    </div>
+
+    <!-- KEY FINDINGS -->
+    <div class="findings">
+        <h2>Key Findings</h2>
+        <ul>
+            <li>{{ stats.total_countries }} countries analyzed in this regional overview.</li>
+            <li>{{ stats.quali_count }} countries reported endemic status ({{ stats.quali_percent|floatformat:1 }}%).</li>
+            <li>{{ stats.progress_count }} countries show progress, while {{ stats.recul_count }} are in decline.</li>
+            <li>{{ stats.stable_count }} countries remain stable across indicators.</li>
+            <li>Regional averages highlight variations in quantitative indicators across years.</li>
+        </ul>
+    </div>
+
+    <!-- STATISTIQUES GLOBALES -->
+    <h1>Regional Statistics</h1>
+    <table>
+        <tr><th>Total Countries Analyzed </th><td class="numeric-value">{{ stats.total_countries }}</td></tr>
+        <tr><th>Countries with Status of endemicity </th><td class="numeric-value">{{ stats.quali_count }} ({{ stats.quali_percent|floatformat:1 }}%)</td></tr>
+        <tr><th>Countries Showing Progress</th><td class="numeric-value">{{ stats.progress_count }} ({{ stats.progress_percent|floatformat:1 }}%)</td></tr>
+        <tr><th>Countries in Decline</th><td class="numeric-value">{{ stats.recul_count }} ({{ stats.recul_percent|floatformat:1 }}%)</td></tr>
+        <tr><th>Countries Remaining Stable</th><td class="numeric-value">{{ stats.stable_count }} ({{ stats.stable_percent|floatformat:1 }}%)</td></tr>
+    </table>
+
+    <!-- INDICATEURS PAR CATÉGORIE -->
+    <h1>Indicators by Category</h1>
+    {% for category, rows in regional_summary.items %}
+        <h2>{{ category }}</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Indicator</th>
+                    {% for year in all_years %}
+                        <th>{{ year }}</th>
+                    {% endfor %}
+                    <th>Variation (%)</th>
+                    <th>Source</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                    <tr>
+                        <td class="indicator-name">{{ row.indicator.indicator_name }}</td>
+                        {% for year in all_years %}
+                            <td class="numeric-value">
+                                {{ row.values|get_item:year|default:"-" }}
+                            </td>
+                        {% endfor %}
+                        <td class="numeric-value">
+                            {% if row.variation %}
+                                {% if row.variation > 0 %}
+                                    ↑ {{ row.variation|floatformat:2 }}%
+                                {% elif row.variation < 0 %}
+                                    ↓ {{ row.variation|floatformat:2 }}%
+                                {% else %}
+                                    – {{ row.variation|floatformat:2 }}%
+                                {% endif %}
+                            {% else %}
+                                –
+                            {% endif %}
+                        </td>
+                        <td>
+                             {{ row.indicator.ref_data }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
+
+    <!-- GRAPHIQUES PAR CATÉGORIE -->
+    <h1>Regional Trends</h1>
+    {% for category, chart in charts_by_category.items %}
+        <h2>{{ category }}</h2>
+        {{ chart|safe }}
+    {% endfor %}
+
+    <!-- CLASSEMENT DES PAYS -->
+    <h1>Country Ranking</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Country</th>
+                <th>Score</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in ranked_countries %}
+                <tr>
+                    <td class="indicator-name">{{ c.country.name }}</td>
+                    <td class="numeric-value">{{ c.score|floatformat:2 }}</td>
+                      <td>
+                            {% if c.score < 0 %}
+                                <span class="badge bg-success">Progress</span>
+                            {% elif c.score > 0 %}
+                                <span class="badge bg-danger">Decline</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Stable</span>
+                            {% endif %}
+                        </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+      <!-- RECOMMENDATIONS -->
+    <div class="recommendations">
+        <h2>Recommendations</h2>
+        <ul>
+            <li>Strengthen regional data collection systems to improve indicator reliability.</li>
+            <li>Focus on categories showing negative variation for targeted interventions.</li>
+            <li>Promote regional collaboration to address shared socio-economic challenges.</li>
+            <li>Ensure transparency and accessibility of official data sources across countries.</li>
+        </ul>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        Confidential Report • Prepared by TVD Data • Regional Analysis
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,330 @@
+{% load custom_filters %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Country Factsheet Report - {{ country.name }}</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 14px;
+            color: #000;
+            background: #fff;
+            line-height: 1.4;
+            margin: 2rem;
+        }
+
+        /* Page de garde */
+        .cover-page {
+            text-align: center;
+            margin-top: 8rem;
+        }
+        .cover-page h1 {
+            font-size: 2rem;
+            text-transform: uppercase;
+            color: #003366;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+        }
+        .cover-page h2 {
+            font-size: 1.2rem;
+            color: #555;
+            margin-bottom: 2rem;
+        }
+        .cover-page .meta {
+            font-size: 0.9rem;
+            color: #333;
+            margin-top: 3rem;
+        }
+
+        /* Titres */
+        h1 {
+            font-size: 1.6rem;
+            text-align: center;
+            text-transform: uppercase;
+            border-bottom: 2px solid #003366;
+            padding-bottom: 0.5rem;
+            margin-top: 3rem;
+            margin-bottom: 1rem;
+        }
+        h2 {
+            font-size: 1.3rem;
+            color: #003366;
+            margin: 0;          /* supprime toute marge verticale */
+            padding: 0;         /* supprime le padding interne */
+            line-height: 1.2;   /* réduit l’interligne */
+        }
+
+
+        h3 {
+            font-size: 1.1rem;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Tableaux PDF-ready */
+
+        /* Alignement spécifique */
+        .indicator-name {
+            text-align: left;
+        }
+        .numeric-value {
+            text-align: center;
+        }
+        .source-cell {
+            white-space: pre-line;
+            font-size: 13px;
+            color: #003366;
+            text-align: left;
+        }
+
+        /* Executive Summary */
+        .summary {
+            border-left: 4px solid #003366;
+            padding: 1rem;
+            margin: 2rem 0;
+            background: #f9f9f9;
+        }
+        .summary h2 {
+            text-transform: uppercase;
+            color: #003366;
+            text-align: center;
+        }
+        .summary p {
+            text-align: justify;
+        }
+
+        /* Key Findings */
+        .findings {
+            margin: 2rem 0;
+        }
+        .findings h2 {
+            text-transform: uppercase;
+            color: #003366;
+        }
+        .findings ul {
+            margin: 0;              /* supprime la marge autour de la liste */
+            padding-left: 1.2rem;   /* conserve un léger retrait pour les puces */
+            list-style-type: square;
+        }
+
+        .findings li {
+            margin: 0;              /* supprime l’espace vertical entre les items */
+            padding: 0;             /* supprime le padding interne */
+            line-height: 1.1;       /* réduit l’interligne */
+            font-size: 14px;
+        }
+
+
+        /* Recommendations */
+        .recommendations {
+            margin: 2rem 0;
+        }
+        .recommendations h2 {
+            text-transform: uppercase;
+            color: #003366;
+        }
+       .recommendations ul {
+            margin: 0;              /* supprime la marge autour de la liste */
+            padding-left: 1.2rem;   /* conserve un léger retrait pour les puces */
+            list-style-type: disc;
+        }
+
+        .recommendations li {
+            margin: 0;              /* supprime l’espace vertical entre les items */
+            padding: 0;             /* supprime le padding interne */
+            line-height: 1.1;       /* réduit l’interligne */
+            font-size: 14px;
+        }
+
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            font-size: 0.8rem;
+            margin-top: 3rem;
+            border-top: 1px solid #000;
+            padding-top: 0.5rem;
+            color: #555;
+        }
+        /* Tableaux PDF-ready */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 14px;
+        }
+
+        th {
+            background: #9ecaf5;
+            color: #1c1c1c;
+            font-weight: bold;
+            text-align: center;
+            padding: 0.4rem;
+            border: 1px solid #000;
+        }
+
+        td {
+            border: 1px solid #000;
+            padding: 0.4rem;
+            vertical-align: middle;
+        }
+
+        /* Première colonne alignée à gauche */
+        td.indicator-name {
+            text-align: left;
+            font-weight: bold;
+        }
+
+        /* Valeurs numériques centrées */
+        td.numeric-value {
+            text-align: center;
+        }
+        .findings ul {
+            margin-left: 1.5rem;
+            list-style-type: square;
+            padding: 0;
+        }
+
+        .findings li {
+            margin: 0;          /* supprime l’espace vertical */
+            line-height: 1.0;   /* réduit l’interligne */
+            font-size: 14px;
+        }
+
+    </style>
+</head>
+    <body>
+
+        <!-- PAGE DE GARDE -->
+        <div class="cover-page">
+            <h1>Country Factsheet</h1>
+            <h2>{{ country.name }} ({{ country.cca3 }})</h2>
+            <div class="meta">
+                Prepared by TVD Data<br>
+                Date: {{ today|date:"F j, Y" }}
+            </div>
+        </div>
+
+        <!-- EXECUTIVE SUMMARY -->
+        <div class="summary">
+            <h2>Executive Summary</h2>
+            <p>
+                This report provides a comprehensive overview of {{ country.name }}’s demographic, geographic, and health indicators. 
+                It highlights key trends, performance against targets, and sources of data. 
+                The analysis is intended to support evidence-based decision-making and policy development.
+            </p>
+        </div>
+
+        <!-- KEY FINDINGS -->
+   <div class="findings">
+        <h2>Key Findings</h2>
+        <ul>
+            <li>Population of {{ country.name }} is estimated at {{ country.population|floatformat:0 }}.</li>
+            <li>Area covers {{ country.area }} km², located in the {{ country.subregion }} region.</li>
+            <li>Indicators show variations across years, with notable changes in health and socio-economic metrics.</li>
+            <li>Data sources are diverse and include official government records and international databases.</li>
+        </ul>
+    </div>
+
+
+        <!-- PROFIL DU PAYS -->
+        <h1>Country Profile</h1>
+        <table>
+            <tr><th>Official Name</th><td class="indicator-name">{{ country.official }}</td></tr>
+            <tr><th>Capital</th><td class="indicator-name">{{ country.capital }}</td></tr>
+            <tr><th>Subregion</th><td class="indicator-name">{{ country.subregion }}</td></tr>
+            <tr><th>Area (km²)</th><td class="numeric-value">{{ country.area }}</td></tr>
+            <tr><th>Population</th><td class="numeric-value">{{ country.population|floatformat:0 }}</td></tr>
+            <tr><th>Languages</th><td class="indicator-name">{{ country.languages }}</td></tr>
+            <tr><th>Classification</th><td class="indicator-name">{{ country.country_class }}</td></tr>
+        </table>
+
+        <!-- INDICATEURS -->
+        <h1>Indicators Overview</h1>
+        {% for section in dashboard_data %}
+            <h2>{{ section.subcomponent.subcomponent_name }}</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Indicator</th>
+                        <th>Target</th>
+                        {% for year in all_years %}
+                            <th>{{ year }}</th>
+                        {% endfor %}
+                        <th>Variation (%)</th>
+                        <th>Source</th>
+                    </tr>
+                </thead>
+            <tbody>
+                    {% for ind in section.indicators %}
+                        <tr>
+                            <td class="indicator-name">{{ ind.indicator.indicator_name }}</td>
+                            <td class="numeric-value">{{ ind.target }}</td>
+                            {% for year in all_years %}
+                                {% with res=ind.results|get_result_for_allyear:year %}
+                                    <td class="numeric-value">
+                                        {% if res %}
+                                            {% if ind.type_indicator == "Quanti_ind" %}
+                                                {{ res.numeric_value|default:"-" }}
+                                            {% else %}
+                                                {{ res.alpha_value|default:"-" }}
+                                            {% endif %}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                {% endwith %}
+                            {% endfor %}
+                            <td class="numeric-value">
+                                {% if ind.variation %}
+                                    {{ ind.variation|floatformat:2 }}%
+                                {% else %}
+                                    –
+                                {% endif %}
+                            </td>
+                            <td class="source-cell">
+                                {{ ind.indicator.ref_data }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+        {% endfor %}
+
+        <!-- GRAPHIQUES -->
+        <h1>Indicator Trends</h1>
+        {% for sub_name, chart in charts.items %}
+            <h2>{{ sub_name }}</h2>
+            {{ chart|safe }}
+        {% endfor %}
+
+        <!-- ANNÉES COUVERTES -->
+        <h1>Years Covered</h1>
+        {% if all_years %}
+            <p>{{ all_years|join:", " }}</p>
+        {% else %}
+            <p>No Year Covered</p>
+        {% endif %}
+
+        <!-- RECOMMENDATIONS -->
+       <div class="recommendations">
+            <h2>Recommendations</h2>
+            <ul>
+                <li>Strengthen data collection systems to improve indicator reliability.</li>
+                <li>Focus on areas with negative variation trends for targeted interventions.</li>
+                <li>Promote regional collaboration to address shared socio-economic challenges.</li>
+                <li>Ensure transparency and accessibility of official data sources.</li>
+            </ul>
+        </div>
+
+
+
+        <!-- FOOTER -->
+        <div class="footer">
+            Confidential Report • Prepared by TVD Data • {{ country.name }}
+        </div>
+
+    </body>
+</html>

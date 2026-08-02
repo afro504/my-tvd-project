@@ -88,8 +88,7 @@ import base64
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
-
-
+from .utils import render_to_pdf
 
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
@@ -107,6 +106,9 @@ from openpyxl.utils import get_column_letter
 import openpyxl
 from docx.shared import RGBColor
 from openpyxl.chart import PieChart, BarChart, Reference
+from .pdf import htmlTopdf
+from xhtml2pdf import pisa
+
 
 # =========================
 # EMAIL / AUTH UTILITIES
@@ -5270,9 +5272,6 @@ def country_factsheet(request, pk):
 
      # Exemple : générer un graphique pour chaque indicateur quantitatif
 
-      
-
-
     charts = {}
     subcomponents = Subcomponent.objects.filter(
         subcomponent_indicator__indicator_code__in=indicators
@@ -5329,17 +5328,6 @@ def country_factsheet(request, pk):
             )
 
             charts[sub.subcomponent_name] = fig.to_html(full_html=False)
-
-
-
-    
-
-
-   
-
-    
-
-
 
 
     # Résoudre le lien court Google Maps
@@ -5523,3 +5511,407 @@ def export_erreurs_csv(request):
 
 
 #xporter en PDF
+
+
+def country_factsheet_pdf(request, pk):
+    template_path = 'mytvddata/pages/dashboard/country_factsheet_pdf.html'
+    
+    # ✅ pk est bien reçu en paramètre
+    country = get_object_or_404(Country, pk=pk)
+
+    # Fusion bind_rows
+    merged_data = bind_rows_data()
+
+    # Filtrer par pays
+    api_data = [d for d in merged_data if d["country_code"] == country.cca3]
+    indicators = [d["indicator_code"] for d in api_data]
+
+    # Exemple : générer un graphique pour chaque indicateur quantitatif
+    charts = {}
+    subcomponents = Subcomponent.objects.filter(
+        subcomponent_indicator__indicator_code__in=indicators
+    ).distinct()
+
+    for sub in subcomponents:
+        indicators_qs = Indicator.objects.filter(subcomponent=sub)
+        data_for_plot = []
+
+        for ind in indicators_qs:
+            if ind.type_indicator == "Quanti_ind":
+                results = sorted(
+                    [d for d in api_data if d["indicator_code"] == ind.indicator_code],
+                    key=lambda x: x["time_dim"] if x["time_dim"] else 0
+                )
+                years = [r["time_dim"] for r in results if r["time_dim"]]
+                values = [r["numeric_value"] for r in results if r["numeric_value"]]
+
+                for y, v in zip(years, values):
+                    data_for_plot.append({
+                        "Année": y,
+                        "Valeur": v,
+                        "Indicateur": ind.indicator_name
+                    })
+
+        if data_for_plot:
+            palette = pc.qualitative.Set2  
+            fig = px.line(
+                data_for_plot,
+                x="Année",
+                y="Valeur",
+                color="Indicateur",
+                markers=True,
+                title=f"Indicator Trends - {sub.subcomponent_name}",
+                color_discrete_sequence=palette
+            )
+            fig.update_traces(
+                line=dict(width=5),
+                marker=dict(size=8),
+                text=[f"{d['Valeur']:.0f}" for d in data_for_plot],
+                textposition="top center",
+                mode="lines+markers+text"
+            )
+            fig.update_layout(
+                template="plotly_white",
+                height=500,
+                margin=dict(l=20, r=20, t=40, b=20),
+                legend=dict(title="Indicators (click to toggle on/off)")
+            )
+            charts[sub.subcomponent_name] = fig.to_html(full_html=False)
+
+    # Résoudre le lien court Google Maps
+    resolved_url = country.maps
+    if resolved_url and "goo.gl/maps" in resolved_url:
+        try:
+            response = requests.head(resolved_url, allow_redirects=True)
+            resolved_url = response.url
+        except Exception:
+            resolved_url = country.maps
+
+    # Localisation
+    locations = LocationCountry.objects.filter(iso3=country.cca3).only("iso3", "name", "latitude", "longitude")
+    center_lat, center_lon = 0.0, 20.0
+    if locations.exists():
+        latitudes = [loc.latitude for loc in locations if loc.latitude]
+        longitudes = [loc.longitude for loc in locations if loc.longitude]
+        if latitudes and longitudes:
+            center_lat = sum(latitudes) / len(latitudes)
+            center_lon = sum(longitudes) / len(longitudes)
+
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=4, tiles="cartodb positron", scrollWheelZoom=True)
+    folium.LayerControl().add_to(m)
+    for location in locations:
+        if location.latitude and location.longitude:
+            folium.Marker(
+                location=(location.latitude, location.longitude),
+                popup=f"<b>{location.name}</b><br>Lat: {location.latitude}, Lon: {location.longitude}",
+                tooltip=location.name,
+                icon=folium.Icon(color="blue", icon="globe", prefix="fa")
+            ).add_to(m)
+    map_html = m._repr_html_()
+
+    # Subcomponents liés aux indicateurs du pays
+    subcomponents = Subcomponent.objects.filter(
+        subcomponent_indicator__indicator_code__in=indicators
+    ).distinct()
+
+    dashboard_data = []
+    all_years = set()
+
+    for sub in subcomponents:
+        indicators_qs = Indicator.objects.filter(subcomponent=sub)
+        indicator_results = []
+        for ind in indicators_qs:
+            results = sorted(
+                [d for d in api_data if d["indicator_code"] == ind.indicator_code],
+                key=lambda x: x["time_dim"] if x["time_dim"] is not None else 0
+            )
+            if results:
+                min_year = results[0]["time_dim"]
+                max_year = results[-1]["time_dim"]
+                variation = None
+                if ind.type_indicator == "Quanti_ind":
+                    min_val = results[0]["numeric_value"]
+                    max_val = results[-1]["numeric_value"]
+                    if min_val is not None and max_val is not None and min_val != 0:
+                        try:
+                            variation = ((max_val - min_val) / min_val) * 100
+                        except (ValueError, TypeError, ZeroDivisionError):
+                            variation = None
+                elif ind.type_indicator == "Quali_ind":
+                    variation = None
+                indicator_results.append({
+                    "indicator": ind,
+                    "results": results,
+                    "min_year": min_year,
+                    "max_year": max_year,
+                    "variation": variation,
+                    "target": ind.indicator_target,
+                    "performance": ind.performance_indicator,
+                    "category": ind.category_indicator,
+                    "data_source": ind.indicator_source,
+                    "type_indicator": ind.type_indicator,
+                })
+                for res in results:
+                    if res["time_dim"] is not None:
+                        try:
+                            all_years.add(int(res["time_dim"]))
+                        except (ValueError, TypeError):
+                            pass
+        dashboard_data.append({
+            "subcomponent": sub,
+            "indicators": indicator_results,
+        })
+    all_years = sorted(all_years)
+
+    context = {
+        "country": country,
+        "resolved_url": resolved_url,
+        "map_html": map_html,
+        "dashboard_data": dashboard_data,
+        "all_years": all_years,
+        "api_data": api_data,
+        "indicators": indicators,
+        "charts": charts,
+    }
+
+    pdf = render_to_pdf('mytvddata/pages/dashboard/country_factsheet_pdf.html', context)
+    if pdf:
+        response = HttpResponse(pdf, content_type='application/pdf')
+        filename = f"Country_factsheet_{country.cca3}.pdf"
+        if request.GET.get("download"):
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        else:
+            response['Content-Disposition'] = f'inline; filename="{filename}"'
+        return response
+    return HttpResponse("Erreur lors de la génération du PDF")
+
+
+
+
+
+def regional_factsheet_pdf(request, pk):
+    template_path = 'mytvddata/pages/dashboard/regional_factsheet_pdf.html'
+    
+    # Page d'analyse régionale regroupée par type d'indicateur
+    subcomponent = get_object_or_404(Subcomponent, pk=pk)
+    indicators = Indicator.objects.filter(subcomponent=subcomponent)
+
+    # ✅ Fusion des données
+    all_data = bind_rows_data()
+    all_years = sorted({d["time_dim"] for d in all_data if d["time_dim"]})
+  
+    # ✅ Fusion des données
+    all_data = bind_rows_data()
+
+    all_years = sorted({d["time_dim"] for d in all_data if d["time_dim"]})
+
+
+    # all_years = sorted(StoreAPI.objects.values_list("time_dim", flat=True).distinct())
+
+    grouped_indicators = {}
+    for ind in indicators:
+        cat = ind.category_indicator or "Autres"
+        grouped_indicators.setdefault(cat, []).append(ind)
+
+    # ✅ Calcul des moyennes régionales et comptages par catégorie
+    regional_summary = {}
+    for category, inds in grouped_indicators.items():
+        summary_rows = []
+        for ind in inds:
+            years = sorted({d["time_dim"] for d in all_data if d["indicator_code"] == ind.indicator_code})
+            values_by_year = {}
+            for year in years:
+                if ind.type_indicator == "Quanti_ind":
+                    # ✅ Somme régionale par année
+                    year_values = [
+                        d["numeric_value"] for d in all_data
+                        if d["indicator_code"] == ind.indicator_code
+                        and d["time_dim"] == year
+                        and d["numeric_value"] is not None
+                    ]
+                    if year_values:
+                        sum_val = sum(year_values)
+                        values_by_year[year] = round(sum_val, 0)  # arrondi à 0
+                elif ind.type_indicator == "Quali_ind":
+                    # ✅ Nombre de pays endémiques par année
+                    endemic_countries = {
+                        d["country_code"] for d in all_data
+                        if d["indicator_code"] == ind.indicator_code
+                        and d["time_dim"] == year
+                        and d.get("alpha_value") == "Yes, country is endemic (report required)"
+                    }
+                    values_by_year[year] = round(len(endemic_countries), 0)
+
+            # ✅ Variation (%)
+            variation = None
+            vals = list(values_by_year.values())
+            if len(vals) >= 2 and vals[0] != 0:
+                variation = ((vals[-1] - vals[0]) / vals[0]) * 100
+
+            if values_by_year:
+                summary_rows.append({
+                    "indicator": ind,
+                    "values": values_by_year,
+                    "variation": variation
+                })
+
+        if summary_rows:
+            regional_summary[category] = summary_rows
+
+
+
+    # ✅ Calculs pays + stats (inchangés)
+
+    country_summary = []
+    for country in Country.objects.all().order_by("name"):
+            country_data = [
+                d for d in all_data
+                if d["country_code"] == country.cca3
+                and d["indicator_code"] in indicators.values_list("indicator_code", flat=True)
+            ]
+
+            progress = []
+            for ind in indicators:
+                values = {v["time_dim"]: v for v in country_data if v["indicator_code"] == ind.indicator_code}
+                if not values:
+                    continue
+
+                if ind.type_indicator == "Quanti_ind":
+                    vals = [v["numeric_value"] for v in values.values() if v["numeric_value"] is not None]
+                    if not vals:
+                        continue
+                    variation = None
+                    if len(vals) >= 2 and vals[0] != 0:
+                        variation = ((vals[-1] - vals[0]) / vals[0]) * 100
+                    progress.append({
+                        "indicator": ind,
+                        "values": {year: (v["numeric_value"] if v else None) for year, v in values.items()},
+                        "variation": variation
+                    })
+
+                elif ind.type_indicator == "Quali_ind":
+                    vals = [v["alpha_value"] for v in values.values() if v["alpha_value"]]
+                    if not vals:
+                        continue
+                    progress.append({
+                        "indicator": ind,
+                        "values": {year: (v["alpha_value"] if v else None) for year, v in values.items()},
+                        "variation": None
+                    })
+
+            if progress:
+                country_summary.append({
+                    "country": country,
+                    "progress": progress,
+                    "score": sum([p["variation"] or 0 for p in progress if p["variation"] is not None])
+                })
+
+    ranked_countries = sorted(country_summary, key=lambda c: c["score"], reverse=False)
+
+    # ✅ Calcul des statistiques globales
+    total_countries = len(country_summary)
+
+    # Quali_ind : nombre de pays avec au moins une valeur
+    quali_count = sum(
+        1 for c in country_summary for p in c["progress"]
+        if p["indicator"].type_indicator == "Quali_ind" and any(p["values"].values())
+    )
+
+    # Quanti_ind : statut Progrès / Recul / Stable
+    progress_count = sum(1 for c in country_summary if c["score"] < 0)
+    recul_count = sum(1 for c in country_summary if c["score"] > 0)
+    stable_count = sum(1 for c in country_summary if c["score"] == 0)
+
+    stats = {
+        "total_countries": total_countries,
+        "quali_count": quali_count,
+        "quali_percent": (quali_count / total_countries * 100) if total_countries else 0,
+        "progress_count": progress_count,
+        "progress_percent": (progress_count / total_countries * 100) if total_countries else 0,
+        "recul_count": recul_count,
+        "recul_percent": (recul_count / total_countries * 100) if total_countries else 0,
+        "stable_count": stable_count,
+        "stable_percent": (stable_count / total_countries * 100) if total_countries else 0,
+    }
+
+
+    # ✅ Génération des graphiques par catégorie
+        
+        # ✅ Génération des graphiques évolutifs par catégorie (moyenne régionale)
+    charts_by_category = {}
+    for category, inds in grouped_indicators.items():
+        data_for_plot = []
+
+        for ind in inds:
+            if ind.type_indicator == "Quanti_ind":
+                # Moyenne régionale par année
+                years = sorted({d["time_dim"] for d in all_data if d["indicator_code"] == ind.indicator_code})
+                for year in years:
+                    year_values = [
+                        d["numeric_value"] for d in all_data
+                        if d["indicator_code"] == ind.indicator_code and d["time_dim"] == year and d["numeric_value"] is not None
+                    ]
+                    if year_values:
+                        avg_value = sum(year_values) / len(year_values)
+                        data_for_plot.append({
+                            "Année": year,
+                            "Valeur": avg_value,
+                            "Indicateur": ind.indicator_name
+                        })
+
+        if data_for_plot:
+            fig = px.line(
+                data_for_plot,
+                x="Année",
+                y="Valeur",
+                color="Indicateur",
+                markers=True,
+                title=f"Regional Average Trends - {category}",
+                color_discrete_sequence=pc.qualitative.Set2
+            )
+            fig.update_traces(
+                line=dict(width=4),
+                marker=dict(size=8),
+                text=[f"{d['Valeur']:.0f}" for d in data_for_plot],
+                textposition="top center",
+                textfont=dict(size=18, color="black"),  # <-- police plus grande
+                mode="lines+markers+text"
+            )
+            fig.update_layout(
+                template="plotly_white",
+                height=550,
+                margin=dict(l=40, r=40, t=60, b=40),
+                xaxis_title="Year",
+                yaxis_title="Regional Average Value",
+                legend=dict(
+                    title="Indicators",
+                    orientation="h",
+                    yanchor="bottom",
+                    y=-0.3,
+                    xanchor="center",
+                    x=0.5
+                )
+            )
+            charts_by_category[category] = fig.to_html(full_html=False)
+
+    context = {
+        "subcomponent": subcomponent,
+        "grouped_indicators": grouped_indicators,
+        "all_years": all_years,
+        "country_summary": country_summary,
+        "ranked_countries": ranked_countries,
+        "stats": stats,
+        "charts_by_category": charts_by_category,
+        "regional_summary": regional_summary  # ✅ ajout pour le template
+    }
+
+    pdf = render_to_pdf('mytvddata/pages/dashboard/regional_factsheet_pdf.html', context)
+    if pdf:
+        response = HttpResponse(pdf, content_type='application/pdf')
+        filename = f"Regional_factsheet_{subcomponent.id}.pdf"
+        if request.GET.get("download"):
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        else:
+            response['Content-Disposition'] = f'inline; filename="{filename}"'
+        return response
+    return HttpResponse("Erreur lors de la génération du PDF")

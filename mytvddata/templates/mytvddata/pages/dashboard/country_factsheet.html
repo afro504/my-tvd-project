@@ -35,6 +35,10 @@
             </a>
          
         {% endif %}
+
+         <a href="{% url 'country_factsheet_pdf' country.pk %}" class="btn btn-outline-primary">
+            📝 Export to PDF
+        </a>
       
 
         <a href="{% url 'country_dashboard_word' country.pk %}" class="btn btn-outline-primary">
