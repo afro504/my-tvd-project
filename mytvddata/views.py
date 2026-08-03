@@ -72,6 +72,9 @@ from .forms import (
     SelectAPIForm, StoreAPIForm,  ApiFieldSelectionForm,StaffMemberForm
 )
 
+
+from .utils import bind_rows_data  # ta fonction qui fusionne les données
+
 # =========================
 # EXTERNAL LIBRARIES
 # =========================
@@ -108,7 +111,8 @@ from docx.shared import RGBColor
 from openpyxl.chart import PieChart, BarChart, Reference
 from .pdf import htmlTopdf
 from xhtml2pdf import pisa
-
+from docx.shared import Pt, RGBColor
+from docx.oxml import OxmlElement
 
 # =========================
 # EMAIL / AUTH UTILITIES
@@ -412,16 +416,16 @@ def add_country(request):
         # ✅ DELETE
         elif 'delete' in request.POST:
             #Condition security
-            if not request.user.is_authenticated:
-                messages.error(request, "⚠️ You must be logged in to edit or delete.")
-                return redirect("signin")  # ou une autre page
- 
-            pk = request.POST.get('delete')
-            country = get_object_or_404(Country, id=pk)
-            country.delete()
-
-            messages.success(request, "Country deleted successfully")
-            return redirect('add_country')
+            if request.user.groups.filter(name='Manager and delete').exists(): ## Condition security
+                 pk = request.POST.get('delete')
+                 country = get_object_or_404(Country, id=pk)
+                 country.delete()
+        
+                 messages.success(request, "Country deleted successfully")
+                 return redirect('add_country')
+            else:
+                return render(request, 'mytvddata/cover/403.html')
+           
  
        
  
@@ -651,17 +655,19 @@ def delete_indicator(request, pk):
     data = dict()
 
     if request.method == 'POST':
-        indicator.delete()
-        data['form_is_valid'] = True
-
-        indicators = Indicator.objects.select_related('subcomponent')
-
-        data['html_indicator_list'] = render_to_string(
-            'mytvddata/pages/indicator/partial_indicator_list.html',
-            {'indicators': indicators},
-            request=request
-        )
-
+        if request.user.groups.filter(name='Manager and delete').exists(): ## Condition security
+                indicator.delete()
+                data['form_is_valid'] = True
+        
+                indicators = Indicator.objects.select_related('subcomponent')
+        
+                data['html_indicator_list'] = render_to_string(
+                    'mytvddata/pages/indicator/partial_indicator_list.html',
+                    {'indicators': indicators},
+                    request=request
+                )
+        else:
+            return render(request, 'mytvddata/cover/403.html')
     else:
         context = {'indicator': indicator}
         data['html_form'] = render_to_string(
@@ -988,8 +994,11 @@ def t_scripts_view(request):
 
 def delete_t_scripts(request, pk):
     if request.method == "POST":
-        WarehouseScript.objects.filter(id=pk).delete()
-        return JsonResponse({'msg': 'deleted'})
+        if request.user.groups.filter(name='Manager and delete').exists(): ## Condition security
+            WarehouseScript.objects.filter(id=pk).delete()
+            return JsonResponse({'msg': 'deleted'})
+        else:
+            return render(request, 'mytvddata/cover/403.html')
     else:
         t_script = WarehouseScript.objects.get(id=pk)
         return render(request, 'mytvddata/pages/scripts_view/delete_t_scripts_modal.html',
@@ -1102,16 +1111,15 @@ def survey_add_project(request):
 
         elif "delete" in request.POST:
             #Condition security
-            if not request.user.is_authenticated:
-                messages.error(request, "⚠️ You must be logged in to edit or delete.")
-                return redirect("signin")  # ou une autre page
+            if request.user.groups.filter(name='Manager and delete').exists(): ## Condition security
+                    pk = request.POST.get('delete')
+                    surveyProject = get_object_or_404(SurveyProject, id=pk)
+                    surveyProject.delete()
+                    messages.success(request, 'Survey project supprimé avec succès')
+                    return redirect('project_survey')
+            else:
+                return render(request, 'mytvddata/cover/403.html')
                         
-            pk = request.POST.get('delete')
-            surveyProject = get_object_or_404(SurveyProject, id=pk)
-            surveyProject.delete()
-            messages.success(request, 'Survey project supprimé avec succès')
-            return redirect('project_survey')
-
         elif "edit" in request.POST:
              #Condition security
             if not request.user.is_authenticated:
@@ -1430,18 +1438,15 @@ def survey_add_data(request):
 
         elif 'delete' in request.POST:
                  #Condition security
-            if not request.user.is_authenticated:
-                messages.error(request, "⚠️ You must be logged in to edit or delete.")
-                return redirect("signin")  # ou une autre page
-                            
-          #  if request.user.groups.filter(name='Manager and delete').exists():
+                    
+            if request.user.groups.filter(name='Manager and delete').exists():
                 pk = request.POST.get('delete')
                 surveyDataset = get_object_or_404(SurveyDataset, id=pk)
                 surveyDataset.delete()
                 messages.success(request, 'Survey dataset supprimé avec succès')
                 return redirect('index_survey')
-          # else:
-          #      return render(request, 'mytvddata/cover/403.html')
+            else:
+                return render(request, 'mytvddata/cover/403.html')
 
         elif 'edit' in request.POST:
               #Condition security
@@ -2163,16 +2168,16 @@ def repository_add_data(request):
 
         elif "delete" in request.POST:
              #Condition security
-            if not request.user.is_authenticated:
-                messages.error(request, "⚠️ You must be logged in to edit or delete.")
-                return redirect("signin")  # ou une autre page
-                        
-            pk = request.POST.get("delete")
-            instance = get_object_or_404(RepositoryIndicator, id=pk)
-            instance.delete()
-            messages.success(request, "❌ Data deleted")
-            return redirect("datasets_repository")
-
+            if request.user.groups.filter(name='Manager and delete').exists(): ## Condition security
+                pk = request.POST.get("delete")
+                instance = get_object_or_404(RepositoryIndicator, id=pk)
+                instance.delete()
+                messages.success(request, "❌ Data deleted")
+                return redirect("datasets_repository")
+                
+            else:
+                return render(request, 'mytvddata/cover/403.html')
+            
         elif "edit" in request.POST:
              #Condition security
             if not request.user.is_authenticated:
@@ -2801,11 +2806,16 @@ def display_api_data(request):
                 return redirect("display_api_data")
 
         elif 'delete' in request.POST:
-            pk = request.POST.get('delete')
-            instance = get_object_or_404(StoreAPI, id=pk)
-            instance.delete()
-            messages.success(request, "❌ API data deleted successfully")
-            return redirect("display_api_data")
+             #Condition security
+            if request.user.groups.filter(name='Manager and delete').exists(): ## Condition security
+                pk = request.POST.get('delete')
+                instance = get_object_or_404(StoreAPI, id=pk)
+                instance.delete()
+                messages.success(request, "❌ API data deleted successfully")
+                return redirect("display_api_data")
+                
+            else:
+                return render(request, 'mytvddata/cover/403.html')
 
         elif 'edit' in request.POST:
             pk = request.POST.get('edit')
@@ -3272,17 +3282,17 @@ def component_add(request):
             return redirect('component_add')  # 🔑 redirection après POST
 
         elif 'delete' in request.POST:
-             #Condition security
-            if not request.user.is_authenticated:
-                messages.error(request, "⚠️ You must be logged in to edit or delete.")
-                return redirect("signin")  # ou une autre page
+              #Condition security
+            if request.user.groups.filter(name='Manager and delete').exists(): ## Condition security
+                pk = request.POST.get('delete')
+                component = Component.objects.get(id=pk)
+                component.delete()
+                messages.success(request, 'Component deleted successfully')
+                return redirect('component_add')  # 🔑 redirection après POST
+                
+            else:
+                return render(request, 'mytvddata/cover/403.html')
             
-            pk = request.POST.get('delete')
-            component = Component.objects.get(id=pk)
-            component.delete()
-            messages.success(request, 'Component deleted successfully')
-            return redirect('component_add')  # 🔑 redirection après POST
-
         elif 'edit' in request.POST:
             pk = request.POST.get('edit')
             component = Component.objects.get(id=pk)
@@ -3369,18 +3379,15 @@ def subcomponent_add(request):
 
         elif 'delete' in request.POST:
                  #Condition security
-            if not request.user.is_authenticated:
-                messages.error(request, "⚠️ You must be logged in to edit or delete.")
-                return redirect("signin")  # ou une autre page
             
-         #   if request.user.groups.filter(name='Manager and delete').exists(): ## Condition security
+            if request.user.groups.filter(name='Manager and delete').exists(): ## Condition security
                 pk = request.POST.get('delete')
                 subcomponent = Subcomponent.objects.get(id = pk)
                 subcomponent.delete()
                 messages.success(request, 'Sub Component deleted successfully')
                 return redirect('subcomponent_add')  # 🔑 redirection après POST
-        #    else:
-        #        return render(request, 'pages/examples/403.html')
+            else:
+                return render(request, 'mytvddata/cover/403.html')
     
         elif 'edit' in request.POST:
              #Condition security
@@ -3742,8 +3749,12 @@ def staff_update(request, pk):
 def staff_delete(request, pk):
     staff = get_object_or_404(StaffMember, pk=pk)
     if request.method == "POST":
-        staff.delete()
-        messages.success(request, "Focal Point record deleted successfully.")
+        if request.user.groups.filter(name='Manager and delete').exists(): ## Condition security
+            staff.delete()
+            messages.success(request, "Focal Point record deleted successfully.")
+        else:
+            return render(request, 'mytvddata/cover/403.html')
+        
     return redirect("staff_list")
 
 
@@ -4144,53 +4155,6 @@ def country_dashboard(request, pk):
     }
    
     return render(request, 'mytvddata/pages/dashboard/country_profile.html', context)
-
-
-
-def bind_rows_data():
-    store_data = StoreAPI.objects.all()
-    repo_data = RepositoryIndicator.objects.all()
-
-    unified_data = []
-
-    # Normaliser StoreAPI
-    for s in store_data:
-        unified_data.append({
-            "indicator_code": s.indicator_code,
-            "country_code": s.country_code,
-            "dim1_type": s.dim1_type,
-            "dim1": s.dim1,
-            "dim2_type": s.dim2_type,
-            "dim2": s.dim2,
-            "dim3_type": s.dim3_type,
-            "dim3": s.dim3,
-            "time_dim": s.time_dim,
-            "alpha_value": s.alpha_value,
-            "numeric_value": s.numeric_value,
-            "publish_date": s.publish_date,
-            "indicator_name": None,
-        })
-
-    # Normaliser RepositoryIndicator
-    for r in repo_data:
-        unified_data.append({
-            "indicator_code": r.indicator_code,
-            "country_code": r.spatial_dim,
-            "dim1_type": r.dim1_type,
-            "dim1": r.dim1,
-            "dim2_type": r.dim2_type,
-            "dim2": r.dim2,
-            "dim3_type": r.dim3_type,
-            "dim3": r.dim3,
-            "time_dim": r.time_dim,
-            "alpha_value": r.alpha_value,
-            "numeric_value": float(r.numeric_value) if r.numeric_value else None,
-            "publish_date": r.publish_date,
-            "indicator_name": r.indicator.indicator_name if r.indicator else None,
-        })
-
-    return unified_data
-
 
 
 
@@ -4645,15 +4609,11 @@ def geocountry_update(request, pk):
 def geocountry_delete(request, pk):
     country = get_object_or_404(LocationCountry, pk=pk)
     if request.method == "POST":
-
-             #Condition security
-
-        if not request.user.is_authenticated:
-            messages.error(request, "⚠️ You must be logged in to edit or delete.")
-            return redirect("signin")  # ou une autre page
-                
-        country.delete()
-        return JsonResponse({"success": True})
+        if request.user.groups.filter(name='Manager and delete').exists(): ## Condition security
+            country.delete()
+            return JsonResponse({"success": True})
+        else:
+            return render(request, 'mytvddata/cover/403.html')
     return JsonResponse({"success": False})
 
 # ✅ Export JSON
@@ -4751,7 +4711,11 @@ def regional_factsheet_results(request, subcomponent_id):
                         d["country_code"] for d in all_data
                         if d["indicator_code"] == ind.indicator_code
                         and d["time_dim"] == year
-                        and d.get("alpha_value") == "Yes, country is endemic (report required)"
+                         and d.get("alpha_value") in [
+                                "Yes, country is endemic (report required)",
+                                "Endemic"
+                            ]
+                        
                     }
                     values_by_year[year] = round(len(endemic_countries), 0)
 
@@ -4802,15 +4766,32 @@ def regional_factsheet_results(request, subcomponent_id):
                         "variation": variation
                     })
 
+
                 elif ind.type_indicator == "Quali_ind":
-                    vals = [v["alpha_value"] for v in values.values() if v["alpha_value"]]
+                    # ✅ On ne garde que les valeurs marquant l’endémicité
+                    vals = [
+                        v["alpha_value"] for v in values.values()
+                        if v["alpha_value"] in [
+                            "Yes, country is endemic (report required)",
+                            "Endemic"
+                        ]
+                    ]
                     if not vals:
                         continue
                     progress.append({
                         "indicator": ind,
-                        "values": {year: (v["alpha_value"] if v else None) for year, v in values.items()},
+                        "values": {
+                            year: (
+                                v["alpha_value"] if v and v["alpha_value"] in [
+                                    "Yes, country is endemic (report required)",
+                                    "Endemic"
+                                ] else None
+                            )
+                            for year, v in values.items()
+                        },
                         "variation": None
                     })
+
 
             if progress:
                 country_summary.append({
@@ -4830,6 +4811,20 @@ def regional_factsheet_results(request, subcomponent_id):
         if p["indicator"].type_indicator == "Quali_ind" and any(p["values"].values())
     )
 
+      # ✅ Nouveau : calcul par ref_data
+    quali_by_source = {}
+    for c in country_summary:
+        for p in c["progress"]:
+            if p["indicator"].type_indicator == "Quali_ind" and any(p["values"].values()):
+                source = p["indicator"].ref_data or "Unknown"
+                quali_by_source[source] = quali_by_source.get(source, 0) + 1
+
+    # Pourcentages par source
+    quali_percent_by_source = {
+        source: (count / total_countries * 100) if total_countries else 0
+        for source, count in quali_by_source.items()
+    }
+
     # Quanti_ind : statut Progrès / Recul / Stable
     progress_count = sum(1 for c in country_summary if c["score"] < 0)
     recul_count = sum(1 for c in country_summary if c["score"] > 0)
@@ -4839,6 +4834,8 @@ def regional_factsheet_results(request, subcomponent_id):
         "total_countries": total_countries,
         "quali_count": quali_count,
         "quali_percent": (quali_count / total_countries * 100) if total_countries else 0,
+        "quali_by_source": quali_by_source,                # ✅ ajout
+        "quali_percent_by_source": quali_percent_by_source, # ✅ ajout
         "progress_count": progress_count,
         "progress_percent": (progress_count / total_countries * 100) if total_countries else 0,
         "recul_count": recul_count,
@@ -4846,6 +4843,14 @@ def regional_factsheet_results(request, subcomponent_id):
         "stable_count": stable_count,
         "stable_percent": (stable_count / total_countries * 100) if total_countries else 0,
     }
+
+
+
+
+
+
+
+
 
 
     # ✅ Génération des graphiques par catégorie
@@ -4906,10 +4911,7 @@ def regional_factsheet_results(request, subcomponent_id):
                 )
             )
             charts_by_category[category] = fig.to_html(full_html=False)
-
-    
-
-       
+     
 
     return render(request, "mytvddata/pages/dashboard/factsheet_results.html", {
         "subcomponent": subcomponent,
@@ -5738,7 +5740,10 @@ def regional_factsheet_pdf(request, pk):
                         d["country_code"] for d in all_data
                         if d["indicator_code"] == ind.indicator_code
                         and d["time_dim"] == year
-                        and d.get("alpha_value") == "Yes, country is endemic (report required)"
+                        and d.get("alpha_value") in [
+                                "Yes, country is endemic (report required)",
+                                "Endemic"
+                            ]
                     }
                     values_by_year[year] = round(len(endemic_countries), 0)
 
@@ -5811,11 +5816,26 @@ def regional_factsheet_pdf(request, pk):
     # ✅ Calcul des statistiques globales
     total_countries = len(country_summary)
 
-    # Quali_ind : nombre de pays avec au moins une valeur
+
+    #Quali_ind : nombre de pays avec au moins une valeur
     quali_count = sum(
         1 for c in country_summary for p in c["progress"]
         if p["indicator"].type_indicator == "Quali_ind" and any(p["values"].values())
     )
+
+    # ✅ Nouveau : calcul par ref_data
+    quali_by_source = {}
+    for c in country_summary:
+        for p in c["progress"]:
+            if p["indicator"].type_indicator == "Quali_ind" and any(p["values"].values()):
+                source = p["indicator"].ref_data or "Unknown"
+                quali_by_source[source] = quali_by_source.get(source, 0) + 1
+
+    # Pourcentages par source
+    quali_percent_by_source = {
+        source: (count / total_countries * 100) if total_countries else 0
+        for source, count in quali_by_source.items()
+    }
 
     # Quanti_ind : statut Progrès / Recul / Stable
     progress_count = sum(1 for c in country_summary if c["score"] < 0)
@@ -5826,6 +5846,8 @@ def regional_factsheet_pdf(request, pk):
         "total_countries": total_countries,
         "quali_count": quali_count,
         "quali_percent": (quali_count / total_countries * 100) if total_countries else 0,
+        "quali_by_source": quali_by_source,                # ✅ ajout
+        "quali_percent_by_source": quali_percent_by_source, # ✅ ajout
         "progress_count": progress_count,
         "progress_percent": (progress_count / total_countries * 100) if total_countries else 0,
         "recul_count": recul_count,
@@ -5833,6 +5855,7 @@ def regional_factsheet_pdf(request, pk):
         "stable_count": stable_count,
         "stable_percent": (stable_count / total_countries * 100) if total_countries else 0,
     }
+
 
 
     # ✅ Génération des graphiques par catégorie
@@ -5915,3 +5938,249 @@ def regional_factsheet_pdf(request, pk):
             response['Content-Disposition'] = f'inline; filename="{filename}"'
         return response
     return HttpResponse("Erreur lors de la génération du PDF")
+
+
+
+
+
+def heatmap_filter(request):
+    subcomponents = Subcomponent.objects.all()
+    sources = Indicator.objects.values_list("ref_data", flat=True).distinct()
+    if request.method == "POST":
+        pk = request.POST.get("subcomponent")
+        year = request.POST.get("year")
+        source = request.POST.get("source")
+        return redirect("endemicity_heatmap", pk=pk, year=year, source=source)
+    return render(request, "mytvddata/pages/dashboard/heatmap_filter.html", {"subcomponents": subcomponents,"sources": sources})
+
+
+
+def endemicity_heatmap(request, pk, year, source):
+    # Récupérer le sous-composant
+    subcomponent = get_object_or_404(Subcomponent, pk=pk)
+    indicators = Indicator.objects.filter(subcomponent=subcomponent, type_indicator="Quali_ind", ref_data=source)
+
+    # Fusion des données
+    all_data = bind_rows_data()
+
+    # Liste des maladies (indicateurs qualitatifs filtrés par ref_data)
+    maladies = [ind for ind in indicators]
+
+    # Liste des pays
+    countries = Country.objects.all().order_by("name")
+
+    # Construction de la matrice
+    heatmap_data = []
+    for country in countries:
+        row = {"country": country.name, "values": {}}
+        for ind in maladies:
+            val = next(
+                (
+                    d["alpha_value"] for d in all_data
+                    if d["country_code"] == country.cca3
+                    and d["indicator_code"] == ind.indicator_code
+                    and d["time_dim"] == int(year)
+                ),
+                None
+            )
+            row["values"][ind.indicator_name] = val
+        heatmap_data.append(row)
+
+    context = {
+        "subcomponent": subcomponent,
+        "maladies": [ind.indicator_name for ind in maladies],
+        "heatmap_data": heatmap_data,
+        "selected_year": year,
+        "selected_source": source,
+    }
+    return render(request, "mytvddata/pages/dashboard/endemicity_heatmap.html", context)
+
+
+
+
+
+
+
+
+def set_cell_shading(cell, fill_color):
+    """
+    Applique une couleur de fond à une cellule Word via XML.
+    fill_color doit être une couleur hexadécimale (ex: 'FF4D4D').
+    """
+    tcPr = cell._element.get_or_add_tcPr()
+    shd = OxmlElement('w:shd')
+    shd.set('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}val', 'clear')
+    shd.set('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}color', 'auto')
+    shd.set('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}fill', fill_color)
+    tcPr.append(shd)
+
+def export_heatmap_word(request, pk, year, source):
+    subcomponent = get_object_or_404(Subcomponent, pk=pk)
+    indicators = Indicator.objects.filter(
+        subcomponent=subcomponent,
+        type_indicator="Quali_ind",
+        ref_data=source
+    )
+
+    all_data = bind_rows_data()
+    maladies = [ind for ind in indicators]
+    countries = Country.objects.all().order_by("name")
+
+    doc = Document()
+
+    # Titre principal
+    title = doc.add_heading("Endemicity Heatmap Report", level=0)
+    run = title.runs[0]
+    run.font.size = Pt(20)
+    run.font.color.rgb = RGBColor(0, 51, 102)
+
+    doc.add_paragraph(f"Subcomponent: {subcomponent.subcomponent_name}")
+    doc.add_paragraph(f"Source: {source} — Year: {year}")
+    doc.add_paragraph("")
+
+    # Tableau
+    table = doc.add_table(rows=1, cols=len(maladies) + 1)
+    table.style = "Table Grid"
+
+    hdr_cells = table.rows[0].cells
+    hdr_cells[0].text = "Country"
+    for i, ind in enumerate(maladies, start=1):
+        hdr_cells[i].text = ind.indicator_name
+
+    # Compteurs pour résumé
+    endemic_count = 0
+    non_endemic_count = 0
+
+    for country in countries:
+        row_cells = table.add_row().cells
+        row_cells[0].text = country.name
+        for i, ind in enumerate(maladies, start=1):
+            val = next(
+                (
+                    d["alpha_value"] for d in all_data
+                    if d["country_code"] == country.cca3
+                    and d["indicator_code"] == ind.indicator_code
+                    and d["time_dim"] == int(year)
+                ),
+                "-"
+            )
+            cell = row_cells[i]
+            cell.text = val if val else "-"
+
+            # Mise en forme conditionnelle
+            if val in ["Endemic", "Yes, country is endemic (report required)"]:
+                endemic_count += 1
+                set_cell_shading(cell, "FF4D4D")  # rouge vif
+                for paragraph in cell.paragraphs:
+                    for run in paragraph.runs:
+                        run.font.color.rgb = RGBColor(255, 255, 255)
+                        run.font.bold = True
+            elif val not in [None, "-", ""]:
+                non_endemic_count += 1
+                set_cell_shading(cell, "4CAF50")  # vert institutionnel
+                for paragraph in cell.paragraphs:
+                    for run in paragraph.runs:
+                        run.font.color.rgb = RGBColor(255, 255, 255)
+                        run.font.bold = True
+
+    # ✅ Ligne de résumé
+    doc.add_paragraph("")
+    summary = doc.add_paragraph("Summary of Endemicity")
+    summary.runs[0].font.size = Pt(14)
+    summary.runs[0].font.bold = True
+    doc.add_paragraph(f"Total endemic cases: {endemic_count}")
+    doc.add_paragraph(f"Total non-endemic cases: {non_endemic_count}")
+
+    # Export
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    filename = f"Heatmap_{subcomponent.subcomponent_name}_{year}_{source}.docx"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    doc.save(response)
+    return response
+
+
+
+def export_heatmap_excel(request, pk, year, source):
+    # Récupérer le sous-composant
+    subcomponent = get_object_or_404(Subcomponent, pk=pk)
+    indicators = Indicator.objects.filter(
+        subcomponent=subcomponent,
+        type_indicator="Quali_ind",
+        ref_data=source
+    )
+
+    # Fusion des données
+    all_data = bind_rows_data()
+
+    # Liste des maladies (indicateurs qualitatifs filtrés par ref_data)
+    maladies = [ind for ind in indicators]
+
+    # Liste des pays
+    countries = Country.objects.all().order_by("name")
+
+    # Construction du tableau
+    data_matrix = []
+    for country in countries:
+        row = {"Country": country.name}
+        for ind in maladies:
+            val = next(
+                (
+                    d["alpha_value"] for d in all_data
+                    if d["country_code"] == country.cca3
+                    and d["indicator_code"] == ind.indicator_code
+                    and d["time_dim"] == int(year)
+                ),
+                None
+            )
+            row[ind.indicator_name] = val
+        data_matrix.append(row)
+
+    # Conversion en DataFrame
+    df = pd.DataFrame(data_matrix)
+
+    # ✅ Export vers Excel avec style
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    filename = f"Heatmap_{subcomponent.subcomponent_name}_{year}_{source}.xlsx"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+    with pd.ExcelWriter(response, engine="openpyxl") as writer:
+        df.to_excel(writer, sheet_name="Heatmap", index=False)
+
+        # Récupérer la feuille
+        ws = writer.book["Heatmap"]
+
+        # ✅ Style des en-têtes
+        header_font = Font(bold=True, color="FFFFFF", size=12)
+        header_fill = PatternFill("solid", fgColor="003366")  # bleu institutionnel
+        for cell in ws[1]:
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+
+        # ✅ Ajuster largeur des colonnes
+        for col in ws.columns:
+            max_length = 0
+            col_letter = get_column_letter(col[0].column)
+            for cell in col:
+                try:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                except:
+                    pass
+            adjusted_width = (max_length + 2)
+            ws.column_dimensions[col_letter].width = adjusted_width
+
+        # ✅ Mise en forme conditionnelle Endemic / Non-endemic
+        endemic_fill = PatternFill("solid", fgColor="FF4D4D")  # rouge vif
+        non_endemic_fill = PatternFill("solid", fgColor="4CAF50")  # vert institutionnel
+        for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=2, max_col=ws.max_column):
+            for cell in row:
+                if cell.value in ["Endemic", "Yes, country is endemic (report required)"]:
+                    cell.fill = endemic_fill
+                    cell.font = Font(color="FFFFFF", bold=True)
+                elif cell.value not in [None, "-", ""]:
+                    cell.fill = non_endemic_fill
+                    cell.font = Font(color="FFFFFF", bold=True)
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    return response

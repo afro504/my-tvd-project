@@ -171,13 +171,50 @@
 
     <!-- STATISTIQUES GLOBALES -->
     <h1>Regional Statistics</h1>
-    <table>
-        <tr><th>Total Countries Analyzed </th><td class="numeric-value">{{ stats.total_countries }}</td></tr>
-        <tr><th>Countries with Status of endemicity </th><td class="numeric-value">{{ stats.quali_count }} ({{ stats.quali_percent|floatformat:1 }}%)</td></tr>
-        <tr><th>Countries Showing Progress</th><td class="numeric-value">{{ stats.progress_count }} ({{ stats.progress_percent|floatformat:1 }}%)</td></tr>
-        <tr><th>Countries in Decline</th><td class="numeric-value">{{ stats.recul_count }} ({{ stats.recul_percent|floatformat:1 }}%)</td></tr>
-        <tr><th>Countries Remaining Stable</th><td class="numeric-value">{{ stats.stable_count }} ({{ stats.stable_percent|floatformat:1 }}%)</td></tr>
-    </table>
+   <!-- STATISTIQUES GLOBALES -->
+<h1>Regional Statistics</h1>
+<table>
+    <tr>
+        <th>Total Countries Analyzed</th>
+        <td class="numeric-value">{{ stats.total_countries }}</td>
+    </tr>
+
+    <!-- ✅ Détail par ref_data -->
+    <tr>
+        <th>Countries with Status of endemicity</th>
+        <td>
+            <strong>{{ stats.quali_count }}</strong> ({{ stats.quali_percent|floatformat:2 }}%)
+            <br>
+            <ul style="margin:0; padding-left:1.2rem; list-style-type:square;">
+                {% for source, count in stats.quali_by_source.items %}
+                    <li>
+                        <strong>{{ source }}</strong> : {{ count }}
+                        ({{ stats.quali_percent_by_source|get_item:source|floatformat:2 }}%)
+                    </li>
+                {% endfor %}
+            </ul>
+        </td>
+    </tr>
+
+    <tr>
+        <th>Countries Showing Progress</th>
+        <td class="numeric-value">
+            {{ stats.progress_count }} ({{ stats.progress_percent|floatformat:2 }}%)
+        </td>
+    </tr>
+    <tr>
+        <th>Countries in Decline</th>
+        <td class="numeric-value">
+            {{ stats.recul_count }} ({{ stats.recul_percent|floatformat:2 }}%)
+        </td>
+    </tr>
+    <tr>
+        <th>Countries Remaining Stable</th>
+        <td class="numeric-value">
+            {{ stats.stable_count }} ({{ stats.stable_percent|floatformat:2 }}%)
+        </td>
+    </tr>
+</table>
 
     <!-- INDICATEURS PAR CATÉGORIE -->
     <h1>Indicators by Category</h1>

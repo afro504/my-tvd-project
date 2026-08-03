@@ -5,7 +5,7 @@ set -e
 
 echo "🚀 Initialisation du conteneur Django..."
 # Attente que SQL Server accepte les connexions
-until /opt/mssql-tools/bin/sqlcmd -S db -U sa -P "Reine2009#" -Q "SELECT 1" > /dev/null 2>&1; do
+until /opt/mssql-tools/bin/sqlcmd -S db -U sa -P "reine2009#" -Q "SELECT 1" > /dev/null 2>&1; do
   >&2 echo "SQL Server n'est pas encore prêt..."
   sleep 5
 done
@@ -16,8 +16,8 @@ elapsed=$((end_time - start_time))
 echo "✅ SQL Server est prêt (attente totale : ${elapsed}s)"
 
 # Vérifier si la base existe, sinon la créer
-echo "📂 Vérification de la base TVDdata..."
-/opt/mssql-tools/bin/sqlcmd -S db -U sa -P "Reine2009#" -Q "IF DB_ID('TVDdata') IS NULL CREATE DATABASE TVDdata;"
+echo "📂 Vérification de la base TropiVectorDB..."
+/opt/mssql-tools/bin/sqlcmd -S db -U sa -P "reine2009#" -Q "IF DB_ID('TropiVectorDB') IS NULL CREATE DATABASE TropiVectorDB;"
 
 # Appliquer les migrations
 echo "📦 Application des migrations..."

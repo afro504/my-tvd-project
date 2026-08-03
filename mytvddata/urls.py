@@ -241,7 +241,11 @@ urlpatterns = [
     path("factsheet/<int:subcomponent_id>/export_word/", views.export_regional_factsheet_word, name="export_regional_factsheet_word"),
     path("factsheet/<int:subcomponent_id>/excel/", views.export_regional_factsheet_excel, name="export_regional_factsheet_excel"),
     path('country/<int:pk>/factsheet/pdf/', views.country_factsheet_pdf, name='country_factsheet_pdf'),
-    path('regional/<int:pk>/factsheet/pdf/', views.regional_factsheet_pdf, name='regional_factsheet_pdf')
+    path('regional/<int:pk>/factsheet/pdf/', views.regional_factsheet_pdf, name='regional_factsheet_pdf'),
+    path("regional/<int:pk>/heatmap/<int:year>/<str:source>/", views.endemicity_heatmap, name="endemicity_heatmap"),
+    path("regional/heatmap/filter/", views.heatmap_filter, name="heatmap_filter"),
+    path("regional/<int:pk>/heatmap/<int:year>/<str:source>/word/", views.export_heatmap_word, name="export_heatmap_word"),
+    path("regional/<int:pk>/heatmap/<int:year>/<str:source>/excel/", views.export_heatmap_excel, name="export_heatmap_excel"),
 
 
 

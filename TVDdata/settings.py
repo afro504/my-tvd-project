@@ -174,11 +174,11 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "mssql", #sql_server.pyodbc
-            "NAME": os.getenv("DB_NAME", "TVDdata"),
-            "HOST": os.getenv("DB_HOST", "db"),
+            "NAME": os.getenv("DB_NAME", "TropiVectorDB"),#"TVDdata"
+            "HOST": os.getenv("DB_HOST", "db"),#  db
             "PORT": os.getenv("DB_PORT", "1433"),
-            "USER": os.getenv("DB_USER", "sa"),
-            "PASSWORD": os.getenv("DB_PASSWORD", "Reine2009#"),
+            "USER": os.getenv("DB_USER", "sa"), #sa
+            "PASSWORD": os.getenv("DB_PASSWORD", "reine2009#"),# "Reine2009#"
             "OPTIONS": {
                 "driver": "ODBC Driver 17 for SQL Server",
                 "TrustServerCertificate": "yes",

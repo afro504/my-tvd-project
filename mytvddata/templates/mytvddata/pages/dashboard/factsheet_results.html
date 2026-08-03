@@ -57,8 +57,17 @@
     <h5 class="fw-bold">Overall statistic</h5>
     <ul>
       <li>Total Countries Analyzed : <strong>{{ stats.total_countries }}</strong></li>
-      <li>Countries with Status of endemicity : <strong>{{ stats.quali_count }}</strong> 
-          ({{ stats.quali_percent|floatformat:2 }}%)</li>
+      <li>Countries with Status of endemicity :</li>
+      <ul>
+        {% for source, count in stats.quali_by_source.items %}
+          <li>
+            <strong>{{ source }}</strong> : {{ count }}
+            ({{ stats.quali_percent_by_source|get_item:source|floatformat:2 }}%)
+          </li>
+        {% endfor %}
+      </ul>
+
+
       <li>Countries Showing <span class="text-success">Progress</span> : <strong>{{ stats.progress_count }}</strong> 
           ({{ stats.progress_percent|floatformat:2 }}%)</li>
       <li>Countries in <span class="text-danger">Decline</span> : <strong>{{ stats.recul_count }}</strong> 

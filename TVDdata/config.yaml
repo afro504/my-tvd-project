@@ -13,11 +13,11 @@ database:
 
   prod:
     ENGINE: mssql
-    NAME: tvd_db_prod
-    HOST: SQLSERVER-PROD
+    NAME: TropiVectorDB
+    HOST: db
     PORT: "1433"
-    USER: admin_user
-    PASSWORD: "Reine2009#"
+    USER: sa
+    PASSWORD: "reine2009#"
     OPTIONS:
       driver: "ODBC Driver 17 for SQL Server"
       trusted_connection: "no"
