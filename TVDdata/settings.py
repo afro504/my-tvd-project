@@ -156,15 +156,28 @@ WSGI_APPLICATION = 'TVDdata.wsgi.application'
 # }
 
 if ENV == "dev":
-    # Connexion locale avec authentification Windows
-    DATABASES = {
+   # # Connexion locale avec authentification Windows
+   # DATABASES = {# Base données locale dans l'ordinateur de développement
+   #     "default": {
+   #         "ENGINE": "mssql",
+   #         "NAME": os.getenv("DB_NAME", "tvd_dts"),
+   #         "HOST": os.getenv("DB_HOST", "DESKTOP-QVJV7NQ"),
+   #         "OPTIONS": {
+   #             "driver": "ODBC Driver 17 for SQL Server",
+   #             "trusted_connection": "yes",
+   #             "TrustServerCertificate": "yes",
+   #         },
+   #     }
+   # }
+    DATABASES = {# Base données dans le serveur Afro
         "default": {
             "ENGINE": "mssql",
-            "NAME": os.getenv("DB_NAME", "tvd_dts"),
-            "HOST": os.getenv("DB_HOST", "DESKTOP-QVJV7NQ"),
+            "NAME": os.getenv("DB_NAME", "TropiVectorBD"),
+            "HOST": os.getenv("DB_HOST", "SQLFCI2012MISC\SQL2012MISC"),  # instance nommée
+            "USER": os.getenv("DB_USER", "tvduser"),
+            "PASSWORD": os.getenv("DB_PASSWORD", "reine2009#"),
             "OPTIONS": {
                 "driver": "ODBC Driver 17 for SQL Server",
-                "trusted_connection": "yes",
                 "TrustServerCertificate": "yes",
             },
         }
@@ -187,6 +200,7 @@ else:
     }
 
    
+
 
 
 

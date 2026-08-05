@@ -1,6 +1,7 @@
 # Create your models here.
 from django.db import models
 from django.urls import reverse
+from django_jsonfield_backport.models import JSONField
 
 
 # ============================
@@ -419,7 +420,7 @@ class StaffMember(models.Model):
     office_affiliation = models.CharField("Office Affiliation", max_length=150, blank=True, null=True)
     position = models.CharField("Position", max_length=100, blank=True, null=True)
     responsibility = models.TextField("Responsibility", blank=True, null=True)
-    language = models.JSONField("Languages", blank=True, null=True)  # stockage liste
+    language = models.TextField("Languages", blank=True, null=True)  # stockage liste # ancien JSONField remplacé par TextField
     diseases = models.ManyToManyField("Subcomponent", related_name="staff_members", blank=True)
     level_geo = models.CharField("Geographical Level", max_length=50, blank=True, null=True)
 
